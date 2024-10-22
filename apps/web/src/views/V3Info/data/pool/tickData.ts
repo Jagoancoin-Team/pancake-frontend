@@ -1,24 +1,58 @@
+import { gql, GraphQLClient } from 'graphql-request'
+import keyBy from 'lodash/keyBy'
 import { TickMath, tickToPrice } from '@pancakeswap/v3-sdk'
-import { Token } from '@pancakeswap/sdk'
+import { Token, ChainId } from '@pancakeswap/sdk'
 import { Address } from 'viem'
-import { explorerApiClient } from 'state/info/api/client'
-import { components } from 'state/info/api/schema'
 
 const PRICE_FIXED_DIGITS = 4
 const DEFAULT_SURROUNDING_TICKS = 300
-const FEE_TIER_TO_TICK_SPACING = (feeTier: number): number => {
+const FEE_TIER_TO_TICK_SPACING = (feeTier: string): number => {
   switch (feeTier) {
-    case 10000:
+    case '50000':
+      return 1000
+    case '10000':
       return 200
-    case 2500:
-      return 50
-    case 500:
-      return 10
-    case 100:
-      return 1
+    case '3000':
+      return 60
+    case '1000':
+      return 20
     default:
       throw Error(`Tick spacing for fee tier ${feeTier} undefined.`)
   }
+}
+
+interface TickPool {
+  tick: string
+  feeTier: string
+  token0: {
+    symbol: string
+    id: string
+    decimals: string
+  }
+  token1: {
+    symbol: string
+    id: string
+    decimals: string
+  }
+  sqrtPrice: string
+  liquidity: string
+}
+
+interface PoolResult {
+  pool: TickPool
+}
+
+// Raw tick returned from GQL
+interface Tick {
+  tickIdx: string
+  liquidityGross: string
+  liquidityNet: string
+  price0: string
+  price1: string
+}
+
+interface SurroundingTicksResult {
+  ticks: Tick[]
 }
 
 // Tick with fields parsed to bigints, and active liquidity computed.
@@ -31,6 +65,62 @@ export interface TickProcessed {
   price1: string
 }
 
+const fetchInitializedTicks = async (
+  poolAddress: string,
+  tickIdxLowerBound: number,
+  tickIdxUpperBound: number,
+  client: GraphQLClient,
+): Promise<{ loading?: boolean; error?: boolean; ticks?: Tick[] }> => {
+  const tickQuery = gql`
+    query surroundingTicks(
+      $poolAddress: String!
+      $tickIdxLowerBound: BigInt!
+      $tickIdxUpperBound: BigInt!
+      $skip: Int!
+    ) {
+      ticks(
+        first: 1000
+        skip: $skip
+        where: { poolAddress: $poolAddress, tickIdx_lte: $tickIdxUpperBound, tickIdx_gte: $tickIdxLowerBound }
+      ) {
+        tickIdx
+        liquidityGross
+        liquidityNet
+        price0
+        price1
+      }
+    }
+  `
+
+  let surroundingTicks: Tick[] = []
+  let surroundingTicksResult: Tick[] = []
+  let skip = 0
+  do {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const data = await client.request<SurroundingTicksResult>(tickQuery, {
+        poolAddress,
+        tickIdxLowerBound,
+        tickIdxUpperBound,
+        skip,
+      })
+
+      // console.log({ data, error, loading }, 'Result. Skip: ' + skip)
+
+      if (!data) {
+        continue
+      }
+      surroundingTicks = data.ticks
+      surroundingTicksResult = surroundingTicksResult.concat(surroundingTicks)
+      skip += 1000
+    } catch (e) {
+      console.error(e)
+      return { error: true, ticks: surroundingTicksResult }
+    }
+  } while (surroundingTicks.length > 0)
+  return { ticks: surroundingTicksResult, loading: false, error: false }
+}
+
 export interface PoolTickData {
   ticksProcessed: TickProcessed[]
   feeTier: string
@@ -38,68 +128,51 @@ export interface PoolTickData {
   activeTickIdx: number
 }
 
+const poolQuery = gql`
+  query pool($poolAddress: ID!) {
+    pool(id: $poolAddress) {
+      tick
+      token0 {
+        symbol
+        id
+        decimals
+      }
+      token1 {
+        symbol
+        id
+        decimals
+      }
+      feeTier
+      sqrtPrice
+      liquidity
+    }
+  }
+`
+
 export const fetchTicksSurroundingPrice = async (
   poolAddress: string,
-  chainName: components['schemas']['ChainName'],
-  chainId: number,
+  client: GraphQLClient,
+  chainId: ChainId,
   numSurroundingTicks = DEFAULT_SURROUNDING_TICKS,
-  signal?: AbortSignal,
 ): Promise<{
   error?: boolean
   data?: PoolTickData
 }> => {
   try {
-    const poolData = await explorerApiClient
-      .GET('/cached/pools/v3/{chainName}/{address}', {
-        signal,
-        params: {
-          path: {
-            chainName,
-            address: poolAddress,
-          },
-        },
-      })
-      .then((res) => res.data)
-
-    const rawTickData: {
-      id: string
-      tickIdx: number
-      liquidityGross: string
-      liquidityNet: string
-      price0: string
-      price1: string
-    }[] = []
-    let hasNextPage = true
-    let endCursor = ''
-
-    while (hasNextPage) {
-      // eslint-disable-next-line no-await-in-loop
-      const result = await explorerApiClient
-        .GET(`/cached/pools/ticks/v3/{chainName}/{pool}`, {
-          signal,
-          params: {
-            path: {
-              chainName,
-              pool: poolAddress,
-            },
-            query: {
-              after: endCursor,
-            },
-          },
-        })
-        .then((res) => res.data)
-
-      rawTickData.push(...(result?.rows ?? []))
-      hasNextPage = result?.hasNextPage ?? false
-      endCursor = result?.endCursor ?? ''
-    }
-
-    if (!poolData || !rawTickData) {
-      return { error: false }
-    }
-
-    const poolCurrentTickIdx = poolData.tick ?? 0
-    const tickSpacing = FEE_TIER_TO_TICK_SPACING(poolData.feeTier)
+    const poolResult = await client.request<PoolResult>(poolQuery, {
+      poolAddress,
+    })
+    const {
+      pool: {
+        tick: poolCurrentTick,
+        feeTier,
+        liquidity,
+        token0: { id: token0Address, decimals: token0Decimals, symbol: token0Symbol },
+        token1: { id: token1Address, decimals: token1Decimals, symbol: token1Symbol },
+      },
+    } = poolResult
+    const poolCurrentTickIdx = parseInt(poolCurrentTick)
+    const tickSpacing = FEE_TIER_TO_TICK_SPACING(feeTier)
     // The pools current tick isn't necessarily a tick that can actually be initialized.
     // Find the nearest valid tick given the tick spacing.
     const activeTickIdx = Math.floor(poolCurrentTickIdx / tickSpacing) * tickSpacing
@@ -109,28 +182,25 @@ export const fetchTicksSurroundingPrice = async (
     const tickIdxLowerBound = activeTickIdx - numSurroundingTicks * tickSpacing
     const tickIdxUpperBound = activeTickIdx + numSurroundingTicks * tickSpacing
 
-    const tickData = rawTickData?.reduce(
-      (acc, item) => {
-        if (item.tickIdx >= tickIdxLowerBound && item.tickIdx <= tickIdxUpperBound) {
-          // eslint-disable-next-line no-param-reassign
-          acc[item.tickIdx] = item
-        }
-        return acc
-      },
-      {} as {
-        [tickIdx: number]: {
-          id: string
-          tickIdx: number
-          liquidityGross: string
-          liquidityNet: string
-          price0: string
-          price1: string
-        }
-      },
+    const initializedTicksResult = await fetchInitializedTicks(
+      poolAddress,
+      tickIdxLowerBound,
+      tickIdxUpperBound,
+      client,
     )
+    if (initializedTicksResult.error || initializedTicksResult.loading) {
+      return {
+        error: initializedTicksResult.error,
+      }
+    }
 
-    const token0 = new Token(chainId, poolData.token0.id as Address, poolData.token0.decimals, poolData.token0.symbol)
-    const token1 = new Token(chainId, poolData.token1.id as Address, poolData.token1.decimals, poolData.token1.symbol)
+    const { ticks: initializedTicks } = initializedTicksResult
+
+    const tickIdxToInitializedTick = keyBy(initializedTicks, 'tickIdx')
+
+    const token0 = new Token(chainId, token0Address as Address, parseInt(token0Decimals), token0Symbol)
+    const token1 = new Token(chainId, token1Address as Address, parseInt(token1Decimals), token1Symbol)
+
     // console.log({ activeTickIdx, poolCurrentTickIdx }, 'Active ticks')
 
     // If the pool's tick is MIN_TICK (-887272), then when we find the closest
@@ -146,7 +216,7 @@ export const fetchTicksSurroundingPrice = async (
     }
 
     const activeTickProcessed: TickProcessed = {
-      liquidityActive: BigInt(poolData.liquidity),
+      liquidityActive: BigInt(liquidity),
       tickIdx: activeTickIdx,
       liquidityNet: 0n,
       price0: tickToPrice(token0, token1, activeTickIdxForPrice).toFixed(PRICE_FIXED_DIGITS),
@@ -157,7 +227,7 @@ export const fetchTicksSurroundingPrice = async (
     // If our active tick happens to be initialized (i.e. there is a position that starts or
     // ends at that tick), ensure we set the gross and net.
     // correctly.
-    const activeTick = tickData[activeTickIdx]
+    const activeTick = tickIdxToInitializedTick[activeTickIdx]
     if (activeTick) {
       activeTickProcessed.liquidityGross = BigInt(activeTick.liquidityGross)
       activeTickProcessed.liquidityNet = BigInt(activeTick.liquidityNet)
@@ -204,7 +274,7 @@ export const fetchTicksSurroundingPrice = async (
 
         // Check if there is an initialized tick at our current tick.
         // If so copy the gross and net liquidity from the initialized tick.
-        const currentInitializedTick = tickData[currentTickIdx]
+        const currentInitializedTick = tickIdxToInitializedTick[currentTickIdx.toString()]
         if (currentInitializedTick) {
           currentTickProcessed.liquidityGross = BigInt(currentInitializedTick.liquidityGross)
           currentTickProcessed.liquidityNet = BigInt(currentInitializedTick.liquidityNet)
@@ -252,7 +322,7 @@ export const fetchTicksSurroundingPrice = async (
     return {
       data: {
         ticksProcessed,
-        feeTier: poolData.feeTier.toString(),
+        feeTier,
         tickSpacing,
         activeTickIdx,
       },

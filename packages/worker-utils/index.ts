@@ -1,15 +1,8 @@
 export const CORS_ALLOW = [
-  /\.pancake\.run$/,
-  /\.pancakeswap\.finance$/,
-  /\.pancakeswap\.games$/,
-  /\.pancakeswap\.com$/,
-  'https://pancakeswap.finance',
-  'https://pancakeswap.games',
-  'https://pancakeswap.com',
-  'https://tgqa.noahlabs.tech',
-  'https://tgqa2.noahlabs.tech',
-  'https://tg-bot.pancakeswap.ai',
+  /\.icecreamswap\.com$/,
+  'https://icecreamswap.com',
   /^http:\/\/localhost(:\d+)?$/,
+  /\.vercel\.app$/,
 ]
 
 function isString(s: any): s is string {

@@ -1,5 +1,4 @@
-import { TradeType } from '@pancakeswap/sdk'
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId, TradeType } from '@pancakeswap/sdk'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
 import { Address } from 'viem'
 import { z } from 'zod'
@@ -28,14 +27,14 @@ const zCurrencyAmount = z
 
 const zV2Pool = z
   .object({
-    type: z.literal(PoolType.V2),
+    type: zPoolType,
     reserve0: zCurrencyAmount,
     reserve1: zCurrencyAmount,
   })
   .required()
 const zV3Pool = z
   .object({
-    type: z.literal(PoolType.V3),
+    type: zPoolType,
     token0: zCurrency,
     token1: zCurrency,
     fee: zFee,
@@ -49,7 +48,7 @@ const zV3Pool = z
   .required()
 const zStablePool = z
   .object({
-    type: z.literal(PoolType.STABLE),
+    type: zPoolType,
     balances: z.array(zCurrencyAmount),
     amplifier: zBigNumber,
     fee: z.string(),
@@ -91,8 +90,6 @@ export const zRouterPostParams = z
     blockNumber: zBigNumber.optional(),
     poolTypes: zPoolTypes.optional(),
     onChainQuoterGasLimit: zBigNumber.optional(),
-    nativeCurrencyUsdPrice: z.number().optional(),
-    quoteCurrencyUsdPrice: z.number().optional(),
   })
   .required({
     chainId: true,

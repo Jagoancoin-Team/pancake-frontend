@@ -1,15 +1,12 @@
 import { Box, Flex } from '@pancakeswap/uikit'
-import { useCallback } from 'react'
 import { styled } from 'styled-components'
-import { useSwiper } from 'swiper/react'
 import HarvestCard from './HarvestCard'
 import UserDetail from './UserDetail'
 
 const StyledCard = styled(Box)`
-  border-top: 1px ${({ theme }) => theme.colors.primary} solid;
-  border-bottom: 1px ${({ theme }) => theme.colors.primary} solid;
-  border-left: 1px ${({ theme }) => theme.colors.primary} solid;
-  border-right: 1px ${({ theme }) => theme.colors.primary} solid;
+  border-bottom: 1px ${({ theme }) => theme.colors.secondary} solid;
+  border-left: 1px ${({ theme }) => theme.colors.secondary} solid;
+  border-right: 1px ${({ theme }) => theme.colors.secondary} solid;
   border-radius: ${({ theme }) => `0 0 ${theme.radii.card} ${theme.radii.card}`};
   background: ${({ theme }) =>
     theme.isDark
@@ -18,24 +15,14 @@ const StyledCard = styled(Box)`
 `
 
 const UserBanner = () => {
-  const swiper = useSwiper()
-
-  const handleHarvestStart = useCallback(() => {
-    swiper?.autoplay?.stop()
-  }, [swiper])
-
-  const handleHarvestEnd = useCallback(() => {
-    swiper?.autoplay?.start()
-  }, [swiper])
-
   return (
-    <StyledCard p={['16px', null, null, '40px']}>
+    <StyledCard p={['16px', null, null, '24px']}>
       <Flex alignItems="center" justifyContent="center" flexDirection={['column', null, null, 'row']}>
         <Flex flex="1" mr={[null, null, null, '32px']}>
           <UserDetail />
         </Flex>
         <Flex flex="1" width={['100%', null, 'auto']}>
-          <HarvestCard onHarvestStart={handleHarvestStart} onHarvestEnd={handleHarvestEnd} />
+          <HarvestCard />
         </Flex>
       </Flex>
     </StyledCard>

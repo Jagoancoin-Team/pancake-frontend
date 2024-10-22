@@ -1,17 +1,23 @@
-import { ArrowBackIcon, ArrowForwardIcon, Box, Flex, Skeleton, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useState, useMemo, useCallback, useEffect, Fragment } from 'react'
 import { styled } from 'styled-components'
-
-import { useTranslation } from '@pancakeswap/localization'
-import orderBy from 'lodash/orderBy'
-import { multiChainId } from 'state/info/constant'
-import { useChainNameByQuery, useMultiChainPath, useStableSwapPath } from 'state/info/hooks'
+import {
+  Text,
+  Flex,
+  Box,
+  Skeleton,
+  ArrowBackIcon,
+  ArrowForwardIcon,
+  useMatchBreakpoints,
+  NextLinkFromReactRouter,
+} from '@pancakeswap/uikit'
+import { useMultiChainPath, useStableSwapPath, useChainNameByQuery } from 'state/info/hooks'
+import { subgraphTokenSymbol } from 'state/info/constant'
 import { TokenData } from 'state/info/types'
-import { formatAmount } from 'utils/formatInfoNumbers'
-import { getTokenNameAlias, getTokenSymbolAlias } from 'utils/getTokenAlias'
 import { CurrencyLogo } from 'views/Info/components/CurrencyLogo'
 import Percent from 'views/Info/components/Percent'
+import { useTranslation } from '@pancakeswap/localization'
+import orderBy from 'lodash/orderBy'
+import { formatAmount } from 'utils/formatInfoNumbers'
 import { Arrow, Break, ClickableColumnHeader, PageButtons, TableWrapper } from './shared'
 
 /**
@@ -95,11 +101,7 @@ const DataRow: React.FC<React.PropsWithChildren<{ tokenData: TokenData; index: n
   const { isXs, isSm } = useMatchBreakpoints()
   const chianPath = useMultiChainPath()
   const chainName = useChainNameByQuery()
-  const chainId = multiChainId[chainName]
   const stableSwapPath = useStableSwapPath()
-
-  const tokenSymbol = getTokenSymbolAlias(tokenData.address, chainId, tokenData.symbol)
-  const tokenName = getTokenNameAlias(tokenData.address, chainId, tokenData.name)
 
   return (
     <LinkWrapper to={`/info${chianPath}/tokens/${tokenData.address}${stableSwapPath}`}>
@@ -112,8 +114,8 @@ const DataRow: React.FC<React.PropsWithChildren<{ tokenData: TokenData; index: n
           {(isXs || isSm) && <Text ml="8px">{tokenData.symbol}</Text>}
           {!isXs && !isSm && (
             <Flex marginLeft="10px">
-              <Text>{tokenName}</Text>
-              <Text ml="8px">({tokenSymbol})</Text>
+              <Text>{tokenData.name}</Text>
+              <Text ml="8px">({subgraphTokenSymbol[tokenData.address] ?? tokenData.symbol})</Text>
             </Flex>
           )}
         </Flex>
@@ -141,7 +143,7 @@ const MAX_ITEMS = 10
 
 const TokenTable: React.FC<
   React.PropsWithChildren<{
-    tokenDatas: (TokenData | undefined)[]
+    tokenDatas: TokenData[] | undefined
     maxItems?: number
   }>
 > = ({ tokenDatas, maxItems = MAX_ITEMS }) => {
@@ -165,7 +167,7 @@ const TokenTable: React.FC<
     return tokenDatas
       ? orderBy(
           tokenDatas,
-          (tokenData) => tokenData?.[sortField as keyof TokenData],
+          (tokenData) => tokenData[sortField as keyof TokenData],
           sortDirection ? 'desc' : 'asc',
         ).slice(maxItems * (page - 1), page * maxItems)
       : []

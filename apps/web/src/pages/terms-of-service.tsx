@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { styled } from 'styled-components'
 import { Flex, Text, Link } from '@pancakeswap/uikit'
+import { SUPPORT_ANY } from "config/constants/supportChains";
 
 export const Container = styled(Flex)`
   display: grid;
@@ -33,7 +34,7 @@ export const Container = styled(Flex)`
 const TermsOfService = () => {
   return (
     <Container>
-      <Text as="h1">PancakeSwap Terms of Service</Text>
+      <Text as="h1">DynastySwap Terms of Service</Text>
       <Text as="h3">Last modified: Feb 28, 2023</Text>
       <Text as="p">
         <Text as="span">
@@ -59,8 +60,8 @@ const TermsOfService = () => {
       <Text as="h3">Introduction</Text>
       <Text as="p">
         The Website provides access to (a) a decentralized protocol on various public blockchains, including but not
-        limited to BNB Chain, Aptos and Ethereum, that allow users to trade certain compatible digital assets (“the
-        PancakeSwap protocol” or the “Protocol”), among other services. The Website is one, but not the exclusive, means
+        limited to Dynasty Chain, Aptos and Ethereum, that allow users to trade certain compatible digital assets (“the
+          DynastySwap protocol” or the “Protocol”), among other services. The Website is one, but not the exclusive, means
         of accessing the Protocol.
       </Text>
       <Text as="p">
@@ -97,11 +98,11 @@ const TermsOfService = () => {
         The Website is distinct from the Protocol and is one, but not the exclusive, means of accessing the Protocol.
         The Protocol itself has three versions, designated as v1, v2, and v3, each of which comprises open-source or
         source-available self-executing smart contracts that are deployed on various public blockchains, such as BNB
-        Chain, Aptos and Ethereum. PancakeSwap does not control or operate any version of the Protocol on any blockchain
+        Chain, Aptos and Ethereum. DynastySwap does not control or operate any version of the Protocol on any blockchain
         network. By using the Website, you understand that you are not buying or selling digital assets from us and that
         we do not operate any liquidity pools on the Protocol or control trade execution on the Protocol. When traders
         pay fees for trades, those fees accrue to liquidity providers for the Protocol. As a general matter, the
-        PancakeSwap team is not a liquidity provider into Protocol liquidity pools and liquidity providers are
+        DynastySwap team is not a liquidity provider into Protocol liquidity pools and liquidity providers are
         independent third parties. The Protocol was initially deployed on the BNB Chain blockchain, and has since been
         deployed on several other blockchain networks.
       </Text>
@@ -127,7 +128,7 @@ const TermsOfService = () => {
 
       <Text as="h3">Intellectual Property Rights</Text>
       <Text as="p">
-        PancakeSwap owns all intellectual property and other rights in the Website and its contents, including (but not
+      DynastySwap owns all intellectual property and other rights in the Website and its contents, including (but not
         limited to) software, text, images, trademarks, service marks, copyrights, patents, designs, and its “look and
         feel.” Unlike the Website, versions 1-3 of the Protocol are comprised entirely of open-source or
         source-available software running on public blockchains.
@@ -242,8 +243,8 @@ const TermsOfService = () => {
       </Text>
       <Text as="p">
         We may provide information about tokens in the Website sourced from third-party data partners through features
-        such as rarity scores, token explorer or token lists (which includes the PancakeSwap default token list and
-        PancakeSwap expanded list hosted at tokenlists.org). We may also provide warning labels for certain tokens. The
+        such as rarity scores, token explorer or token lists (which includes the DynastySwap default token list and
+          DynastySwap expanded list hosted at tokenlists.org). We may also provide warning labels for certain tokens. The
         provision of informational materials does not make trades in those tokens solicited; we are not attempting to
         induce you to make any purchase as a result of information provided. All such information provided by the
         Website is for informational purposes only and should not be construed as investment advice or a recommendation
@@ -291,7 +292,7 @@ const TermsOfService = () => {
         to understand the inherent risks associated with using cryptographic and blockchain-based systems, and that you
         have a working knowledge of the usage and intricacies of digital assets such as ether (ETH), so-called
         stablecoins, and other digital tokens such as those following the Ethereum Token Standard (ERC-20), or standards
-        of any other digital tokens which are transacted on PancakeSwap.
+        of any other digital tokens which are transacted on DynastySwap.
       </Text>
       <Text as="p">
         In particular, you understand that the markets for these digital assets are nascent and highly volatile due to
@@ -316,7 +317,7 @@ const TermsOfService = () => {
       <Text as="p">
         Finally, you understand that we do not create, own, or operate cross-chain bridges and we do not make any
         representation or warranty about the safety or soundness of any cross-chain bridge, including its use for
-        PancakeSwap governance.
+        DynastySwap governance.
       </Text>
       <Text as="p">
         In summary, you acknowledge that we are not responsible for any of these variables or risks, do not own or
@@ -373,7 +374,7 @@ const TermsOfService = () => {
         Similarly, the Protocol is provided "AS IS", at your own risk, and without warranties of any kind. Although we
         contributed to the initial code for the Protocol, we do not provide, own, or control the Protocol, which is run
         autonomously without any headcount by smart contracts deployed on various blockchains. Upgrades and
-        modifications to the Protocol are generally managed in a community-driven way by holders of the CAKE token. No
+        modifications to the Protocol are generally managed in a community-driven way by holders of the ICE token. No
         developer or entity involved in creating the Protocol will be liable for any claims or damages whatsoever
         associated with your use, inability to use, or your interaction with other users of, the Protocol, including any
         direct, indirect, incidental, special, exemplary, punitive or consequential damages, or loss of profits,
@@ -446,13 +447,13 @@ const TermsOfService = () => {
       <Text as="h3">Gas Fees</Text>
       <Text as="p">
         Blockchain transactions require the payment of transaction fees to the appropriate network (“Gas Fees”). Except
-        as otherwise expressly set forth in the terms of another offer by PancakeSwap, you will be solely responsible to
+        as otherwise expressly set forth in the terms of another offer by DynastySwap, you will be solely responsible to
         pay the Gas Fees for any transaction that you initiate.
       </Text>
     </Container>
   )
 }
 
-TermsOfService.chains = []
+TermsOfService.chains = SUPPORT_ANY
 
 export default TermsOfService

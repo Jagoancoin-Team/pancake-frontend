@@ -1,9 +1,9 @@
-import React, { ReactNode, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation, Trans } from '@pancakeswap/localization'
 import { styled } from 'styled-components'
 import { Box, Card, Flex, Text } from '@pancakeswap/uikit'
 import BigNumber from 'bignumber.js'
-import { useCakePrice } from 'hooks/useCakePrice'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import { formatNumber } from '@pancakeswap/utils/formatBalance'
 import { InfoDetail } from 'views/AffiliatesProgram/hooks/useAuthAffiliate'
 import PieChartContainer from './PieChartContainer'
@@ -39,7 +39,7 @@ interface CommissionInfoProps {
 
 export interface ChartInfo {
   id: string
-  name: ReactNode
+  name: JSX.Element
   chartColor: string
   usdValue: string
   cakeValue: string
@@ -88,19 +88,19 @@ const chartConfig: ChartInfo[] = [
 
 const CommissionInfo: React.FC<React.PropsWithChildren<CommissionInfoProps>> = ({ affiliate }) => {
   const { t } = useTranslation()
-  const cakePrice = useCakePrice()
+  const cakePriceBusd = usePriceCakeUSD()
   const { totalUsers, totalEarnFeeUSD } = affiliate.metric
 
   const totalCakeEarned = useMemo(() => {
-    const cakeBalance = new BigNumber(totalEarnFeeUSD).div(cakePrice).toNumber()
+    const cakeBalance = new BigNumber(totalEarnFeeUSD).div(cakePriceBusd).toNumber()
     return formatNumber(cakeBalance)
-  }, [cakePrice, totalEarnFeeUSD])
+  }, [cakePriceBusd, totalEarnFeeUSD])
 
   const chartData = useMemo(() => {
     return chartConfig
       .map((chart) => {
         const usdValue: string = affiliate.metric[chart?.id] ?? '0'
-        const cakeBalance = new BigNumber(usdValue).div(cakePrice).toNumber()
+        const cakeBalance = new BigNumber(usdValue).div(cakePriceBusd).toNumber()
         const valuePercentage = new BigNumber(usdValue).div(totalEarnFeeUSD)
         const percentage = new BigNumber(valuePercentage.isNaN() ? '0' : valuePercentage).times(100).toNumber()
         return {
@@ -112,7 +112,7 @@ const CommissionInfo: React.FC<React.PropsWithChildren<CommissionInfoProps>> = (
         }
       })
       .sort((a, b) => b.cakeValueAsNumber - a.cakeValueAsNumber)
-  }, [affiliate?.metric, cakePrice, totalEarnFeeUSD])
+  }, [affiliate?.metric, cakePriceBusd, totalEarnFeeUSD])
 
   return (
     <Box width={['100%', '100%', '100%', '100%', '100%', '387px']}>

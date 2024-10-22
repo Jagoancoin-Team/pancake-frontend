@@ -4,20 +4,17 @@ import {
   AutoColumn,
   Box,
   Flex,
+  NextLinkFromReactRouter,
   SortArrowIcon,
   Text,
   useMatchBreakpoints,
 } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
-import { useTranslation } from '@pancakeswap/localization'
 import { useActiveChainId } from 'hooks/useActiveChainId'
+import { useTranslation } from '@pancakeswap/localization'
 import useTheme from 'hooks/useTheme'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { multiChainId } from 'state/info/constant'
 import { useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
 import { styled } from 'styled-components'
-import { getTokenNameAlias, getTokenSymbolAlias } from 'utils/getTokenAlias'
 import { CurrencyLogo } from 'views/Info/components/CurrencyLogo'
 import { Arrow, Break, ClickableColumnHeader, PageButtons, TableWrapper } from 'views/Info/components/InfoTables/shared'
 import { TOKEN_HIDE, v3InfoPath } from '../../constants'
@@ -79,9 +76,6 @@ const ResponsiveLogo = styled(CurrencyLogo)`
 const DataRow = ({ tokenData, index, chainPath }: { tokenData: TokenData; index: number; chainPath: string }) => {
   const { theme } = useTheme()
   const chainName = useChainNameByQuery()
-  const chainId = multiChainId[chainName]
-  const tokenSymbol = getTokenSymbolAlias(tokenData.address, chainId, tokenData.symbol) ?? ''
-  const tokenName = getTokenNameAlias(tokenData.address, chainId, tokenData.name) ?? ''
   const { isMobile } = useMatchBreakpoints()
   return (
     <LinkWrapper to={`/${v3InfoPath}${chainPath}/tokens/${tokenData.address}`}>
@@ -94,10 +88,10 @@ const DataRow = ({ tokenData, index, chainPath }: { tokenData: TokenData; index:
 
           <Text style={{ marginLeft: '10px' }}>
             <RowFixed>
-              {isMobile ? <HoverInlineText text={tokenSymbol} /> : <HoverInlineText text={tokenName} />}
+              {isMobile ? <HoverInlineText text={tokenData.symbol} /> : <HoverInlineText text={tokenData.name} />}
               {!isMobile && (
                 <Text ml="8px" color={theme.colors.text99}>
-                  ({tokenSymbol})
+                  ({tokenData.symbol})
                 </Text>
               )}
             </RowFixed>
@@ -154,18 +148,18 @@ export default function TokenTable({
   }, [maxItems, tokenDatas])
 
   const sortedTokens = useMemo(() => {
-    return tokenDatas && chainId
+    return tokenDatas
       ? tokenDatas
-          .filter((x) => !!x && !TOKEN_HIDE?.[chainId]?.includes(x.address))
-          .sort((a, b) => {
-            if (a && b) {
-              return a[sortField as keyof TokenData] > b[sortField as keyof TokenData]
-                ? (sortDirection ? -1 : 1) * 1
-                : (sortDirection ? -1 : 1) * -1
-            }
-            return -1
-          })
-          .slice(maxItems * (page - 1), page * maxItems)
+        .filter((x) => !!x && !TOKEN_HIDE?.[chainId]?.includes(x.address))
+        .sort((a, b) => {
+          if (a && b) {
+            return a[sortField as keyof TokenData] > b[sortField as keyof TokenData]
+              ? (sortDirection ? -1 : 1) * 1
+              : (sortDirection ? -1 : 1) * -1
+          }
+          return -1
+        })
+        .slice(maxItems * (page - 1), page * maxItems)
       : []
   }, [tokenDatas, maxItems, page, , sortField, sortDirection, chainId])
 
@@ -271,7 +265,7 @@ export default function TokenTable({
                 <ArrowBackIcon color={page === 1 ? 'textDisabled' : 'primary'} />
               </Arrow>
             </Box>
-            <Text>{`Page ${page} of ${maxPage}`}</Text>
+            <Text>{t('Page %page% of %maxPage%', { page, maxPage })}</Text>
             <Box
               onClick={() => {
                 setPage(page === maxPage ? page : page + 1)

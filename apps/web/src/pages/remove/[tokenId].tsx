@@ -12,7 +12,6 @@ const RemoveLiquidityPage = () => {
 }
 
 RemoveLiquidityPage.chains = CHAIN_IDS
-RemoveLiquidityPage.screen = true
 
 export default RemoveLiquidityPage
 
@@ -24,14 +23,14 @@ export const getStaticPaths: GetStaticPaths = () => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const tokenId = params?.tokenId
+  const { tokenId } = params
 
   const isNumberReg = /^\d+$/
 
   if (!(tokenId as string)?.match(isNumberReg)) {
     return {
       redirect: {
-        statusCode: 307,
+        statusCode: 303,
         destination: `/add`,
       },
     }

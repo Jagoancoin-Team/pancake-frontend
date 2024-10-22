@@ -1,5 +1,6 @@
-import { withWebSecurityHeaders } from '@pancakeswap/next-config/withWebSecurityHeaders'
 import { createVanillaExtractPlugin } from '@vanilla-extract/next-plugin'
+import { withAxiom } from 'next-axiom'
+import { withWebSecurityHeaders } from '@pancakeswap/next-config/withWebSecurityHeaders'
 
 const withVanillaExtract = createVanillaExtractPlugin()
 
@@ -12,12 +13,10 @@ const nextConfig = {
     '@pancakeswap/hooks',
     '@pancakeswap/localization',
     '@pancakeswap/utils',
-    // https://github.com/TanStack/query/issues/6560#issuecomment-1975771676
-    '@tanstack/query-core',
   ],
   compiler: {
     styledComponents: true,
   },
 }
 
-export default withVanillaExtract(withWebSecurityHeaders(nextConfig))
+export default withAxiom(withVanillaExtract(withWebSecurityHeaders(nextConfig)))

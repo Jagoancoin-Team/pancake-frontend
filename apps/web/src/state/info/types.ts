@@ -1,18 +1,14 @@
-import { ComputedFarmConfigV3, Protocol } from '@pancakeswap/farms'
+import { ComputedFarmConfigV3 } from '@pancakeswap/farms'
 
 export interface Block {
   number: number
   timestamp: string
 }
 
-export interface TvlChartEntry {
-  date: number
-  liquidityUSD: number
-}
-
-export interface VolumeChartEntry {
+export interface ChartEntry {
   date: number
   volumeUSD: number
+  liquidityUSD: number
 }
 
 /**
@@ -37,10 +33,10 @@ export type Transaction = {
   hash: string
   timestamp: string
   sender: string
-  token0Symbol?: string
-  token1Symbol?: string
-  token0Address?: string
-  token1Address?: string
+  token0Symbol: string
+  token1Symbol: string
+  token0Address: string
+  token1Address: string
   amountUSD: number
   amountToken0: number
   amountToken1: number
@@ -56,28 +52,30 @@ export interface ProtocolData {
   txCount: number
   txCountChange: number
 }
+
+export interface ProtocolState {
+  readonly overview?: ProtocolData
+
+  readonly chartData?: ChartEntry[]
+
+  readonly transactions?: Transaction[]
+}
+
 // POOLS
 
 export interface PoolData {
   address: string
-  lpAddress?: string
-  protocol?: Protocol
-  timestamp: number
-
-  feeTier: number
 
   token0: {
     name: string
     symbol: string
     address: string
-    decimals: number
   }
 
   token1: {
     name: string
     symbol: string
     address: string
-    decimals: number
   }
 
   volumeUSD: number
@@ -102,6 +100,17 @@ export interface PoolData {
   liquidityToken0: number
   liquidityToken1: number
 }
+
+export interface PoolsState {
+  byAddress: {
+    [address: string]: {
+      data?: PoolData
+      chartData?: ChartEntry[]
+      transactions?: Transaction[]
+    }
+  }
+}
+
 // TOKENS
 
 export type TokenData = {
@@ -128,6 +137,29 @@ export type TokenData = {
   campaignId?: string
   pairs?: ComputedFarmConfigV3[]
 }
+
+export interface TokensState {
+  byAddress: {
+    [address: string]: {
+      data?: TokenData
+      poolAddresses?: string[]
+      chartData?: ChartEntry[]
+      priceData: {
+        oldestFetchedTimestamp?: number
+        [secondsInterval: number]: PriceChartEntry[] | undefined
+      }
+      transactions?: Transaction[]
+    }
+  }
+}
+
+// Info redux state
+export interface InfoState {
+  protocol: ProtocolState
+  pools: PoolsState
+  tokens: TokensState
+}
+
 export enum InfoDataSource {
   V3,
   V2,

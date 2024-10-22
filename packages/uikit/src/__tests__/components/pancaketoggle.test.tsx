@@ -1,6 +1,6 @@
-import { expect, it, vi } from "vitest";
-import PancakeToggle from "../../components/PancakeToggle/PancakeToggle";
+import { vi } from "vitest";
 import { renderWithProvider } from "../../testHelpers";
+import PancakeToggle from "../../components/PancakeToggle/PancakeToggle";
 
 const handleChange = vi.fn();
 
@@ -141,6 +141,7 @@ it("renders correctly", () => {
         scale="md"
       >
         <input
+          checked=""
           class="c1"
           id="pancake-toggle"
           scale="md"
@@ -310,6 +311,7 @@ it("renders correctly scale sm", () => {
         scale="sm"
       >
         <input
+          checked=""
           class="c1"
           id="pancake-toggle"
           scale="sm"

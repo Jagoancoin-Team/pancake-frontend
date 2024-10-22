@@ -1,11 +1,11 @@
-import { ChainId, getLlamaChainName } from '@pancakeswap/chains'
-import { Currency, Token } from '@pancakeswap/sdk'
+import { ChainId, Currency, Token } from '@pancakeswap/sdk'
 import { gql } from 'graphql-request'
-import { Address, getAddress } from 'viem'
+import { getAddress, Address } from 'viem'
 
-import { withFallback } from '../../utils/withFallback'
 import { getCheckAgainstBaseTokens } from '../functions'
 import { SubgraphProvider } from '../types'
+import { CHAIN_ID_TO_CHAIN_NAME } from '../../constants'
+import { withFallback } from '../../utils/withFallback'
 
 const tokenPriceQuery = gql`
   query getTokens($pageSize: Int!, $tokenAddrs: [ID!]) {
@@ -45,7 +45,7 @@ export function createCommonTokenPriceProvider<T = any>(
   getTokenPrices: GetTokenPrices<T>,
 ): CommonTokenPriceProvider<T> {
   return async function getCommonTokenPrices({ currencyA, currencyB, ...rest }: GetCommonTokenPricesParams & T) {
-    const baseTokens: Token[] = await getCheckAgainstBaseTokens(currencyA, currencyB)
+    const baseTokens: Token[] = getCheckAgainstBaseTokens(currencyA, currencyB)
     if (!baseTokens) {
       return null
     }
@@ -93,19 +93,13 @@ export const getTokenUsdPricesBySubgraph: GetTokenPrices<BySubgraphEssentials> =
 export const getCommonTokenPricesBySubgraph =
   createCommonTokenPriceProvider<BySubgraphEssentials>(getTokenUsdPricesBySubgraph)
 
-type LlamaTokenPriceFetcherFactoryOptions = {
-  endpoint: string
-}
-
-const createGetTokenPriceFromLlmaWithCache = ({
-  endpoint,
-}: LlamaTokenPriceFetcherFactoryOptions): GetTokenPrices<BySubgraphEssentials> => {
+const createGetTokenPriceFromLlmaWithCache = (): GetTokenPrices<BySubgraphEssentials> => {
   // Add cache in case we reach the rate limit of llma api
   const cache = new Map<string, TokenUsdPrice>()
 
   return async ({ addresses, chainId }) => {
-    if (!chainId || !getLlamaChainName(chainId)) {
-      return []
+    if (!chainId) {
+      throw new Error(`Invalid chain id ${chainId}`)
     }
     const [cachedResults, addressesToFetch] = addresses.reduce<[TokenUsdPrice[], string[]]>(
       ([cachedAddrs, newAddrs], address) => {
@@ -125,18 +119,25 @@ const createGetTokenPriceFromLlmaWithCache = ({
     }
 
     const list = addressesToFetch
-      .map((address) => `${getLlamaChainName(chainId)}:${address.toLocaleLowerCase()}`)
+      .map(
+        (address) =>
+          `${address.toLocaleLowerCase()}`,
+      )
       .join(',')
-    const result: { coins?: { [key: string]: { price: string } } } = await fetch(`${endpoint}/${list}`).then((res) =>
-      res.json(),
+    const result: { [key: string]: string } = await fetch(
+      `https://pricing.icecreamswap.com/${chainId}?token=${list}`,
     )
+      .then((res) => res.json())
+      .catch(reason => {
+        console.warn("Error while getting token price", reason)
+        return {}
+      })
 
-    const { coins = {} } = result
     return [
       ...cachedResults,
-      ...Object.entries(coins).map(([key, value]) => {
-        const [, address] = key.split(':')
-        const tokenPrice = { address, priceUSD: value.price }
+      ...Object.entries(result || {}).map(([key, value]) => {
+        const address = key
+        const tokenPrice = { address, priceUSD: value }
         cache.set(getAddress(address), tokenPrice)
         return tokenPrice
       }),
@@ -145,25 +146,12 @@ const createGetTokenPriceFromLlmaWithCache = ({
 }
 
 export const getCommonTokenPricesByLlma = createCommonTokenPriceProvider<BySubgraphEssentials>(
-  createGetTokenPriceFromLlmaWithCache({
-    endpoint: 'https://coins.llama.fi/prices/current',
-  }),
-)
-
-export const getCommonTokenPricesByWalletApi = createCommonTokenPriceProvider<BySubgraphEssentials>(
-  createGetTokenPriceFromLlmaWithCache({
-    endpoint: 'https://wallet-api.pancakeswap.com/v1/prices',
-  }),
+  createGetTokenPriceFromLlmaWithCache(),
 )
 
 export const getCommonTokenPrices = withFallback([
   {
     asyncFn: ({ currencyA, currencyB }: ParamsWithFallback) => getCommonTokenPricesByLlma({ currencyA, currencyB }),
-    timeout: 3000,
-  },
-  {
-    asyncFn: ({ currencyA, currencyB }: ParamsWithFallback) =>
-      getCommonTokenPricesByWalletApi({ currencyA, currencyB }),
     timeout: 3000,
   },
   {

@@ -1,10 +1,11 @@
-import { AnimatePresence, LazyMotion, Variants, domAnimation } from "framer-motion";
-import debounce from "lodash/debounce";
+import { AnimatePresence, Variants, LazyMotion, domAnimation } from "framer-motion";
 import React, { useCallback, useEffect, useState } from "react";
-import { isMobile } from "react-device-detect";
 import { createPortal } from "react-dom";
 import { usePopper } from "react-popper";
-import { useTheme } from "styled-components";
+import { isMobile } from "react-device-detect";
+import { DefaultTheme, ThemeProvider, useTheme } from "styled-components";
+import debounce from "lodash/debounce";
+import { dark, light } from "../../theme";
 import getPortalRoot from "../../util/getPortalRoot";
 import isTouchDevice from "../../util/isTouchDevice";
 import { Arrow, StyledTooltip } from "./StyledTooltip";
@@ -31,6 +32,13 @@ const deviceActions: { [device in Devices]: DeviceAction } = {
     start: "mouseenter",
     end: "mouseleave",
   },
+};
+
+const invertTheme = (currentTheme: DefaultTheme) => {
+  if (currentTheme.isDark) {
+    return light;
+  }
+  return dark;
 };
 
 const useTooltip = (content: React.ReactNode, options?: TooltipOptions): TooltipRefs => {
@@ -87,12 +95,12 @@ const useTooltip = (content: React.ReactNode, options?: TooltipOptions): Tooltip
     (e: Event) => {
       setVisible(true);
       if (trigger === "hover") {
-        // we don't need to make a inTooltipRef anymore, when we leave
+        // we dont need to make a inTooltipRef anymore, when we leave
         // the target, hide tooltip is called for leaving the target, but show tooltip
         // is called for entering the tooltip. since we enact a delay in hidetooltip,
-        // by the time the delay is over lodash debounce will be cancelled until we leave the
-        // tooltip calling hidetooltip once again to close. clever method jackson pointed me
-        // onto. saves a lot of needless states and refs and listeners
+        // by the time the dylay is over lodash debounce will be cancelled until we leave the
+        // tooltip calling hidetooltip onece again to close. clever method jackson pointed me
+        // onto. saves a lot of nedless states and refs and listeners
         debouncedHide.cancel();
       }
       if (!avoidToStopPropagation) {
@@ -198,32 +206,29 @@ const useTooltip = (content: React.ReactNode, options?: TooltipOptions): Tooltip
     ],
   });
 
-  const stopPropagation = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-  }, []);
+  const tooltip = (
+    <StyledTooltip
+      data-theme={isDark ? "light" : "dark"}
+      {...animationMap}
+      variants={animationVariants}
+      transition={{ duration: 0.3 }}
+      ref={setTooltipElement}
+      style={styles.popper}
+      {...attributes.popper}
+    >
+      {content}
+      <Arrow ref={setArrowElement} style={styles.arrow} />
+    </StyledTooltip>
+  );
 
-  const AnimatedTooltip = visible ? (
+  const AnimatedTooltip = (
     <LazyMotion features={domAnimation}>
-      <AnimatePresence>
-        <StyledTooltip
-          onClick={stopPropagation}
-          data-theme={isDark ? "light" : "dark"}
-          {...animationMap}
-          variants={animationVariants}
-          transition={{ duration: 0.3 }}
-          ref={setTooltipElement}
-          style={styles.popper}
-          {...attributes.popper}
-        >
-          {content}
-          <Arrow ref={setArrowElement} style={styles.arrow} />
-        </StyledTooltip>
-      </AnimatePresence>
+      <AnimatePresence>{visible && tooltip}</AnimatePresence>
     </LazyMotion>
-  ) : null;
+  );
 
-  const portal = visible && isInPortal && getPortalRoot();
-  const tooltipInPortal = visible && isInPortal && portal ? createPortal(AnimatedTooltip, portal) : null;
+  const portal = getPortalRoot();
+  const tooltipInPortal = portal && isInPortal ? createPortal(AnimatedTooltip, portal) : null;
 
   return {
     targetRef: setTargetElement,

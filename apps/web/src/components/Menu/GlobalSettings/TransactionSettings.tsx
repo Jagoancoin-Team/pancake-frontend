@@ -1,10 +1,9 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Button, Flex, Input, QuestionHelper, Text } from '@pancakeswap/uikit'
-import { useUserSlippage } from '@pancakeswap/utils/user'
 import { useState } from 'react'
-import { escapeRegExp } from 'utils'
-
-import { useUserTransactionTTL } from 'hooks/useTransactionDeadline'
+import { escapeRegExp } from '../../../utils'
+import { Text, Button, Input, Flex, Box, QuestionHelper } from '@pancakeswap/uikit'
+import { useTranslation } from '@pancakeswap/localization'
+import { useUserSlippage } from '@pancakeswap/utils/user'
+import { useUserTransactionTTL } from 'state/user/hooks'
 
 enum SlippageError {
   InvalidInput = 'InvalidInput',
@@ -21,7 +20,7 @@ const THREE_DAYS_IN_SECONDS = 60 * 60 * 24 * 3
 
 const SlippageTabs = () => {
   const [userSlippageTolerance, setUserSlippageTolerance] = useUserSlippage()
-  const [ttl, setTTL] = useUserTransactionTTL()
+  const [ttl, setTtl] = useUserTransactionTTL()
   const [slippageInput, setSlippageInput] = useState('')
   const [deadlineInput, setDeadlineInput] = useState('')
 
@@ -29,8 +28,7 @@ const SlippageTabs = () => {
 
   const slippageInputIsValid =
     slippageInput === '' || (userSlippageTolerance / 100).toFixed(2) === Number.parseFloat(slippageInput).toFixed(2)
-  const deadlineInputIsValid =
-    deadlineInput === '' || (ttl !== undefined && (Number(ttl) / 60).toString() === deadlineInput)
+  const deadlineInputIsValid = deadlineInput === '' || (ttl / 60).toString() === deadlineInput
 
   let slippageError: SlippageError | undefined
   if (slippageInput !== '' && !slippageInputIsValid) {
@@ -71,7 +69,7 @@ const SlippageTabs = () => {
     try {
       const valueAsInt: number = Number.parseInt(value) * 60
       if (!Number.isNaN(valueAsInt) && valueAsInt > 60 && valueAsInt < THREE_DAYS_IN_SECONDS) {
-        setTTL(valueAsInt)
+        setTtl(valueAsInt)
       } else {
         deadlineError = DeadlineError.InvalidInput
       }
@@ -181,7 +179,10 @@ const SlippageTabs = () => {
               inputMode="numeric"
               pattern="^[0-9]+$"
               isWarning={!!deadlineError}
-              placeholder={(Number(ttl) / 60).toString()}
+              onBlur={() => {
+                parseCustomDeadline((ttl / 60).toString())
+              }}
+              placeholder={(ttl / 60).toString()}
               value={deadlineInput}
               onChange={(event) => {
                 if (event.currentTarget.validity.valid) {

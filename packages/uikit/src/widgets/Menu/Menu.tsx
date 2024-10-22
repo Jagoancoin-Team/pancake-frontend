@@ -1,11 +1,11 @@
 import { useIsMounted } from "@pancakeswap/hooks";
 import throttle from "lodash/throttle";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { styled } from "styled-components";
-import { AtomBox } from "../../components/AtomBox";
 import BottomNav from "../../components/BottomNav";
 import { Box } from "../../components/Box";
 import Flex from "../../components/Box/Flex";
+import { AtomBox } from "../../components/AtomBox";
 import CakePrice from "../../components/CakePrice/CakePrice";
 import Footer from "../../components/Footer";
 import LangSelector from "../../components/LangSelector/LangSelector";
@@ -68,6 +68,10 @@ const Inner = styled.div`
   transition: margin-top 0.2s, margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translate3d(0, 0, 0);
   max-width: 100%;
+  padding-bottom: 50px;
+  ${({ theme }) => theme.mediaQueries.md} {
+    padding-bottom: 0px;
+  }
 `;
 
 const Menu: React.FC<React.PropsWithChildren<NavProps>> = ({
@@ -84,14 +88,13 @@ const Menu: React.FC<React.PropsWithChildren<NavProps>> = ({
   footerLinks,
   activeItem,
   activeSubItem,
-  activeSubItemChildItem,
   langs,
   buyCakeLabel,
   buyCakeLink,
   children,
   chainId,
-  logoComponent,
 }) => {
+  const hasSubLinks = subLinks && subLinks.length > 0;
   const { isMobile } = useMatchBreakpoints();
   const isMounted = useIsMounted();
   const [showMenu, setShowMenu] = useState(true);
@@ -150,20 +153,14 @@ const Menu: React.FC<React.PropsWithChildren<NavProps>> = ({
             {banner && isMounted && <TopBannerContainer height={topBannerHeight}>{banner}</TopBannerContainer>}
             <StyledNav>
               <Flex>
-                {logoComponent ?? <Logo href={homeLink?.href ?? "/"} />}
-                <AtomBox display={{ xs: "none", lg: "block" }}>
-                  <MenuItems
-                    ml="24px"
-                    items={links}
-                    activeItem={activeItem}
-                    activeSubItem={activeSubItem}
-                    activeSubItemChildItem={activeSubItemChildItem}
-                  />
+                <Logo href={homeLink?.href ?? "/"} />
+                <AtomBox display={{ xs: "none", md: "block" }}>
+                  <MenuItems items={links} activeItem={activeItem} activeSubItem={activeSubItem} ml="24px" />
                 </AtomBox>
               </Flex>
               <Flex alignItems="center" height="100%">
-                <AtomBox mr="12px" display={{ xs: "none", xxl: "block" }}>
-                  <CakePrice chainId={chainId} showSkeleton={false} cakePriceUsd={cakePriceUsd} />
+                <AtomBox mr="12px" display={{ xs: "none", lg: "block" }}>
+                  <CakePrice showSkeleton={false} cakePriceUsd={cakePriceUsd} chainId={chainId} />
                 </AtomBox>
                 <Box mt="4px">
                   <LangSelector
@@ -183,15 +180,15 @@ const Menu: React.FC<React.PropsWithChildren<NavProps>> = ({
             <Flex justifyContent="space-around" overflow="hidden">
               <SubMenuItems
                 items={subLinksWithoutMobile}
-                mt={`${totalTopMenuHeight + 1}px`}
-                activeItem={activeSubItemChildItem || activeSubItem}
+                style={{ marginTop: `${totalTopMenuHeight + 1}px`, display: "block" }}
+                activeItem={activeSubItem}
               />
 
               {subLinksMobileOnly && subLinksMobileOnly?.length > 0 && (
                 <SubMenuItems
                   items={subLinksMobileOnly}
-                  mt={`${totalTopMenuHeight + 1}px`}
-                  activeItem={activeSubItemChildItem || activeSubItem}
+                  style={{ marginTop: `${totalTopMenuHeight + 1}px`, display: "block" }}
+                  activeItem={activeSubItem}
                   isMobileOnly
                 />
               )}
@@ -199,11 +196,12 @@ const Menu: React.FC<React.PropsWithChildren<NavProps>> = ({
           ) : (
             <div />
           )}
-          <BodyWrapper mt={!subLinks ? `${totalTopMenuHeight + 1}px` : "0"}>
+          <BodyWrapper style={{ marginTop: !subLinks ? `${totalTopMenuHeight + 1}px` : "0" }}>
             <Inner>{children}</Inner>
           </BodyWrapper>
         </Wrapper>
       </AtomBox>
+      {/*
       <Footer
         chainId={chainId}
         items={footerLinks}
@@ -217,7 +215,8 @@ const Menu: React.FC<React.PropsWithChildren<NavProps>> = ({
         buyCakeLink={buyCakeLink}
         mb={[`${MOBILE_MENU_HEIGHT}px`, null, "0px"]}
       />
-      <AtomBox display={{ xs: "block", lg: "none" }}>
+      */}
+      <AtomBox display={{ xs: "block", md: "none" }}>
         <BottomNav items={links} activeItem={activeItem} activeSubItem={activeSubItem} />
       </AtomBox>
     </MenuContext.Provider>

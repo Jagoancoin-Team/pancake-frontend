@@ -1,8 +1,8 @@
+import { Dispatch, SetStateAction } from 'react'
 import { Token } from '@pancakeswap/sdk'
 import BigNumber from 'bignumber.js'
-import { Dispatch, SetStateAction } from 'react'
-import { DeserializedLockedVaultUser } from 'state/types'
 import { VaultPosition, VaultPositionParams } from 'utils/cakePool'
+import { DeserializedLockedVaultUser } from 'state/types'
 
 type VoidFn = () => void
 
@@ -13,7 +13,7 @@ export interface GenericModalProps {
   stakingToken: Token
   currentBalance: BigNumber
   stakingTokenBalance: BigNumber
-  stakingTokenPrice?: number
+  stakingTokenPrice: number
   customLockAmount?: string
   customLockWeekInSeconds?: number
 }
@@ -28,7 +28,7 @@ export interface ValidatorReturn {
 }
 
 export interface ExtendDurationModal {
-  stakingToken?: Token
+  stakingToken: Token
   stakingTokenPrice: number
   currentLockedAmount: number
   onDismiss?: VoidFn
@@ -43,7 +43,7 @@ export interface ExtendDurationModal {
 
 export interface AddButtonProps {
   currentBalance: BigNumber
-  stakingToken?: Token
+  stakingToken: Token
   currentLockedAmount: BigNumber
   lockEndTime: string
   lockStartTime: string
@@ -87,7 +87,7 @@ export interface ModalValidator {
 export interface LockedModalBodyPropsType {
   onDismiss?: VoidFn
   stakingToken: Token
-  stakingTokenPrice?: number
+  stakingTokenPrice: number
   currentBalance?: BigNumber
   lockedAmount: BigNumber
   editAmountOnly?: React.ReactElement
@@ -109,7 +109,7 @@ export interface LockedModalBodyPropsType {
 }
 
 export interface ExtendDurationButtonPropsType {
-  stakingToken?: Token
+  stakingToken: Token
   stakingTokenPrice: number
   currentLockedAmount: number
   currentBalance?: BigNumber
@@ -125,7 +125,7 @@ export interface AfterLockedActionsPropsType {
   lockEndTime: string
   lockStartTime: string
   currentLockedAmount: number
-  stakingToken?: Token
+  stakingToken: Token
   stakingTokenPrice: number
   position: VaultPosition
   isInline?: boolean
@@ -135,10 +135,10 @@ export interface AfterLockedActionsPropsType {
 
 export interface LockedActionsPropsType extends VaultPositionParams {
   lockStartTime: string
-  stakingToken?: Token
-  stakingTokenBalance?: BigNumber
+  stakingToken: Token
+  stakingTokenBalance: BigNumber
   stakingTokenPrice: number
-  lockedAmount?: BigNumber
+  lockedAmount: BigNumber
 }
 
 export interface StaticAmountPropsType {
@@ -159,5 +159,5 @@ export interface LockDurationFieldPropsType {
 }
 
 export interface LockedStakingApyPropsType {
-  userData?: DeserializedLockedVaultUser
+  userData: DeserializedLockedVaultUser
 }

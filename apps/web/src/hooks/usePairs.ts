@@ -1,8 +1,8 @@
-import { Currency, CurrencyAmount, Pair, pancakePairV2ABI } from '@pancakeswap/sdk'
+import { CurrencyAmount, Pair, Currency, pancakePairV2ABI } from '@pancakeswap/sdk'
 import { useMemo } from 'react'
 
-import { useMultipleContractSingleData } from 'state/multicall/hooks'
-import { wrappedCurrency } from 'utils/wrappedCurrency'
+import { useMultipleContractSingleData } from '../state/multicall/hooks'
+import { wrappedCurrency } from '../utils/wrappedCurrency'
 import { useActiveChainId } from './useActiveChainId'
 
 export enum PairState {
@@ -71,9 +71,6 @@ export function useV2Pairs(currencies: [Currency | undefined, Currency | undefin
 }
 
 export function useV2Pair(tokenA?: Currency, tokenB?: Currency): [PairState, Pair | null] {
-  const pairCurrencies = useMemo<[Currency | undefined, Currency | undefined][]>(
-    () => [[tokenA, tokenB]],
-    [tokenA, tokenB],
-  )
+  const pairCurrencies = useMemo<[Currency, Currency][]>(() => [[tokenA, tokenB]], [tokenA, tokenB])
   return useV2Pairs(pairCurrencies)[0]
 }

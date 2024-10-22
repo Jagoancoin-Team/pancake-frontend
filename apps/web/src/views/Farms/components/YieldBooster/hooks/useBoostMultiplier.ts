@@ -1,14 +1,12 @@
-import { ChainId } from '@pancakeswap/chains'
-import { ZERO } from '@pancakeswap/swap-sdk-core'
-import { useQuery } from '@tanstack/react-query'
-import BN from 'bignumber.js'
-import { bCakeFarmBoosterABI } from 'config/abi/bCakeFarmBooster'
 import { useBCakeFarmBoosterContract, useMasterchef } from 'hooks/useContract'
-import _toNumber from 'lodash/toNumber'
+import BN from 'bignumber.js'
 import { useCallback } from 'react'
+import useSWR from 'swr'
+import _toNumber from 'lodash/toNumber'
+import { Address, useAccount } from 'wagmi'
 import { publicClient } from 'utils/wagmi'
-import { Address } from 'viem'
-import { useAccount } from 'wagmi'
+import { ChainId } from '@pancakeswap/sdk'
+import { bCakeFarmBoosterABI } from 'config/abi/bCakeFarmBooster'
 import { YieldBoosterState } from './useYieldBoosterState'
 
 const PRECISION_FACTOR = new BN('1000000000000') // 1e12
@@ -42,7 +40,7 @@ async function getPublicMultiplier({ farmBoosterContract }): Promise<number> {
   const MAX_BOOST_PRECISION = new BN(CA_PRECISION.toString())
     .div(new BN(cA.toString()))
     .times(PRECISION_FACTOR)
-    .minus(new BN(BOOST_PRECISION?.toString() ?? ZERO.toString()))
+    .minus(new BN(BOOST_PRECISION.toString()))
 
   const boostPercent = PRECISION_FACTOR.plus(MAX_BOOST_PRECISION).div(PRECISION_FACTOR)
 
@@ -89,7 +87,7 @@ async function getMultiplierFromMC({
   proxyAddress: Address
   masterChefContract: ReturnType<typeof useMasterchef>
 }): Promise<number> {
-  const boostMultiplier = await masterChefContract?.read.getBoostMultiplier([proxyAddress, BigInt(pid)])
+  const boostMultiplier = await masterChefContract.read.getBoostMultiplier([proxyAddress, BigInt(pid)])
 
   if (!boostMultiplier) return 0
 
@@ -121,10 +119,7 @@ export default function useBoostMultiplier({ pid, boosterState, proxyAddress }):
 
   const cacheName = shouldGetFromSC ? `proxy${pid}` : should1X ? `user${pid}` : `public${pid}`
 
-  const { data } = useQuery({
-    queryKey: ['boostMultiplier', cacheName],
-    queryFn: getMultiplier,
-  })
+  const { data } = useSWR(['boostMultiplier', cacheName], getMultiplier)
 
   return data || 0
 }

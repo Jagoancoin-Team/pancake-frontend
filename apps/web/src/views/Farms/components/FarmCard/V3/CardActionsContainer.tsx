@@ -2,10 +2,10 @@ import { useModalV2 } from '@pancakeswap/uikit'
 import { FarmWidget } from '@pancakeswap/widgets-internal'
 import ConnectWalletButton from 'components/ConnectWalletButton'
 import { useMemo } from 'react'
-import { type V3Farm } from 'state/farms/types'
 import { styled } from 'styled-components'
 import { unwrappedToken } from 'utils/wrappedCurrency'
 import { AddLiquidityV3Modal } from 'views/AddLiquidityV3/Modal'
+import { V3Farm } from 'views/Farms/FarmsV3'
 import FarmInfo from './FarmInfo'
 
 const { NoPosition } = FarmWidget.FarmV3Card
@@ -45,7 +45,7 @@ const CardActions: React.FC<React.PropsWithChildren<FarmCardActionsProps>> = ({ 
       ) : (
         <NoPosition
           inactive={inactive}
-          account={account!}
+          account={account}
           hasNoPosition={hasNoPosition}
           onAddLiquidityClick={addLiquidityModal.onOpen}
           connectWalletButton={<ConnectWalletButton mt="8px" width="100%" />}

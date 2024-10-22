@@ -1,11 +1,11 @@
-import { BigintIsh, Currency, CurrencyAmount, TradeType, ZERO } from '@pancakeswap/sdk'
-import { ChainId } from '@pancakeswap/chains'
+import { BigintIsh, ChainId, Currency, CurrencyAmount, TradeType, ZERO } from '@pancakeswap/sdk'
 
 import { computeAllRoutes, getBestRouteCombinationByQuotes } from './functions'
 import { createGasModel } from './gasModel'
 import { getRoutesWithValidQuote } from './getRoutesWithValidQuote'
 import { BestRoutes, TradeConfig, RouteConfig, SmartRouterTrade, RouteType } from './types'
 import { ROUTE_CONFIG_BY_CHAIN } from './constants'
+import {Address} from "viem";
 
 export async function getBestTrade(
   amount: CurrencyAmount<Currency>,
@@ -55,9 +55,6 @@ async function getBestRoutes(
     gasPriceWei,
     allowedPoolTypes,
     quoterOptimization,
-    quoteCurrencyUsdPrice,
-    nativeCurrencyUsdPrice,
-    signal,
   } = {
     ...routeConfig,
     ...(ROUTE_CONFIG_BY_CHAIN[chainId as ChainId] || {}),
@@ -71,7 +68,6 @@ async function getBestRoutes(
     currencyB: currency,
     blockNumber,
     protocols: allowedPoolTypes,
-    signal,
   })
 
   let baseRoutes = computeAllRoutes(inputCurrency, outputCurrency, candidatePools, maxHops)
@@ -80,14 +76,7 @@ async function getBestRoutes(
     baseRoutes = baseRoutes.filter(({ type }) => type !== RouteType.MIXED)
   }
 
-  const gasModel = await createGasModel({
-    gasPriceWei,
-    poolProvider,
-    quoteCurrency: currency,
-    blockNumber,
-    quoteCurrencyUsdPrice,
-    nativeCurrencyUsdPrice,
-  })
+  const gasModel = await createGasModel({ gasPriceWei, poolProvider, quoteCurrency: currency, blockNumber })
   const routesWithValidQuote = await getRoutesWithValidQuote({
     amount,
     baseRoutes,
@@ -97,7 +86,6 @@ async function getBestRoutes(
     blockNumber,
     gasModel,
     quoterOptimization,
-    signal,
   })
   // routesWithValidQuote.forEach(({ percent, path, amount: a, quote }) => {
   //   const pathStr = path.map((t) => t.symbol).join('->')

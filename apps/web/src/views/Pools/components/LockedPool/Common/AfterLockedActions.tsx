@@ -1,10 +1,11 @@
+import { memo, ReactNode } from 'react'
+import { Message, MessageText, Box, Flex, useMatchBreakpoints } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Flex, Message, MessageText, useMatchBreakpoints } from '@pancakeswap/uikit'
 import Trans from 'components/Trans'
-import { ReactNode, memo } from 'react'
 import { VaultPosition } from 'utils/cakePool'
-import { useIsMigratedToVeCake } from 'views/CakeStaking/hooks/useIsMigratedToVeCake'
-import WithdrawAllButton from '../Buttons/WithdrawAllButton'
+
+import ConvertToFlexibleButton from '../Buttons/ConvertToFlexibleButton'
+import ExtendButton from '../Buttons/ExtendDurationButton'
 import { AfterLockedActionsPropsType } from '../types'
 
 const msg: Record<VaultPosition, ReactNode> = {
@@ -13,36 +14,39 @@ const msg: Record<VaultPosition, ReactNode> = {
   [VaultPosition.Locked]: null,
   [VaultPosition.LockedEnd]: (
     <Trans>
-      Extending or adding CAKE is not available for migrated positions. To get more veCAKE, withdraw from the unlocked
-      CAKE pool position, and add CAKE to veCAKE.
+      Renew your staking position to continue enjoying the benefits of farm yield boosting, participating in IFOs,
+      voting power boosts, and so much more!
     </Trans>
   ),
   [VaultPosition.AfterBurning]: (
     <Trans>
-      Extending or adding CAKE is not available for migrated positions. To get more veCAKE, withdraw from the unlocked
-      CAKE pool position, and add CAKE to veCAKE.
+      The lock period has ended. To avoid more rewards being burned, renew your staking position to continue enjoying
+      the benefits from locked staking.
     </Trans>
   ),
 }
 
 const AfterLockedActions: React.FC<React.PropsWithChildren<AfterLockedActionsPropsType>> = ({
+  currentLockedAmount,
+  stakingToken,
+  stakingTokenPrice,
   position,
   isInline,
   hideConvertToFlexibleButton,
+  customLockWeekInSeconds,
 }) => {
+  const { t } = useTranslation()
   const { isDesktop } = useMatchBreakpoints()
   const isDesktopView = isInline && isDesktop
   const Container = isDesktopView ? Flex : Box
-  const isMigratedToVeCake = useIsMigratedToVeCake()
-  const { t } = useTranslation()
 
   return (
     <Message
       variant="warning"
       mb="16px"
       action={
-        <Container mt={!isDesktopView ? '8px' : undefined} ml="10px">
-          {/* <ExtendButton
+        <Container mt={!isDesktopView && '8px'} ml="10px">
+          <ExtendButton
             modalTitle={t('Renew')}
             lockEndTime="0"
             lockStartTime="0"
@@ -57,19 +61,13 @@ const AfterLockedActions: React.FC<React.PropsWithChildren<AfterLockedActionsPro
             customLockWeekInSeconds={customLockWeekInSeconds}
           >
             {t('Renew')}
-          </ExtendButton> */}
-          {!hideConvertToFlexibleButton && <WithdrawAllButton minWidth={isDesktopView ? '200px' : undefined} />}
+          </ExtendButton>
+          {!hideConvertToFlexibleButton && <ConvertToFlexibleButton minWidth={isDesktopView && '200px'} />}
         </Container>
       }
       actionInline={isDesktopView}
     >
-      <MessageText>
-        {isMigratedToVeCake
-          ? msg[position]
-          : t(
-              'The lock period has ended. To get more veCAKE, withdraw from the unlocked CAKE pool position, and add CAKE to veCAKE.',
-            )}
-      </MessageText>
+      <MessageText>{msg[position]}</MessageText>
     </Message>
   )
 }

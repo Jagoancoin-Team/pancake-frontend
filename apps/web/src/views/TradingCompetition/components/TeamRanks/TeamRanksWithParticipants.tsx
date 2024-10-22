@@ -66,7 +66,7 @@ const TotalParticipantsCloud = styled(Flex)`
 interface TeamRanksWithParticipantsProps extends TeamRanksProps {
   image: StaticImageData
   participantSubgraphAddress: string
-  subgraph: string
+  subgraphName: string
 }
 
 const TeamRanksWithParticipants: React.FC<React.PropsWithChildren<TeamRanksWithParticipantsProps>> = ({
@@ -76,15 +76,15 @@ const TeamRanksWithParticipants: React.FC<React.PropsWithChildren<TeamRanksWithP
   team3LeaderboardInformation,
   globalLeaderboardInformation,
   participantSubgraphAddress,
-  subgraph,
+  subgraphName,
 }) => {
   const { t } = useTranslation()
   const participants = useGetParticipants(participantSubgraphAddress)
 
   const isTeamLeaderboardDataComplete = Boolean(
-    team1LeaderboardInformation?.leaderboardData &&
-      team2LeaderboardInformation?.leaderboardData &&
-      team3LeaderboardInformation?.leaderboardData,
+    team1LeaderboardInformation.leaderboardData &&
+      team2LeaderboardInformation.leaderboardData &&
+      team3LeaderboardInformation.leaderboardData,
   )
 
   const isGlobalLeaderboardDataComplete = Boolean(isTeamLeaderboardDataComplete && globalLeaderboardInformation)
@@ -93,9 +93,9 @@ const TeamRanksWithParticipants: React.FC<React.PropsWithChildren<TeamRanksWithP
     return orderBy(arrayOfTeams, (team) => team.leaderboardData.volume, 'desc')
   }
 
-  const teamsSortedByVolume = isTeamLeaderboardDataComplete
-    ? getTeamsSortedByVolume([team1LeaderboardInformation, team2LeaderboardInformation, team3LeaderboardInformation])
-    : undefined
+  const teamsSortedByVolume =
+    isTeamLeaderboardDataComplete &&
+    getTeamsSortedByVolume([team1LeaderboardInformation, team2LeaderboardInformation, team3LeaderboardInformation])
 
   return (
     <Wrapper>
@@ -129,7 +129,7 @@ const TeamRanksWithParticipants: React.FC<React.PropsWithChildren<TeamRanksWithP
           team3LeaderboardInformation={team3LeaderboardInformation}
           globalLeaderboardInformation={globalLeaderboardInformation}
           isGlobalLeaderboardDataComplete={isGlobalLeaderboardDataComplete}
-          subgraph={subgraph}
+          subgraphName={subgraphName}
         />
       </StyledTopTradersWrapper>
     </Wrapper>

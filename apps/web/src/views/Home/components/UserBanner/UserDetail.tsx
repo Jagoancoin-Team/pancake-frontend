@@ -12,8 +12,6 @@ import {
 } from '@pancakeswap/uikit'
 import { useAccount } from 'wagmi'
 import { styled } from 'styled-components'
-import { useProfile } from 'state/profile/hooks'
-import ProfileAvatarWithTeam from 'components/ProfileAvatarWithTeam'
 import { useTranslation } from '@pancakeswap/localization'
 import truncateHash from '@pancakeswap/utils/truncateHash'
 import useGetUsernameWithVisibility from 'hooks/useUsernameWithVisibility'
@@ -34,8 +32,8 @@ const Mobile = styled(Flex)`
 `
 
 const Sticker = styled(Flex)`
-  height: 120px;
-  width: 120px;
+  height: 92px;
+  width: 92px;
   background-color: ${({ theme }) => theme.colors.invertedContrast};
   border: 3px solid ${({ theme }) => theme.colors.invertedContrast};
   border-radius: ${({ theme }) => theme.radii.circle};
@@ -48,13 +46,15 @@ const StyledNoProfileAvatarIcon = styled(NoProfileAvatarIcon)`
 `
 
 const UserDetail = () => {
-  const { profile, isLoading: isProfileLoading } = useProfile()
+  // const { profile, isLoading: isProfileLoading } = useProfile()
+  const profile = undefined
+  const isProfileLoading = false
   const { t } = useTranslation()
   const { address: account } = useAccount()
   const { isMobile, isTablet, isDesktop } = useMatchBreakpoints()
-  const { domainName, isLoading: isDomainNameLoading, avatar } = useDomainNameForAddress(account ?? '')
+  const { domainName, isLoading: isDomainNameLoading, avatar } = useDomainNameForAddress(account)
   const { usernameWithVisibility, userUsernameVisibility, setUserUsernameVisibility } = useGetUsernameWithVisibility(
-    profile?.username ?? '',
+    profile?.username,
   )
 
   const toggleUsernameVisibility = () => {
@@ -69,9 +69,7 @@ const UserDetail = () => {
         <Desktop>
           <Box mr="24px">
             <Sticker>
-              {profile ? (
-                <ProfileAvatarWithTeam profile={profile} />
-              ) : avatar ? (
+              {avatar ? (
                 <ProfileAvatar src={avatar} width={32} height={32} mr="16px" />
               ) : (
                 <StyledNoProfileAvatarIcon />
@@ -102,7 +100,7 @@ const UserDetail = () => {
       {isMobile && (
         <Mobile>
           {profile ? (
-            <Heading mb="8px" textAlign="center">
+            <Heading mb="18px" textAlign="center">
               {t('Hi, %userName%!', {
                 userName: usernameWithVisibility,
               })}

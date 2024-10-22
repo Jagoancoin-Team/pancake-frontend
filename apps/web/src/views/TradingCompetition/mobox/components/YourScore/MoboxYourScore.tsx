@@ -1,18 +1,15 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Heading, Skeleton, Text } from '@pancakeswap/uikit'
+import { Skeleton, Heading, Text } from '@pancakeswap/uikit'
 import { styled } from 'styled-components'
-
-import { TC_MOBOX_SUBGRAPH } from 'config/constants/endpoints'
-
-import { LIVE } from '../../../../../config/constants/trading-competition/phases'
-import RibbonWithImage from '../../../components/RibbonWithImage'
-import ScoreCard from '../../../components/YourScore/ScoreCard'
+import { useTranslation } from '@pancakeswap/localization'
 import ScoreHeader from '../../../components/YourScore/ScoreHeader'
-import UserRankBox from '../../../components/YourScore/UserRankBox'
-import CakersShare from '../../../pngs/mobox-cakers-share.png'
+import RibbonWithImage from '../../../components/RibbonWithImage'
+import { YourScoreProps } from '../../../types'
 import FlippersShare from '../../../pngs/mobox-flippers-share.png'
 import StormShare from '../../../pngs/mobox-storm-share.png'
-import { YourScoreProps } from '../../../types'
+import CakersShare from '../../../pngs/mobox-cakers-share.png'
+import ScoreCard from '../../../components/YourScore/ScoreCard'
+import UserRankBox from '../../../components/YourScore/UserRankBox'
+import { LIVE } from '../../../../../config/constants/trading-competition/phases'
 import MoboxUserPrizeGrid from './MoboxUserPrizeGrid'
 
 const Wrapper = styled.div`
@@ -50,7 +47,7 @@ const MoboxYourScore: React.FC<React.PropsWithChildren<YourScoreProps>> = ({
         </RibbonWithImage>
       )}
       <ScoreCard
-        subgraph={TC_MOBOX_SUBGRAPH}
+        subgraphName="pancakeswap/trading-competition-v3"
         userPrizeGrid={<MoboxUserPrizeGrid userTradingInformation={userTradingInformation} />}
         extraUserRankBox={
           <UserRankBox
@@ -58,7 +55,7 @@ const MoboxYourScore: React.FC<React.PropsWithChildren<YourScoreProps>> = ({
             title={t('Your MBOX volume rank').toUpperCase()}
             footer={t('Based on your MBOX/BNB and MBOX/BUSD trading')}
             // Add responsive mr if competition is LIVE
-            mr={currentPhase?.state === LIVE ? [0, null, null, '8px'] : 0}
+            mr={currentPhase.state === LIVE ? [0, null, null, '8px'] : 0}
           >
             {!userLeaderboardInformation ? (
               <Skeleton height="26px" width="110px" />

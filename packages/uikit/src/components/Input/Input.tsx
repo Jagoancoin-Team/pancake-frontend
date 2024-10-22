@@ -1,4 +1,4 @@
-import { DefaultTheme, styled } from "styled-components";
+import { styled, DefaultTheme } from "styled-components";
 import { InputProps, scales } from "./types";
 
 interface StyledInputProps extends InputProps {
@@ -8,17 +8,13 @@ interface StyledInputProps extends InputProps {
 /**
  * Priority: Warning --> Success
  */
-const getBoxShadow = ({ isSuccess = false, isWarning = false, isError = false, theme }: StyledInputProps) => {
+const getBoxShadow = ({ isSuccess = false, isWarning = false, theme }: StyledInputProps) => {
   if (isWarning) {
     return theme.shadows.warning;
   }
 
   if (isSuccess) {
     return theme.shadows.success;
-  }
-
-  if (isError) {
-    return theme.shadows.danger;
   }
 
   return theme.shadows.inset;
@@ -37,7 +33,7 @@ const getHeight = ({ scale = scales.MD }: StyledInputProps) => {
 };
 
 const Input = styled("input").withConfig({
-  shouldForwardProp: (props) => !["scale", "isSuccess", "isWarning", "isError"].includes(props),
+  shouldForwardProp: (props) => !["scale", "isSuccess", "isWarning"].includes(props),
 })<InputProps>`
   background-color: ${({ theme }) => theme.colors.input};
   border-radius: 16px;
@@ -63,7 +59,7 @@ const Input = styled("input").withConfig({
   }
 
   &:focus:not(:disabled) {
-    box-shadow: ${({ theme, isWarning, isSuccess, isError }) => {
+    box-shadow: ${({ theme, isWarning, isSuccess }) => {
       if (isWarning) {
         return theme.shadows.warning;
       }
@@ -71,11 +67,6 @@ const Input = styled("input").withConfig({
       if (isSuccess) {
         return theme.shadows.success;
       }
-
-      if (isError) {
-        return theme.shadows.danger;
-      }
-
       return theme.shadows.focus;
     }};
   }
@@ -85,7 +76,6 @@ Input.defaultProps = {
   scale: scales.MD,
   isSuccess: false,
   isWarning: false,
-  isError: false,
 };
 
 export default Input;

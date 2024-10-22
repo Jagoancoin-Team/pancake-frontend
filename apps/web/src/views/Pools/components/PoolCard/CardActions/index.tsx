@@ -2,17 +2,13 @@ import BigNumber from 'bignumber.js'
 
 import { styled } from 'styled-components'
 import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import { Flex, Text, Box } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-
+import { Flex, Text, Box, Pool } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
 import { PoolCategory } from 'config/constants/types'
-import { useProfileRequirement } from 'views/Pools/hooks/useProfileRequirement'
 import { Token } from '@pancakeswap/sdk'
 import ApprovalAction from './ApprovalAction'
 import StakeActions from './StakeActions'
 import HarvestActions from './HarvestActions'
-import { ProfileRequirementWarning } from '../../ProfileRequirementWarning'
 
 const InlineText = styled(Text)`
   display: inline;
@@ -24,9 +20,10 @@ interface CardActionsProps {
 }
 
 const CardActions: React.FC<React.PropsWithChildren<CardActionsProps>> = ({ pool, stakedBalance }) => {
-  const { sousId, stakingToken, earningToken, poolCategory, userData, earningTokenPrice, profileRequirement } = pool
+  const { sousId, stakingToken, earningToken, poolCategory, userData, earningTokenPrice } = pool
   // Pools using native BNB behave differently than pools using a token
-  const isBnbPool = poolCategory === PoolCategory.BINANCE
+  const isBnbPool = poolCategory === PoolCategory.BINANCE || poolCategory === PoolCategory.BINANCE_AUTO
+  const isAutoPool = poolCategory === PoolCategory.AUTO || poolCategory === PoolCategory.BINANCE_AUTO
   const { t } = useTranslation()
   const allowance = userData?.allowance ? new BigNumber(userData.allowance) : BIG_ZERO
   const stakingTokenBalance = userData?.stakingTokenBalance ? new BigNumber(userData.stakingTokenBalance) : BIG_ZERO
@@ -35,30 +32,31 @@ const CardActions: React.FC<React.PropsWithChildren<CardActionsProps>> = ({ pool
   const isStaked = stakedBalance.gt(0)
   const isLoading = !userData
 
-  const { notMeetRequired, notMeetThreshold } = useProfileRequirement(profileRequirement)
-
   return (
     <Flex flexDirection="column">
       <Flex flexDirection="column">
-        <>
-          <Box display="inline">
-            <InlineText color="secondary" bold fontSize="12px">
-              {`${earningToken.symbol} `}
-            </InlineText>
-            <InlineText color="textSubtle" textTransform="uppercase" bold fontSize="12px">
-              {t('Earned')}
-            </InlineText>
-          </Box>
-          <HarvestActions
-            earnings={earnings}
-            earningTokenSymbol={earningToken.symbol}
-            earningTokenDecimals={earningToken.decimals}
-            sousId={sousId}
-            earningTokenPrice={earningTokenPrice || 0}
-            isBnbPool={isBnbPool}
-            isLoading={isLoading}
-          />
-        </>
+        {!isAutoPool && (
+            <>
+              <Box display="inline">
+                <InlineText color="secondary" textTransform="uppercase" bold fontSize="12px">
+                  {`${earningToken.symbol} `}
+                </InlineText>
+                <InlineText color="textSubtle" textTransform="uppercase" bold fontSize="12px">
+                  {t('Earned')}
+                </InlineText>
+              </Box>
+              <HarvestActions
+                  earnings={earnings}
+                  earningTokenSymbol={earningToken.symbol}
+                  earningTokenDecimals={earningToken.decimals}
+                  sousId={sousId}
+                  earningTokenPrice={earningTokenPrice}
+                  isBnbPool={isBnbPool}
+                  isLoading={isLoading}
+              />
+            </>
+          )
+        }
         <Box display="inline">
           <InlineText color={isStaked ? 'secondary' : 'textSubtle'} textTransform="uppercase" bold fontSize="12px">
             {isStaked ? stakingToken.symbol : t('Stake')}{' '}
@@ -67,9 +65,7 @@ const CardActions: React.FC<React.PropsWithChildren<CardActionsProps>> = ({ pool
             {isStaked ? t('Staked') : `${stakingToken.symbol}`}
           </InlineText>
         </Box>
-        {notMeetRequired || notMeetThreshold ? (
-          <ProfileRequirementWarning profileRequirement={profileRequirement} />
-        ) : needsApproval && !isStaked && !pool.isFinished ? (
+        {needsApproval && !isStaked && !pool.isFinished ? (
           <ApprovalAction pool={pool} isLoading={isLoading} />
         ) : (
           <StakeActions

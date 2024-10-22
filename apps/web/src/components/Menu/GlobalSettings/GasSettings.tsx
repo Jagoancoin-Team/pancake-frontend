@@ -1,13 +1,11 @@
 import { Flex, Button, Text, QuestionHelper } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
-import { useDefaultGasPrice, useGasPriceManager } from 'state/user/hooks'
-import { GAS_PRICE_GWEI, GAS_PRICE } from 'state/types'
-import { formatGwei } from 'viem'
+import { useGasPriceManager } from '../../../state/user/hooks'
+import { GAS_PRICE_GWEI, GAS_PRICE } from '../../../state/types'
 
 const GasSettings = () => {
   const { t } = useTranslation()
   const [gasPrice, setGasPrice] = useGasPriceManager()
-  const defaultGasPrice = useDefaultGasPrice()
 
   return (
     <Flex flexDirection="column">
@@ -39,7 +37,6 @@ const GasSettings = () => {
           variant={gasPrice === GAS_PRICE_GWEI.rpcDefault ? 'primary' : 'tertiary'}
         >
           {t('Default')}
-          {defaultGasPrice ? ` (${formatGwei(defaultGasPrice)})` : null}
         </Button>
         <Button
           mt="4px"

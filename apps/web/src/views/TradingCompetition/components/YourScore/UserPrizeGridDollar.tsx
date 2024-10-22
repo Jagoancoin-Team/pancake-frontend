@@ -1,7 +1,7 @@
-import { Skeleton, Text } from '@pancakeswap/uikit'
+import { Text, Skeleton } from '@pancakeswap/uikit'
 
 interface UserPrizeGridDollarProps {
-  dollarValueOfTokensReward: number | null
+  dollarValueOfTokensReward: number
 }
 
 const UserPrizeGridDollar: React.FC<React.PropsWithChildren<UserPrizeGridDollarProps>> = ({

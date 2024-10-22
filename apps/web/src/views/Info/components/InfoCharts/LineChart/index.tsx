@@ -1,24 +1,23 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { darkColors, lightColors } from '@pancakeswap/uikit'
-import { LineChartLoader } from 'components/ChartLoaders'
-import dayjs from 'dayjs'
-import useTheme from 'hooks/useTheme'
-import { IChartApi, createChart } from 'lightweight-charts'
-import { darken } from 'polished'
 import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
+import useTheme from 'hooks/useTheme'
+import { LineChartLoader } from 'components/ChartLoaders'
+import { createChart, IChartApi } from 'lightweight-charts'
+import { format } from 'date-fns'
+import { darken } from 'polished'
+import { useTranslation } from '@pancakeswap/localization'
 import { formatAmount } from 'utils/formatInfoNumbers'
+import { lightColors, darkColors } from '@pancakeswap/uikit'
 
 export type LineChartProps = {
   data: any[]
   setHoverValue: Dispatch<SetStateAction<number | undefined>> // used for value on hover
   setHoverDate: Dispatch<SetStateAction<string | undefined>> // used for label of value
-  dateFormat?: string
 } & React.HTMLAttributes<HTMLDivElement>
 
 /**
  * Note: remember that it needs to be mounted inside the container with fixed height
  */
-const LineChart = ({ data, setHoverValue, setHoverDate, dateFormat = 'h:mm a' }: LineChartProps) => {
+const LineChart = ({ data, setHoverValue, setHoverDate }: LineChartProps) => {
   const { isDark } = useTheme()
   const {
     currentLanguage: { locale },
@@ -61,7 +60,7 @@ const LineChart = ({ data, setHoverValue, setHoverDate, dateFormat = 'h:mm a' }:
         borderVisible: false,
         secondsVisible: false,
         tickMarkFormatter: (unixTime: number) => {
-          return dayjs.unix(unixTime).format(dateFormat)
+          return format(unixTime * 1000, 'h:mm a')
         },
       },
       grid: {
@@ -137,7 +136,7 @@ const LineChart = ({ data, setHoverValue, setHoverDate, dateFormat = 'h:mm a' }:
     return () => {
       chart.remove()
     }
-  }, [isDark, locale, transformedData, setHoverValue, setHoverDate, dateFormat])
+  }, [isDark, locale, transformedData, setHoverValue, setHoverDate])
 
   return (
     <>

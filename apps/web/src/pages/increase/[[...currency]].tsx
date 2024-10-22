@@ -1,14 +1,14 @@
-import { CAKE, USDC } from '@pancakeswap/tokens'
+import { ICE, USD } from '@pancakeswap/tokens'
 import { useCurrency } from 'hooks/Tokens'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import useNativeCurrency from 'hooks/useNativeCurrency'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { CHAIN_IDS } from 'utils/wagmi'
-import IncreaseLiquidityV3 from 'views/AddLiquidityV3/IncreaseLiquidityV3'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import LiquidityFormProvider from 'views/AddLiquidityV3/formViews/V3FormView/form/LiquidityFormProvider'
+import IncreaseLiquidityV3 from 'views/AddLiquidityV3/IncreaseLiquidityV3'
 
-const IncreaseLiquidityPage = () => {
+const AddLiquidityPage = () => {
   const router = useRouter()
   const { chainId } = useActiveChainId()
 
@@ -16,7 +16,7 @@ const IncreaseLiquidityPage = () => {
 
   const [currencyIdA, currencyIdB] = router.query.currency || [
     native.symbol,
-    (chainId && CAKE[chainId]?.address) ?? (chainId && USDC[chainId]?.address),
+    ICE[chainId]?.address ?? USD[chainId]?.address,
   ]
 
   const currencyA = useCurrency(currencyIdA)
@@ -29,10 +29,9 @@ const IncreaseLiquidityPage = () => {
   )
 }
 
-IncreaseLiquidityPage.chains = CHAIN_IDS
-IncreaseLiquidityPage.screen = true
+AddLiquidityPage.chains = CHAIN_IDS
 
-export default IncreaseLiquidityPage
+export default AddLiquidityPage
 
 const OLD_PATH_STRUCTURE = /^(0x[a-fA-F0-9]{40}|BNB)-(0x[a-fA-F0-9]{40}|BNB)$/
 
@@ -44,7 +43,7 @@ export const getStaticPaths: GetStaticPaths = () => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const { currency = [] } = params || {}
+  const { currency = [] } = params
   const [currencyIdA, currencyIdB, feeAmountFromUrl, tokenId] = currency
   const match = currencyIdA?.match(OLD_PATH_STRUCTURE)
 
@@ -62,7 +61,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (currencyIdA && currencyIdB && currencyIdA.toLowerCase() === currencyIdB.toLowerCase()) {
     return {
       redirect: {
-        statusCode: 307,
+        statusCode: 303,
         destination: `/add/${currencyIdA}`,
       },
     }

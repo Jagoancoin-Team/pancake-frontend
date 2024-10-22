@@ -1,13 +1,11 @@
-import { Box, Text } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-
+import { Text, Box, Pool } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
+import { useVaultPoolByKey } from 'state/pools/hooks'
 import { Token } from '@pancakeswap/sdk'
 import { getBalanceNumber } from '@pancakeswap/utils/formatBalance'
-import { useVaultPoolByKey } from 'state/pools/hooks'
 
 interface OriginalLockedInfoProps {
-  pool?: Pool.DeserializedPool<Token>
+  pool: Pool.DeserializedPool<Token>
 }
 
 const OriginalLockedInfo: React.FC<React.PropsWithChildren<OriginalLockedInfoProps>> = ({ pool }) => {
@@ -16,12 +14,12 @@ const OriginalLockedInfo: React.FC<React.PropsWithChildren<OriginalLockedInfoPro
     currentLanguage: { locale },
   } = useTranslation()
 
-  const { userData } = useVaultPoolByKey(pool?.vaultKey)
+  const { userData } = useVaultPoolByKey(pool.vaultKey)
 
   const originalLockedAmount = getBalanceNumber(userData?.lockedAmount)
   const originalUsdValue = getBalanceNumber(
-    userData?.lockedAmount.multipliedBy(pool?.stakingTokenPrice ?? 0),
-    pool?.stakingToken.decimals,
+    userData?.lockedAmount.multipliedBy(pool.stakingTokenPrice),
+    pool.stakingToken.decimals,
   )
   const originalLockedAmountText = originalLockedAmount > 0.01 ? originalLockedAmount.toFixed(2) : '<0.01'
   const originalUsdValueText = originalUsdValue > 0.01 ? `~${originalUsdValue.toFixed(2)}` : '<0.01'
@@ -36,7 +34,7 @@ const OriginalLockedInfo: React.FC<React.PropsWithChildren<OriginalLockedInfoPro
       </Text>
       <Box mt="12px">
         <Text>{t('Original locked amount')}:</Text>
-        <Text bold>{`${originalLockedAmountText} CAKE (${originalUsdValueText} USD)`}</Text>
+        <Text bold>{`${originalLockedAmountText} ICE (${originalUsdValueText} USD)`}</Text>
       </Box>
       <Box mt="12px">
         <Text>{t('Last action')}:</Text>

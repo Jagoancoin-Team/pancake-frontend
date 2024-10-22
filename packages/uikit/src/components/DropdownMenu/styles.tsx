@@ -15,7 +15,7 @@ const getTextColor = ({
 };
 
 export const DropdownMenuItem = styled("button").withConfig({
-  shouldForwardProp: (props) => !["confirmModalId"].includes(props),
+  shouldForwardProp: (props) => !["confirmModalId", "supportChainIds"].includes(props),
 })<StyledDropdownMenuItemProps & { $isActive: boolean }>`
   align-items: center;
   border: 0;

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { API_PROFILE } from 'config/constants/endpoints'
 
 export const useTeamInformation = (competitionId: number) => {
   const [globalLeaderboardInformation, setGlobalLeaderboardInformation] = useState(null)
@@ -11,6 +10,7 @@ export const useTeamInformation = (competitionId: number) => {
   // 3. Cakers
   const [team3LeaderboardInformation, setTeam3LeaderboardInformation] = useState({ teamId: 3, leaderboardData: null })
 
+  /*
   useEffect(() => {
     const fetchGlobalLeaderboardStats = async () => {
       const res = await fetch(`${API_PROFILE}/api/leaderboard/${competitionId}/global`)
@@ -45,6 +45,7 @@ export const useTeamInformation = (competitionId: number) => {
     )
     fetchGlobalLeaderboardStats()
   }, [competitionId, setTeam1LeaderboardInformation, setTeam2LeaderboardInformation, setTeam3LeaderboardInformation])
+  */
 
   return {
     team1LeaderboardInformation,

@@ -1,19 +1,16 @@
-import { createContext, useCallback, useEffect, useState, useMemo } from 'react'
+import React, { createContext, useCallback, useEffect, useState, useMemo } from 'react'
+import { useLastUpdated } from '@pancakeswap/hooks'
 import memoize from 'lodash/memoize'
 import omitBy from 'lodash/omitBy'
 import reduce from 'lodash/reduce'
+import isUndefinedOrNull from '@pancakeswap/utils/isUndefinedOrNull'
 import { EN, languages } from './config/languages'
 import { ContextApi, ProviderState, TranslateFunction, Language } from './types'
 import { LS_KEY, fetchLocale, getLanguageCodeFromLS } from './helpers'
-import useLastUpdated from './hooks/useLastUpdated'
 
 const initialState: ProviderState = {
   isFetching: true,
   currentLanguage: EN,
-}
-
-function isUndefinedOrNull(value: any): boolean {
-  return value === null || value === undefined
 }
 
 const includesVariableRegex = new RegExp(/%\S+?%/, 'gm')
@@ -109,10 +106,7 @@ export const LanguageProvider: React.FC<React.PropsWithChildren> = ({ children }
           return reduce(
             omitBy(data, isUndefinedOrNull),
             (result, dataValue, dataKey) => {
-              if (dataValue !== undefined && dataValue !== null) {
-                return result.replace(getRegExpForDataKey(dataKey), dataValue.toString())
-              }
-              return result
+              return result.replace(getRegExpForDataKey(dataKey), dataValue.toString())
             },
             translatedText,
           )

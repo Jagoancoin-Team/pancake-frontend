@@ -1,51 +1,41 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, Price, Token, ZERO } from '@pancakeswap/sdk'
-import {
-  CalculateIcon,
-  Flex,
-  IconButton,
-  PairDataTimeWindowEnum,
-  QuestionHelper,
-  RocketIcon,
-  Text,
-  TooltipText,
-} from '@pancakeswap/uikit'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import { formatPrice } from '@pancakeswap/utils/formatFractions'
-import { FeeCalculator, Pool, encodeSqrtRatioX96, isPoolTickInRange, parseProtocolFees } from '@pancakeswap/v3-sdk'
+import { Currency, CurrencyAmount, Token, ZERO, Price } from '@pancakeswap/sdk'
+import { TooltipText, Flex, CalculateIcon, Text, IconButton, QuestionHelper } from '@pancakeswap/uikit'
 import {
   RoiCalculatorModalV2,
   RoiCalculatorPositionInfo,
-  useAmountsByUsdValue,
   useRoi,
+  useAmountsByUsdValue,
 } from '@pancakeswap/widgets-internal/roi'
-import { useCakePrice } from 'hooks/useCakePrice'
-import { useRouter } from 'next/router'
+import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
+import { encodeSqrtRatioX96, parseProtocolFees, Pool, FeeCalculator } from '@pancakeswap/v3-sdk'
 import { useCallback, useMemo, useState } from 'react'
 import { styled } from 'styled-components'
+import { useTranslation } from '@pancakeswap/localization'
+import { formatPrice } from '@pancakeswap/utils/formatFractions'
+import { useCakePrice } from 'hooks/useCakePrice'
+import { useRouter } from 'next/router'
 
-import { PositionDetails, getPositionFarmApr, getPositionFarmAprFactor } from '@pancakeswap/farms'
-import { Bound } from 'config/constants/types'
-import { useFarm } from 'hooks/useFarm'
-import { usePoolAvgTradingVolume } from 'hooks/usePoolTradingVolume'
-import { useStablecoinPrice } from 'hooks/useStablecoinPrice'
-import { useDerivedPositionInfo } from 'hooks/v3/useDerivedPositionInfo'
-import { usePairTokensPrice } from 'hooks/v3/usePairTokensPrice'
-import { useAllV3Ticks } from 'hooks/v3/usePoolTickData'
 import useV3DerivedInfo from 'hooks/v3/useV3DerivedInfo'
+import { useDerivedPositionInfo } from 'hooks/v3/useDerivedPositionInfo'
+import { Bound } from 'config/constants/types'
+import { useAllV3Ticks } from 'hooks/v3/usePoolTickData'
+import { Field } from 'state/mint/actions'
+import { usePoolAvgTradingVolume } from 'hooks/usePoolTradingVolume'
+import { useStablecoinPrice } from 'hooks/useBUSDPrice'
+import { usePairTokensPrice } from 'hooks/v3/usePairTokensPrice'
 import { batch } from 'react-redux'
-import { CurrencyField as Field } from 'utils/types'
+import { PositionDetails, getPositionFarmApr, getPositionFarmAprFactor } from '@pancakeswap/farms'
 import currencyId from 'utils/currencyId'
+import isPoolTickInRange from 'utils/isPoolTickInRange'
+import { useFarm } from 'hooks/useFarm'
 
-import { useUserPositionInfo } from 'views/Farms/components/YieldBooster/hooks/bCakeV3/useBCakeV3Info'
-import { BoostStatus, useBoostStatus } from 'views/Farms/components/YieldBooster/hooks/bCakeV3/useBoostStatus'
-import { useV3MintActionHandlers } from '../formViews/V3FormView/form/hooks/useV3MintActionHandlers'
 import { useV3FormState } from '../formViews/V3FormView/form/reducer'
+import { useV3MintActionHandlers } from '../formViews/V3FormView/form/hooks/useV3MintActionHandlers'
 
 interface Props {
-  baseCurrency?: Currency | null
-  quoteCurrency?: Currency | null
-  feeAmount?: number
+  baseCurrency: Currency
+  quoteCurrency: Currency
+  feeAmount: number
   showTitle?: boolean
   showQuestion?: boolean
   allowApply?: boolean
@@ -81,7 +71,7 @@ export function AprCalculator({
 }: Props) {
   const { t } = useTranslation()
   const [isOpen, setOpen] = useState(false)
-  const [priceSpan, setPriceSpan] = useState(PairDataTimeWindowEnum.DAY)
+  const [priceSpan, setPriceSpan] = useState(0)
   const { data: farm } = useFarm({ currencyA: baseCurrency, currencyB: quoteCurrency, feeAmount })
   const cakePrice = useCakePrice()
 
@@ -97,9 +87,9 @@ export function AprCalculator({
     formState,
   )
   const router = useRouter()
-  const poolAddress = useMemo(() => (pool ? Pool.getAddress(pool.token0, pool.token1, pool.fee) : undefined), [pool])
+  const poolAddress = useMemo(() => pool && Pool.getAddress(pool.token0, pool.token1, pool.fee), [pool])
 
-  const prices = usePairTokensPrice(poolAddress, priceSpan, baseCurrency?.chainId, isOpen)
+  const prices = usePairTokensPrice(poolAddress, priceSpan, baseCurrency?.chainId)
   const { ticks: data } = useAllV3Ticks(baseCurrency, quoteCurrency, feeAmount)
   const volume24H = usePoolAvgTradingVolume({
     address: poolAddress,
@@ -124,21 +114,15 @@ export function AprCalculator({
     () =>
       baseUSDPrice
         ? parseFloat(formatPrice(baseUSDPrice, 6) || '0')
-        : deriveUSDPrice(
-            quoteUSDPrice,
-            quoteCurrency && price?.baseCurrency.equals(quoteCurrency.wrapped) ? price : price?.invert(),
-          ),
-    [baseUSDPrice, quoteUSDPrice, price, quoteCurrency],
+        : deriveUSDPrice(quoteUSDPrice, price?.baseCurrency.equals(quoteCurrency?.wrapped) ? price : price?.invert()),
+    [baseUSDPrice, quoteUSDPrice, price, quoteCurrency?.wrapped],
   )
   const currencyBUsdPrice = useMemo(
     () =>
       baseUSDPrice &&
-      (deriveUSDPrice(
-        baseUSDPrice,
-        baseCurrency && price?.baseCurrency.equals(baseCurrency.wrapped) ? price : price?.invert(),
-      ) ||
+      (deriveUSDPrice(baseUSDPrice, price?.baseCurrency.equals(baseCurrency?.wrapped) ? price : price?.invert()) ||
         parseFloat(formatPrice(quoteUSDPrice, 6) || '0')),
-    [baseUSDPrice, quoteUSDPrice, price, baseCurrency],
+    [baseUSDPrice, quoteUSDPrice, price, baseCurrency?.wrapped],
   )
 
   const depositUsd = useMemo(
@@ -173,6 +157,8 @@ export function AprCalculator({
 
   const validAmountA = amountA || (inverted ? tokenAmount1 : tokenAmount0) || (inverted ? aprAmountB : aprAmountA)
   const validAmountB = amountB || (inverted ? tokenAmount0 : tokenAmount1) || (inverted ? aprAmountA : aprAmountB)
+  const [amount0, amount1] = inverted ? [validAmountB, validAmountA] : [validAmountA, validAmountB]
+  const inRange = isPoolTickInRange(pool, tickLower, tickUpper)
   const { apr } = useRoi({
     tickLower,
     tickUpper,
@@ -206,8 +192,6 @@ export function AprCalculator({
         })),
     [existingPosition, validAmountA, validAmountB, tickUpper, tickLower, sqrtRatioX96],
   )
-  const [amount0, amount1] = inverted ? [validAmountB, validAmountA] : [validAmountA, validAmountB]
-  const inRange = useMemo(() => isPoolTickInRange(pool, tickLower, tickUpper), [pool, tickLower, tickUpper])
   const { positionFarmApr, positionFarmAprFactor } = useMemo(() => {
     if (!farm || !cakePrice || !positionLiquidity || !amount0 || !amount1 || !inRange) {
       return {
@@ -243,15 +227,6 @@ export function AprCalculator({
   // NOTE: Assume no liquidity when opening modal
   const { onFieldAInput, onBothRangeInput, onSetFullRange } = useV3MintActionHandlers(false)
 
-  const tokenId = useMemo(() => positionDetails?.tokenId?.toString() ?? '-1', [positionDetails?.tokenId])
-  const pid = useMemo(() => farm?.farm?.pid ?? -1, [farm?.farm.pid])
-  const {
-    data: { boostMultiplier },
-  } = useUserPositionInfo(positionDetails?.tokenId?.toString() ?? '-1')
-
-  const { status: boostedStatus } = useBoostStatus(pid, tokenId)
-  const isBoosted = useMemo(() => boostedStatus === BoostStatus.Boosted, [boostedStatus])
-
   const closeModal = useCallback(() => setOpen(false), [])
   const onApply = useCallback(
     (position: RoiCalculatorPositionInfo) => {
@@ -277,8 +252,8 @@ export function AprCalculator({
           query: {
             ...router.query,
             currency: [
-              position.amountA ? currencyId(position.amountA.currency) : '',
-              position.amountB ? currencyId(position.amountB.currency) : '',
+              position.amountA ? currencyId(position.amountA.currency) : undefined,
+              position.amountB ? currencyId(position.amountB.currency) : undefined,
               feeAmount ? feeAmount.toString() : '',
             ],
           },
@@ -299,15 +274,7 @@ export function AprCalculator({
 
   const hasFarmApr = positionFarmApr && +positionFarmApr > 0
   const combinedApr = hasFarmApr ? +apr.toSignificant(6) + +positionFarmApr : +apr.toSignificant(6)
-  const combinedAprWithBoosted = hasFarmApr
-    ? +apr.toSignificant(6) + +positionFarmApr * (isBoosted ? boostMultiplier : 1)
-    : +apr.toSignificant(6)
   const aprDisplay = combinedApr.toLocaleString(undefined, {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-  })
-
-  const boostedAprDisplay = combinedAprWithBoosted.toLocaleString(undefined, {
     maximumFractionDigits: 2,
     minimumFractionDigits: 0,
   })
@@ -327,22 +294,8 @@ export function AprCalculator({
             {hasFarmApr ? t('APR (with farming)') : t('APR')}
           </Text>
         )}
-        <AprButtonContainer alignItems="center">
-          <AprText onClick={() => setOpen(true)}>
-            <Flex style={{ gap: 3 }}>
-              {isBoosted && (
-                <>
-                  <RocketIcon color="success" />
-                  <Text fontSize="14px" color="success">
-                    {boostedAprDisplay}%
-                  </Text>
-                </>
-              )}
-              <Text fontSize="14px" style={{ textDecoration: isBoosted ? 'line-through' : 'none' }}>
-                {aprDisplay}%
-              </Text>
-            </Flex>
-          </AprText>
+        <AprButtonContainer onClick={() => setOpen(true)} alignItems="center">
+          <AprText>{aprDisplay}%</AprText>
           <IconButton variant="text" scale="sm" onClick={() => setOpen(true)}>
             <CalculateIcon color="textSubtle" ml="0.25em" width="24px" />
           </IconButton>
@@ -391,8 +344,8 @@ export function AprCalculator({
         priceSpan={priceSpan}
         onPriceSpanChange={setPriceSpan}
         onApply={onApply}
-        isFarm={Boolean(hasFarmApr)}
-        cakeAprFactor={positionFarmAprFactor.times(isBoosted ? boostMultiplier : 1)}
+        isFarm={hasFarmApr}
+        cakeAprFactor={positionFarmAprFactor}
         cakePrice={cakePrice.toFixed(3)}
       />
     </>

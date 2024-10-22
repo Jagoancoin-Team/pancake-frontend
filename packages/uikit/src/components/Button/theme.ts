@@ -63,8 +63,5 @@ export const styleVariants = {
     background: vars.colors.gradientBubblegum,
     color: "textSubtle",
     boxShadow: "none",
-    ":disabled": {
-      background: vars.colors.disabled,
-    },
   },
 };

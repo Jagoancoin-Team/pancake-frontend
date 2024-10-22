@@ -1,5 +1,4 @@
 import { Currency, Price } from '@pancakeswap/sdk'
-import invariant from 'tiny-invariant'
 
 import { BaseRoute, Pool, RouteType, PoolType, Route } from '../types'
 import { getOutputCurrency, getTokenPrice } from './pool'
@@ -36,7 +35,7 @@ export function buildBaseRoute(pools: Pool[], currencyIn: Currency, currencyOut:
   }
 }
 
-function getRouteTypeFromPool(pool: Pick<Pool, 'type'>) {
+function getRouteTypeFromPool(pool: Pool) {
   switch (pool.type) {
     case PoolType.V2:
       return RouteType.V2
@@ -49,27 +48,11 @@ function getRouteTypeFromPool(pool: Pick<Pool, 'type'>) {
   }
 }
 
-export function getRouteTypeByPools(pools: Pick<Pool, 'type'>[]) {
-  let routeType: RouteType | undefined
-  for (const p of pools) {
-    if (routeType === undefined) {
-      routeType = getRouteTypeFromPool(p)
-      continue
-    }
-    if (routeType === RouteType.MIXED || routeType !== getRouteTypeFromPool(p)) {
-      routeType = RouteType.MIXED
-      continue
-    }
-  }
-  invariant(routeType !== undefined, 'INVALID_ROUTE_TYPE')
-  return routeType
-}
-
 export function getQuoteCurrency({ input, output }: BaseRoute, baseCurrency: Currency) {
   return baseCurrency.equals(input) ? output : input
 }
 
-export function getMidPrice({ path, pools }: Pick<Route, 'path' | 'pools'>) {
+export function getMidPrice({ path, pools }: Route) {
   let i = 0
   let price: Price<Currency, Currency> | null = null
   for (const pool of pools) {

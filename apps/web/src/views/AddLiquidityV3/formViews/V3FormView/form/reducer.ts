@@ -4,8 +4,8 @@ import { atomWithReducer } from 'jotai/utils'
 import { createContext, useContext } from 'react'
 import { Price, Token } from '@pancakeswap/swap-sdk-core'
 
-import { CurrencyField as Field } from 'utils/types'
 import {
+  Field,
   resetMintState,
   setFullRange,
   typeInput,
@@ -18,18 +18,18 @@ type FullRange = true
 
 export interface MintState {
   readonly independentField: Field
-  readonly typedValue: string | undefined
+  readonly typedValue: string
   readonly startPriceTypedValue: string // for the case when there's no liquidity
-  readonly leftRangeTypedValue: Price<Token, Token> | FullRange | undefined
-  readonly rightRangeTypedValue: Price<Token, Token> | FullRange | undefined
+  readonly leftRangeTypedValue: Price<Token, Token> | FullRange
+  readonly rightRangeTypedValue: Price<Token, Token> | FullRange
 }
 
 export const initialState: MintState = {
   independentField: Field.CURRENCY_A,
   typedValue: '',
   startPriceTypedValue: '',
-  leftRangeTypedValue: undefined,
-  rightRangeTypedValue: undefined,
+  leftRangeTypedValue: null,
+  rightRangeTypedValue: null,
 }
 
 const reducer = createReducer<MintState>(initialState, (builder) =>

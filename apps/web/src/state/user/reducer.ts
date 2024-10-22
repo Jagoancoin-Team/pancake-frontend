@@ -1,36 +1,42 @@
-import { SerializedWrappedToken } from '@pancakeswap/token-lists'
 import { createReducer } from '@reduxjs/toolkit'
+import { SerializedWrappedToken } from '@pancakeswap/token-lists'
 import omitBy from 'lodash/omitBy'
+import { DEFAULT_DEADLINE_FROM_NOW } from '../../config/constants'
 import { updateVersion } from '../global/actions'
-import { GAS_PRICE_GWEI } from '../types'
 import {
-  FarmStakedOnly,
-  SerializedPair,
-  ViewMode,
   addSerializedPair,
   addSerializedToken,
   addWatchlistPool,
   addWatchlistToken,
+  FarmStakedOnly,
   removeSerializedPair,
   removeSerializedToken,
-  setSubgraphHealthIndicatorDisplayed,
+  SerializedPair,
   updateGasPrice,
+  updateUserDeadline,
   updateUserFarmStakedOnly,
   updateUserFarmsViewMode,
-  updateUserLimitOrderAcceptedWarning,
   updateUserPoolStakedOnly,
   updateUserPoolsViewMode,
+  ViewMode,
   updateUserPredictionAcceptedRisk,
-  updateUserPredictionChainlinkChartDisclaimerShow,
   updateUserPredictionChartDisclaimerShow,
+  updateUserPredictionChainlinkChartDisclaimerShow,
   updateUserUsernameVisibility,
+  setIsExchangeChartDisplayed,
+  setSubgraphHealthIndicatorDisplayed,
+  updateUserLimitOrderAcceptedWarning,
 } from './actions'
+import { GAS_PRICE_GWEI } from '../types'
 
 const currentTimestamp = () => Date.now()
 
 export interface UserState {
   // the timestamp of the last updateVersion action
   lastUpdateVersionTimestamp?: number
+
+  // deadline set by user in minutes, used in all txns
+  userDeadline: number
 
   tokens: {
     [chainId: number]: {
@@ -44,6 +50,7 @@ export interface UserState {
       [key: string]: SerializedPair
     }
   }
+  isExchangeChartDisplayed: boolean
   isSubgraphHealthIndicatorDisplayed: boolean
   userFarmStakedOnly: FarmStakedOnly
   userPoolStakedOnly: boolean
@@ -57,7 +64,7 @@ export interface UserState {
   gasPrice: string
   watchlistTokens: string[]
   watchlistPools: string[]
-  hideTimestampPhishingWarningBanner: number | null
+  hideTimestampPhishingWarningBanner: number
 }
 
 function pairKey(token0Address: string, token1Address: string) {
@@ -65,13 +72,15 @@ function pairKey(token0Address: string, token1Address: string) {
 }
 
 export const initialState: UserState = {
+  userDeadline: DEFAULT_DEADLINE_FROM_NOW,
   tokens: {},
   pairs: {},
+  isExchangeChartDisplayed: true,
   isSubgraphHealthIndicatorDisplayed: false,
   userFarmStakedOnly: FarmStakedOnly.ON_FINISHED,
   userPoolStakedOnly: false,
-  userPoolsViewMode: ViewMode.TABLE,
-  userFarmsViewMode: ViewMode.TABLE,
+  userPoolsViewMode: ViewMode.CARD,
+  userFarmsViewMode: ViewMode.CARD,
   userPredictionAcceptedRisk: false,
   userLimitOrderAcceptedWarning: false,
   userPredictionChartDisclaimerShow: true,
@@ -86,7 +95,19 @@ export const initialState: UserState = {
 export default createReducer(initialState, (builder) =>
   builder
     .addCase(updateVersion, (state) => {
+      // slippage is'nt being tracked in local storage, reset to default
+      // noinspection SuspiciousTypeOfGuard
+
+      // deadline isnt being tracked in local storage, reset to default
+      // noinspection SuspiciousTypeOfGuard
+      if (typeof state.userDeadline !== 'number') {
+        state.userDeadline = DEFAULT_DEADLINE_FROM_NOW
+      }
+
       state.lastUpdateVersionTimestamp = currentTimestamp()
+    })
+    .addCase(updateUserDeadline, (state, action) => {
+      state.userDeadline = action.payload.userDeadline
     })
     .addCase(addSerializedToken, (state, { payload: { serializedToken } }) => {
       if (!state.tokens) {
@@ -174,6 +195,9 @@ export default createReducer(initialState, (builder) =>
         const newPools = state.watchlistPools.filter((x) => x !== address)
         state.watchlistPools = newPools
       }
+    })
+    .addCase(setIsExchangeChartDisplayed, (state, { payload }) => {
+      state.isExchangeChartDisplayed = payload
     })
     .addCase(setSubgraphHealthIndicatorDisplayed, (state, { payload }) => {
       state.isSubgraphHealthIndicatorDisplayed = payload

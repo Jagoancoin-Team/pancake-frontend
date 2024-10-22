@@ -1,24 +1,23 @@
-import { useTranslation } from '@pancakeswap/localization'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { timeFormat } from 'views/TradingReward/utils/timeFormat'
 import {
-  Box,
-  ButtonMenu,
-  ButtonMenuItem,
   Card,
+  Text,
   Flex,
   PaginationButton,
-  Text,
   useMatchBreakpoints,
+  ButtonMenu,
+  ButtonMenuItem,
+  Box,
 } from '@pancakeswap/uikit'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from '@pancakeswap/localization'
+import { UserCampaignInfoDetail } from 'views/TradingReward/hooks/useAllUserCampaignInfo'
+import { AllTradingRewardPairDetail } from 'views/TradingReward/hooks/useAllTradingRewardPair'
+import useRewardBreakdown, { RewardBreakdownDetail } from 'views/TradingReward/hooks/useRewardBreakdown'
 import DesktopView from 'views/TradingReward/components/RewardsBreakdown/DesktopView'
 import MobileView from 'views/TradingReward/components/RewardsBreakdown/MobileView'
-import { AllTradingRewardPairDetail, RewardType } from 'views/TradingReward/hooks/useAllTradingRewardPair'
-import { UserCampaignInfoDetail } from 'views/TradingReward/hooks/useAllUserCampaignInfo'
-import useRewardBreakdown, { RewardBreakdownDetail } from 'views/TradingReward/hooks/useRewardBreakdown'
-import { timeFormat } from 'views/TradingReward/utils/timeFormat'
 
 interface RewardsBreakdownProps {
-  type: RewardType
   allUserCampaignInfo: UserCampaignInfoDetail[]
   allTradingRewardPairData: AllTradingRewardPairDetail
   campaignPairs: { [campaignId in string]: { [chainId in string]: Array<string> } }
@@ -34,7 +33,6 @@ const initList: RewardBreakdownDetail = {
 }
 
 const RewardsBreakdown: React.FC<React.PropsWithChildren<RewardsBreakdownProps>> = ({
-  type,
   allUserCampaignInfo,
   allTradingRewardPairData,
   campaignPairs,
@@ -91,9 +89,7 @@ const RewardsBreakdown: React.FC<React.PropsWithChildren<RewardsBreakdownProps>>
   const handleIndex = (pageIndex: number) => {
     if (pageIndex === 0) {
       setCurrentPage(1)
-      if (currentList) {
-        setList(currentList)
-      }
+      setList(currentList)
     } else {
       setCurrentPage(2)
     }
@@ -128,7 +124,7 @@ const RewardsBreakdown: React.FC<React.PropsWithChildren<RewardsBreakdownProps>>
           })}
         </Text>
       )}
-      {(index === 1 || !currentList) && data.length > 1 ? (
+      {index === 1 || !currentList ? (
         <Box mb="-16px">
           <PaginationButton
             showMaxPageText
@@ -140,9 +136,9 @@ const RewardsBreakdown: React.FC<React.PropsWithChildren<RewardsBreakdownProps>>
       ) : null}
       <Card mt="40px">
         {isDesktop ? (
-          <DesktopView type={type} list={list} isFetching={isFetching} />
+          <DesktopView list={list} isFetching={isFetching} />
         ) : (
-          <MobileView type={type} list={list} isFetching={isFetching} />
+          <MobileView list={list} isFetching={isFetching} />
         )}
       </Card>
     </Flex>

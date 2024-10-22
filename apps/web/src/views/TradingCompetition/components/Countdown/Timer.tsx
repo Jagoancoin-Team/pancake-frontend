@@ -2,7 +2,6 @@ import { styled } from 'styled-components'
 import { Flex, Heading, Text, Link, useTooltip, BscScanIcon } from '@pancakeswap/uikit'
 import { getBlockExploreLink } from 'utils'
 import { useTranslation, ContextApi } from '@pancakeswap/localization'
-import { ReactNode } from 'react'
 
 export interface TimerProps {
   prefix?: string
@@ -12,6 +11,7 @@ export interface TimerProps {
   days?: number
   showTooltip?: boolean
   blockNumber?: number
+  chainId: number
   HeadingTextComponent?: React.ElementType
   BodyTextComponent?: React.ElementType
 }
@@ -61,12 +61,12 @@ const DefaultBodyTextComponent = ({ children, ...props }) => (
   </Text>
 )
 
-const TooltipContent = ({ blockNumber, t }: { blockNumber: number; t: ContextApi['t'] }): ReactNode => (
+const TooltipContent = ({ blockNumber, t, chainId }: { blockNumber: number; t: ContextApi['t'], chainId: number }): JSX.Element => (
   <>
     <Text color="body" mb="10px" fontWeight="600">
       {t('Block %num%', { num: blockNumber })}
     </Text>
-    <Link external href={getBlockExploreLink(blockNumber, 'block')}>
+    <Link external href={getBlockExploreLink(blockNumber, 'block', chainId)}>
       {t('View on BscScan')}
       <BscScanIcon color="primary" ml="4px" />
     </Link>
@@ -80,12 +80,13 @@ const Wrapper: React.FC<React.PropsWithChildren<TimerProps>> = ({
   hours,
   days,
   blockNumber,
+  chainId,
   showTooltip = false,
   HeadingTextComponent = DefaultHeadingTextComponent,
   BodyTextComponent = DefaultBodyTextComponent,
 }) => {
   const { t } = useTranslation()
-  const { targetRef, tooltip, tooltipVisible } = useTooltip(<TooltipContent blockNumber={blockNumber || 0} t={t} />, {
+  const { targetRef, tooltip, tooltipVisible } = useTooltip(<TooltipContent blockNumber={blockNumber} t={t} chainId={chainId} />, {
     placement: 'bottom',
   })
   const shouldDisplayTooltip = showTooltip && tooltipVisible

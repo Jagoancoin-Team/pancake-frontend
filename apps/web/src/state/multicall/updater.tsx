@@ -4,8 +4,7 @@ import { useAtom } from 'jotai'
 import { useEffect, useMemo, useRef } from 'react'
 import { useCurrentBlock } from 'state/block/hooks'
 import { multicallReducerAtom, MulticallState } from 'state/multicall/reducer'
-import { useWorker } from 'hooks/useWorker'
-
+import { worker2 } from 'utils/worker'
 import { useMulticallContract } from '../../hooks/useContract'
 import {
   Call,
@@ -92,7 +91,6 @@ export default function Updater(): null {
   const { chainId } = useActiveChainId()
   const multicallContract = useMulticallContract()
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
-  const worker = useWorker()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {
     return activeListeningKeys(debouncedListeners, chainId)
@@ -108,7 +106,7 @@ export default function Updater(): null {
   )
 
   useEffect(() => {
-    if (!worker || !currentBlock || !chainId || !multicallContract) return
+    if (!currentBlock || !chainId || !multicallContract) return
 
     const outdatedCallKeys: string[] = JSON.parse(serializedOutdatedCallKeys)
     if (outdatedCallKeys.length === 0) return
@@ -133,7 +131,7 @@ export default function Updater(): null {
       cancellations: chunkedCalls.map((chunk, index) => {
         const { cancel, promise } = retry(
           () =>
-            worker.fetchChunk({
+            worker2.fetchChunk({
               chainId,
               chunk,
               minBlockNumber: currentBlock,
@@ -207,7 +205,7 @@ export default function Updater(): null {
         return cancel
       }),
     }
-  }, [worker, chainId, multicallContract, dispatch, serializedOutdatedCallKeys, currentBlock])
+  }, [chainId, multicallContract, dispatch, serializedOutdatedCallKeys, currentBlock])
 
   return null
 }

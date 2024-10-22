@@ -1,7 +1,7 @@
+import useSWR from 'swr'
 import { useState } from 'react'
 import { TRADING_REWARD_API } from 'config/constants/endpoints'
 import { RewardType } from 'views/TradingReward/hooks/useAllTradingRewardPair'
-import { useQuery } from '@tanstack/react-query'
 
 interface UseRankListProps {
   campaignId: string
@@ -39,10 +39,9 @@ export const useRankList = ({ campaignId, currentPage }: UseRankListProps): Rank
   const [lastCampaignId, setLastCampaignId] = useState('')
   const [topThreeTraders, setTopThreeTraders] = useState<RankListDetail[]>([])
 
-  const { data } = useQuery({
-    queryKey: ['tradingReward', 'trader-rank-list', campaignId, currentPage],
-
-    queryFn: async () => {
+  const { data } = useSWR(
+    Number(campaignId) > 0 && currentPage && ['/trader-rank-list', campaignId, currentPage],
+    async () => {
       try {
         setIsLoading(true)
         setLastCampaignId(campaignId)
@@ -79,11 +78,12 @@ export const useRankList = ({ campaignId, currentPage }: UseRankListProps): Rank
         setIsLoading(false)
       }
     },
-
-    enabled: Boolean(Number(campaignId) > 0 && currentPage),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  })
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
+    },
+  )
 
   return {
     isLoading,

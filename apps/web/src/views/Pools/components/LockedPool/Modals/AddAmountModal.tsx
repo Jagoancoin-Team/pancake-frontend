@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import dayjs from 'dayjs'
-import { convertTimeToMilliseconds } from 'utils/timeHelper'
+import { differenceInSeconds } from 'date-fns'
+import { convertTimeToSeconds } from 'utils/timeHelper'
 import { Modal, Box, MessageText, Message, Checkbox, Flex, Text } from '@pancakeswap/uikit'
 import _noop from 'lodash/noop'
 import { useTranslation } from '@pancakeswap/localization'
@@ -29,13 +29,13 @@ const RenewDuration = ({ setCheckedState, checkedState }) => {
         <Message variant="warning" mb="16px">
           <MessageText maxWidth="320px">
             {t(
-              'Adding more CAKE will renew your lock, setting it to remaining duration. Due to shorter lock period, benefits decrease. To keep similar benefits, extend your lock.',
+              'Adding more ICE will renew your lock, setting it to remaining duration. Due to shorter lock period, benefits decrease. To keep similar benefits, extend your lock.',
             )}
           </MessageText>
         </Message>
       )}
       <Flex alignItems="center">
-        <Checkbox checked={checkedState} onChange={() => setCheckedState((prev: any) => !prev)} scale="sm" />
+        <Checkbox checked={checkedState} onChange={() => setCheckedState((prev) => !prev)} scale="sm" />
         <Text ml="8px" color="text">
           {t('Renew and extend your lock to keep similar benefits.')}
         </Text>
@@ -100,8 +100,12 @@ const AddAmountModal: React.FC<React.PropsWithChildren<AddAmountModalProps>> = (
     [totalLockedAmountBN, stakingTokenPrice, stakingToken.decimals],
   )
 
-  const remainingDuration = dayjs(convertTimeToMilliseconds(lockEndTime || '')).diff(dayjs(), 'seconds')
-  const passedDuration = dayjs().diff(dayjs(convertTimeToMilliseconds(lockStartTime || '')), 'seconds')
+  const remainingDuration = differenceInSeconds(new Date(convertTimeToSeconds(lockEndTime)), new Date(), {
+    roundingMethod: 'ceil',
+  })
+  const passedDuration = differenceInSeconds(new Date(), new Date(convertTimeToSeconds(lockStartTime)), {
+    roundingMethod: 'ceil',
+  })
 
   // if you locked for 1 week, then add cake without renew the extension, it's possible that remainingDuration + passedDuration less than 1 week.
   const atLeastOneWeekNewDuration = Math.max(ONE_WEEK_DEFAULT + MIN_DURATION_BUFFER, remainingDuration + passedDuration)
@@ -119,7 +123,7 @@ const AddAmountModal: React.FC<React.PropsWithChildren<AddAmountModalProps>> = (
         isValidDuration
         openCalculator={_noop}
         duration={remainingDuration}
-        newDuration={checkedState ? atLeastOneWeekNewDuration : undefined}
+        newDuration={checkedState ? atLeastOneWeekNewDuration : null}
         lockedAmount={currentLockedAmountAsBalance.toNumber()}
         newLockedAmount={totalLockedAmount}
         usdValueStaked={usdValueNewStaked}
@@ -147,7 +151,7 @@ const AddAmountModal: React.FC<React.PropsWithChildren<AddAmountModalProps>> = (
 
   return (
     <RoiCalculatorModalProvider lockedAmount={lockedAmount}>
-      <Modal title={t('Add CAKE')} onDismiss={onDismiss} headerBackground={theme.colors.gradientCardHeader}>
+      <Modal title={t('Add ICE')} onDismiss={onDismiss} headerBackground={theme.colors.gradientCardHeader}>
         <Box mb="16px">
           <BalanceField
             stakingAddress={stakingToken.address}

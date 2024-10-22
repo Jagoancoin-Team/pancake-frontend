@@ -82,13 +82,12 @@ const BattleCta: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
     <ClaimModal userTradingInformation={userTradingInformation} onClaimSuccess={onClaimSuccess} />,
     false,
   )
-  const hasRegistered = userTradingInformation?.hasRegistered
-  const hasUserClaimed = userTradingInformation?.hasUserClaimed
+  const { hasRegistered, hasUserClaimed } = userTradingInformation
   const registeredAndNotStarted = hasRegistered && !isCompetitionLive && !hasCompetitionEnded
 
   const isButtonDisabled = Boolean(
     isLoading ||
-      currentPhase?.state === OVER ||
+      currentPhase.state === OVER ||
       registeredAndNotStarted ||
       finishedAndPrizesClaimed ||
       finishedAndNothingToClaim,
@@ -100,7 +99,7 @@ const BattleCta: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
       return t('Now Live!')
     }
     // Competition finished. Rewards being calculated
-    if (currentPhase?.state === FINISHED) {
+    if (currentPhase.state === FINISHED) {
       return `${t('Calculating')}...`
     }
     // All competition finished states
@@ -117,7 +116,7 @@ const BattleCta: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
       return t('Connect Wallet')
     }
     // User not registered and competition in register
-    if (currentPhase?.state === REGISTRATION && !hasRegistered) {
+    if (currentPhase.state === REGISTRATION && !hasRegistered) {
       return t('I want to Battle!')
     }
     // Competition live
@@ -127,7 +126,7 @@ const BattleCta: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
     // User registered and competition finished
     if (hasCompetitionEnded) {
       // Claim period has ended
-      if (currentPhase?.state === OVER) {
+      if (currentPhase.state === OVER) {
         return t('Claim period over')
       }
       // User has prizes to claim
@@ -194,7 +193,7 @@ const BattleCta: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
             <LaurelRightIcon className="text-decorator" />
           </Flex>
           {/* Hide button if in the pre-claim, FINISHED phase */}
-          {currentPhase?.state === FINISHED && (
+          {currentPhase.state === FINISHED && (
             <Box width="280px" p="20px 0px 0px">
               {/* {inputSecondary can't fit this case} */}
               {/* <Text color="#D7CAEC">
@@ -220,7 +219,7 @@ const BattleCta: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
               </Text>
             </Box>
           )}
-          {currentPhase?.state !== FINISHED && (
+          {currentPhase.state !== FINISHED && (
             <Flex alignItems="flex-end">
               {account ? (
                 <StyledButton disabled={isButtonDisabled} onClick={handleCtaClick}>

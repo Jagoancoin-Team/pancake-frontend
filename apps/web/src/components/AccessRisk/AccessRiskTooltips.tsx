@@ -1,14 +1,12 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
 import { Flex, Link, Text } from '@pancakeswap/uikit'
 import { TOKEN_RISK } from 'components/AccessRisk'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 
 interface AccessRiskTooltipsProps {
-  riskLevel?: number
-  hasResult?: boolean
+  riskLevel: number
+  hasResult: boolean
   tokenAddress?: string
-  riskLevelDescription?: string
+  riskLevelDescription: string
 }
 
 const AccessRiskTooltips: React.FC<AccessRiskTooltipsProps> = ({
@@ -18,7 +16,6 @@ const AccessRiskTooltips: React.FC<AccessRiskTooltipsProps> = ({
   tokenAddress,
 }) => {
   const { t } = useTranslation()
-  const { chainId } = useActiveChainId()
 
   if (riskLevel === TOKEN_RISK.UNKNOWN || !hasResult) {
     return (
@@ -42,7 +39,7 @@ const AccessRiskTooltips: React.FC<AccessRiskTooltipsProps> = ({
     )
   }
 
-  if (hasResult && riskLevel && riskLevel >= TOKEN_RISK.VERY_LOW && tokenAddress) {
+  if (hasResult && riskLevel >= TOKEN_RISK.VERY_LOW && tokenAddress) {
     return (
       <>
         <Text my="8px">{riskLevelDescription}</Text>
@@ -50,14 +47,12 @@ const AccessRiskTooltips: React.FC<AccessRiskTooltipsProps> = ({
         <Link style={{ display: 'inline' }} ml="4px" external href="https://www.hashdit.io">
           HashDit
         </Link>
-        {chainId === ChainId.BSC && (
-          <Flex mt="4px">
-            <Text>{t('Get more details from')}</Text>
-            <Link ml="4px" external href={`https://dappbay.bnbchain.org/risk-scanner/${tokenAddress}`}>
-              {t('RedAlarm')}
-            </Link>
-          </Flex>
-        )}
+        <Flex mt="4px">
+          <Text>{t('Get more details from')}</Text>
+          <Link ml="4px" external href={`https://dappbay.bnbchain.org/risk-scanner/${tokenAddress}`}>
+            {t('RedAlarm')}
+          </Link>
+        </Flex>
       </>
     )
   }

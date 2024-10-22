@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
-import Dropdown from "../../components/Dropdown/Dropdown";
+import React from "react";
 import { renderWithProvider } from "../../testHelpers";
+import Dropdown from "../../components/Dropdown/Dropdown";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(<Dropdown target={<div>target</div>} />);

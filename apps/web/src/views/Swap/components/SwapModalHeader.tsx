@@ -1,15 +1,14 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, Percent, TradeType } from '@pancakeswap/sdk'
-import { ArrowDownIcon, AutoColumn, Button, ErrorIcon, Text } from '@pancakeswap/uikit'
-import { formatAmount } from '@pancakeswap/utils/formatFractions'
-import truncateHash from '@pancakeswap/utils/truncateHash'
-import { RowBetween, RowFixed } from 'components/Layout/Row'
-import { CurrencyLogo } from 'components/Logo'
 import { ReactElement, useMemo } from 'react'
+import { TradeType, CurrencyAmount, Currency, Percent } from '@pancakeswap/sdk'
+import { Button, Text, ErrorIcon, ArrowDownIcon, AutoColumn } from '@pancakeswap/uikit'
 import { Field } from 'state/swap/actions'
-import { basisPointsToPercent, warningSeverity } from 'utils/exchange'
-import { SlippageAdjustedAmounts } from '../V3Swap/utils/exchange'
-import { SwapShowAcceptChanges, TruncatedText } from './styleds'
+import { useTranslation } from '@pancakeswap/localization'
+import { formatAmount } from '@pancakeswap/utils/formatFractions'
+import { warningSeverity, basisPointsToPercent } from 'utils/exchange'
+import { CurrencyLogo } from 'components/Logo'
+import { RowBetween, RowFixed } from 'components/Layout/Row'
+import truncateHash from '@pancakeswap/utils/truncateHash'
+import { TruncatedText, SwapShowAcceptChanges } from './styleds'
 
 export default function SwapModalHeader({
   inputAmount,
@@ -26,15 +25,15 @@ export default function SwapModalHeader({
 }: {
   inputAmount: CurrencyAmount<Currency>
   outputAmount: CurrencyAmount<Currency>
-  currencyBalances?: {
+  currencyBalances: {
     INPUT?: CurrencyAmount<Currency>
     OUTPUT?: CurrencyAmount<Currency>
   }
   tradeType: TradeType
   priceImpactWithoutFee?: Percent
-  slippageAdjustedAmounts: SlippageAdjustedAmounts | undefined | null
-  isEnoughInputBalance?: boolean
-  recipient?: string
+  slippageAdjustedAmounts: { [field in Field]?: CurrencyAmount<Currency> }
+  isEnoughInputBalance: boolean
+  recipient: string | null
   showAcceptChanges: boolean
   onAcceptChanges: () => void
   allowedSlippage: number | ReactElement
@@ -52,18 +51,18 @@ export default function SwapModalHeader({
 
   const amount =
     tradeType === TradeType.EXACT_INPUT
-      ? formatAmount(slippageAdjustedAmounts?.[Field.OUTPUT], 6)
-      : formatAmount(slippageAdjustedAmounts?.[Field.INPUT], 6)
+      ? formatAmount(slippageAdjustedAmounts[Field.OUTPUT], 6)
+      : formatAmount(slippageAdjustedAmounts[Field.INPUT], 6)
   const symbol = tradeType === TradeType.EXACT_INPUT ? outputAmount.currency.symbol : inputAmount.currency.symbol
 
   const tradeInfoText = useMemo(() => {
     return tradeType === TradeType.EXACT_INPUT
       ? t('Output is estimated. You will receive at least %amount% %symbol% or the transaction will revert.', {
-          amount: `${amount}`,
+          amount,
           symbol,
         })
       : t('Input is estimated. You will sell at most %amount% %symbol% or the transaction will revert.', {
-          amount: `${amount}`,
+          amount,
           symbol,
         })
   }, [t, tradeType, amount, symbol])
@@ -88,7 +87,7 @@ export default function SwapModalHeader({
           <Text fontSize="14px" ml="10px" mr="8px">
             {inputAmount.currency.symbol}
           </Text>
-          <CurrencyLogo currency={currencyBalances?.INPUT?.currency ?? inputAmount.currency} size="24px" />
+          <CurrencyLogo currency={currencyBalances.INPUT?.currency ?? inputAmount.currency} size="24px" />
         </RowFixed>
       </RowBetween>
       <RowFixed margin="auto">
@@ -114,7 +113,7 @@ export default function SwapModalHeader({
           <Text fontSize="14px" ml="10px" mr="8px">
             {outputAmount.currency.symbol}
           </Text>
-          <CurrencyLogo currency={currencyBalances?.OUTPUT?.currency ?? outputAmount.currency} size="24px" />
+          <CurrencyLogo currency={currencyBalances.OUTPUT?.currency ?? outputAmount.currency} size="24px" />
         </RowFixed>
       </RowBetween>
       {showAcceptChanges ? (
@@ -148,7 +147,7 @@ export default function SwapModalHeader({
           {tradeInfoText}
         </Text>
       </AutoColumn>
-      {recipient ? (
+      {recipient !== null ? (
         <AutoColumn justify="flex-start" gap="sm" style={{ padding: '12px 0 0 0px' }}>
           <Text fontSize={12} color="textSubtle">
             {recipientSentToText}

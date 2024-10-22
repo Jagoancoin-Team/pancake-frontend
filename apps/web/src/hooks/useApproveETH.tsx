@@ -1,13 +1,13 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { WETH9 } from '@pancakeswap/sdk'
-import { MaxUint256 } from '@pancakeswap/swap-sdk-core'
-import { useToast } from '@pancakeswap/uikit'
-import { ToastDescriptionWithTx } from 'components/Toast'
 import { useCallWithGasPrice } from 'hooks/useCallWithGasPrice'
-import useCatchTxError from 'hooks/useCatchTxError'
-import { useTokenContract } from 'hooks/useContract'
-import { useCallback } from 'react'
 import { Address } from 'viem'
+import { useTokenContract } from 'hooks/useContract'
+import { WETH9 } from '@pancakeswap/sdk'
+import { useCallback } from 'react'
+import { useToast } from '@pancakeswap/uikit'
+import useCatchTxError from 'hooks/useCatchTxError'
+import { useTranslation } from '@pancakeswap/localization'
+import { ToastDescriptionWithTx } from 'components/Toast'
+import { MaxUint256 } from '@pancakeswap/swap-sdk-core'
 import { useActiveChainId } from './useActiveChainId'
 
 export const useApproveETH = (spender: string) => {
@@ -17,7 +17,7 @@ export const useApproveETH = (spender: string) => {
   const { callWithGasPrice } = useCallWithGasPrice()
   const { chainId } = useActiveChainId()
 
-  const ethContract = useTokenContract(chainId ? WETH9[chainId].address : undefined)
+  const ethContract = useTokenContract(WETH9[chainId].address)
 
   const onApprove = useCallback(async () => {
     const receipt = await fetchWithCatchTxError(() => {

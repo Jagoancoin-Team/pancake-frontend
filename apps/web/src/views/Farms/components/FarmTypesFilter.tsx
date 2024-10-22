@@ -1,18 +1,18 @@
-import { useTranslation } from '@pancakeswap/localization'
+import { useEffect, useState, useRef } from 'react'
 import {
   Box,
   Button,
-  CurrencyIcon,
-  FarmIcon,
-  Flex,
-  InlineMenu,
   RocketIcon,
+  CurrencyIcon,
+  Flex,
   Text,
+  InlineMenu,
   Toggle,
+  FarmIcon,
   TradeIcon,
 } from '@pancakeswap/uikit'
-import { useEffect, useRef, useState } from 'react'
 import { styled } from 'styled-components'
+import { useTranslation } from '@pancakeswap/localization'
 
 interface FarmTypesFilterProps {
   boostedOnly: boolean
@@ -62,8 +62,8 @@ export const FarmTypesFilter: React.FC<FarmTypesFilterProps> = ({
   const { t } = useTranslation()
 
   const [isOpen, setIsOpen] = useState(false)
-  const wrapperRef = useRef<HTMLDivElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef(null)
+  const menuRef = useRef(null)
   const handleMenuClick = () => setIsOpen(!isOpen)
 
   useEffect(() => {
@@ -71,8 +71,8 @@ export const FarmTypesFilter: React.FC<FarmTypesFilterProps> = ({
       if (
         wrapperRef.current &&
         menuRef.current &&
-        !menuRef.current.contains(target as HTMLElement) &&
-        !wrapperRef.current.contains(target as HTMLElement)
+        !menuRef.current.contains(target) &&
+        !wrapperRef.current.contains(target)
       ) {
         setIsOpen(false)
       }
@@ -119,7 +119,7 @@ export const FarmTypesFilter: React.FC<FarmTypesFilterProps> = ({
                         const totalFarmsEnableCount = farmTypesEnableCount + (!v3FarmOnly ? 1 : -1)
                         handleSetFarmTypesEnableCount(totalFarmsEnableCount)
 
-                        handleSetV3FarmOnly?.(!v3FarmOnly)
+                        handleSetV3FarmOnly(!v3FarmOnly)
                       }}
                       scale="sm"
                     />
@@ -138,12 +138,13 @@ export const FarmTypesFilter: React.FC<FarmTypesFilterProps> = ({
                         const totalFarmsEnableCount = farmTypesEnableCount + (!v2FarmOnly ? 1 : -1)
                         handleSetFarmTypesEnableCount(totalFarmsEnableCount)
 
-                        handleSetV2FarmOnly?.(!v2FarmOnly)
+                        handleSetV2FarmOnly(!v2FarmOnly)
                       }}
                       scale="sm"
                     />
                   </ToggleWrapper>
                 </StyledItemRow>
+                {/*
                 <StyledItemRow alignItems="center" px="16px" py="8px" ml="8px" mt="8px">
                   <RocketIcon />
                   <Text fontSize={16} ml="10px" style={{ flex: 1 }} bold>
@@ -181,6 +182,7 @@ export const FarmTypesFilter: React.FC<FarmTypesFilterProps> = ({
                     />
                   </ToggleWrapper>
                 </StyledItemRow>
+                */}
               </Box>
             </Box>
           </InlineMenu>

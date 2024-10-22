@@ -13,41 +13,40 @@ import {
 } from '@pancakeswap/uikit'
 import SubgraphHealthIndicator from 'components/SubgraphHealthIndicator'
 import { useTranslation } from '@pancakeswap/localization'
-import { ChainId } from '@pancakeswap/chains'
-import { LeaderboardDataItem, TeamRanksProps } from '../../../types'
+import { TeamRanksProps } from '../../../types'
 import TopTradersGrid from './TopTradersGrid'
 
-const TopTradersCard: React.FC<React.PropsWithChildren<TeamRanksProps & { subgraph?: string }>> = ({
+const TopTradersCard: React.FC<React.PropsWithChildren<TeamRanksProps & { subgraphName?: string }>> = ({
   team1LeaderboardInformation,
   team2LeaderboardInformation,
   team3LeaderboardInformation,
   globalLeaderboardInformation,
   isGlobalLeaderboardDataComplete,
-  subgraph,
+  subgraphName,
 }) => {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(0)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [topTradersGridData, setTopTradersGridData] = useState<LeaderboardDataItem[] | null | undefined>(null)
+  const [topTradersGridData, setTopTradersGridData] = useState(null)
   const handleItemClick = (index: number) => setActiveTab(index)
   const tabs = [t('Total'), 'Storm', 'Flippers', 'Cakers']
 
   useEffect(() => {
     const getData = () => {
       if (activeTab === 0) {
-        setTopTradersGridData(globalLeaderboardInformation?.data)
+        setTopTradersGridData(globalLeaderboardInformation.data)
       }
 
       if (activeTab === 1) {
-        setTopTradersGridData(team1LeaderboardInformation?.leaderboardData?.data)
+        setTopTradersGridData(team1LeaderboardInformation.leaderboardData.data)
       }
 
       if (activeTab === 2) {
-        setTopTradersGridData(team2LeaderboardInformation?.leaderboardData?.data)
+        setTopTradersGridData(team2LeaderboardInformation.leaderboardData.data)
       }
 
       if (activeTab === 3) {
-        setTopTradersGridData(team3LeaderboardInformation?.leaderboardData?.data)
+        setTopTradersGridData(team3LeaderboardInformation.leaderboardData.data)
       }
     }
 
@@ -76,10 +75,9 @@ const TopTradersCard: React.FC<React.PropsWithChildren<TeamRanksProps & { subgra
                 {t('Since start of the competition')}
               </Text>
             </Flex>
-            {subgraph && (
+            {subgraphName && (
               <SubgraphHealthIndicator
-                chainId={ChainId.BSC}
-                subgraph={subgraph}
+                subgraphName={subgraphName}
                 inline
                 obeyGlobalSetting={false}
                 customDescriptions={{
@@ -101,7 +99,7 @@ const TopTradersCard: React.FC<React.PropsWithChildren<TeamRanksProps & { subgra
               return <Tab key={tabText}>{tabText}</Tab>
             })}
           </TabMenu>
-          <TopTradersGrid data={topTradersGridData || undefined} isExpanded={isExpanded} />
+          <TopTradersGrid data={topTradersGridData} isExpanded={isExpanded} />
         </Box>
         <CardFooter p="0px">
           <Flex alignItems="center" justifyContent="center">

@@ -1,6 +1,13 @@
 import { encodeFunctionData, Hex, Address } from 'viem'
-import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WNATIVE } from '@pancakeswap/sdk'
-import { ChainId } from '@pancakeswap/chains'
+import {
+  Currency,
+  CurrencyAmount,
+  Percent,
+  TradeType,
+  validateAndParseAddress,
+  WNATIVE,
+  ChainId, Pair,
+} from '@pancakeswap/sdk'
 import { FeeOptions, MethodParameters, Payments, PermitOptions, Position, SelfPermit, toHex } from '@pancakeswap/v3-sdk'
 import invariant from 'tiny-invariant'
 
@@ -10,7 +17,7 @@ import { ApproveAndCall, ApprovalTypes, CondensedAddLiquidityOptions } from './a
 import { SmartRouterTrade, V3Pool, BaseRoute, RouteType, StablePool } from '../types'
 import { MulticallExtended, Validation } from './multicallExtended'
 import { PaymentsExtended } from './paymentsExtended'
-import { encodeMixedRouteToPath } from './encodeMixedRouteToPath'
+import { encodeV3RouteToForeignPath } from './encodeMixedRouteToPath'
 import { partitionMixedRouteByProtocol } from './partitionMixedRouteByProtocol'
 import { maximumAmountIn, minimumAmountOut } from './maximumAmount'
 import { isStablePool, isV2Pool, isV3Pool } from './pool'
@@ -99,11 +106,19 @@ export abstract class SwapRouter {
       : validateAndParseAddress(options.recipient)
 
     if (trade.tradeType === TradeType.EXACT_INPUT) {
-      const exactInputParams = [amountIn, performAggregatedSlippageCheck ? 0n : amountOut, path, recipient] as const
+      const pools = route.pools.map((pool) => pool.address? pool.address: Pair.getAddress(pool.reserve0.currency.wrapped, pool.reserve1.currency.wrapped))
+      const exactInputParams = [
+        amountIn, // amountIn
+        performAggregatedSlippageCheck ? 0n : amountOut, // amountOutMin
+        pools, // pools
+        route.inputAmount.currency.wrapped.address, // tokenIn
+        route.outputAmount.currency.wrapped.address, // tokenOut
+        recipient, // to
+      ] as const
 
       return encodeFunctionData({
         abi: SwapRouter.ABI,
-        functionName: 'swapExactTokensForTokens',
+        functionName: 'swapExactTokensForTokensExternal',
         args: exactInputParams,
       })
     }
@@ -203,9 +218,9 @@ export abstract class SwapRouter {
       if (singleHop) {
         if (trade.tradeType === TradeType.EXACT_INPUT) {
           const exactInputSingleParams = {
+            pool: (pools[0] as V3Pool).address,
             tokenIn: path[0].wrapped.address,
             tokenOut: path[1].wrapped.address,
-            fee: (pools[0] as V3Pool).fee,
             recipient,
             amountIn,
             amountOutMinimum: performAggregatedSlippageCheck ? 0n : amountOut,
@@ -221,9 +236,9 @@ export abstract class SwapRouter {
           )
         } else {
           const exactOutputSingleParams = {
+            pool: (pools[0] as V3Pool).address,
             tokenIn: path[0].wrapped.address,
             tokenOut: path[1].wrapped.address,
-            fee: (pools[0] as V3Pool).fee,
             recipient,
             amountOut,
             amountInMaximum: amountIn,
@@ -239,7 +254,7 @@ export abstract class SwapRouter {
           )
         }
       } else {
-        const pathStr = encodeMixedRouteToPath(
+        const pathStr = encodeV3RouteToForeignPath(
           { ...route, input: inputAmount.currency, output: outputAmount.currency },
           trade.tradeType === TradeType.EXACT_OUTPUT,
         )
@@ -403,7 +418,7 @@ export abstract class SwapRouter {
           const inAmount = i === 0 ? amountIn : 0n
           const outAmount = !lastSectionInRoute ? 0n : amountOut
           if (mixedRouteIsAllV3(newRoute)) {
-            const pathStr = encodeMixedRouteToPath(newRoute, !isExactIn)
+            const pathStr = encodeV3RouteToForeignPath(newRoute, !isExactIn)
             if (isExactIn) {
               const exactInputParams = {
                 path: pathStr,
@@ -435,23 +450,27 @@ export abstract class SwapRouter {
               )
             }
           } else if (mixedRouteIsAllV2(newRoute)) {
-            const path = newRoute.path.map((token) => token.wrapped.address)
             if (isExactIn) {
+              const pools = newRoute.pools.map((pool) => pool.address? pool.address: Pair.getAddress(pool.reserve0.currency.wrapped, pool.reserve1.currency.wrapped))
+
               const exactInputParams = [
                 inAmount, // amountIn
                 outAmount, // amountOutMin
-                path, // path
+                pools, // pools
+                newRoute.input.wrapped.address, // tokenIn
+                newRoute.output.wrapped.address, // tokenOut
                 recipientAddress, // to
               ] as const
 
               calldatas.push(
                 encodeFunctionData({
                   abi: SwapRouter.ABI,
-                  functionName: 'swapExactTokensForTokens',
+                  functionName: 'swapExactTokensForTokensExternal',
                   args: exactInputParams,
                 }),
               )
             } else {
+              const path = newRoute.path.map((token) => token.wrapped.address)
               const exactOutputParams = [outAmount, inAmount, path, recipientAddress] as const
 
               calldatas.push(
@@ -546,13 +565,13 @@ export abstract class SwapRouter {
     //   1. when there are >2 exact input trades. this is only a heuristic,
     //      as it's still more gas-expensive even in this case, but has benefits
     //      in that the reversion probability is lower
-    const performAggregatedSlippageCheck = sampleTrade.tradeType === TradeType.EXACT_INPUT && numberOfTrades > 2
+    const performAggregatedSlippageCheck = sampleTrade.tradeType === TradeType.EXACT_INPUT // && numberOfTrades > 2
     // flag for whether funds should be send first to the router
     //   1. when receiving ETH (which much be unwrapped from WETH)
     //   2. when a fee on the output is being taken
     //   3. when performing swap and add
     //   4. when performing an aggregated slippage check
-    const routerMustCustody = outputIsNative || !!options.fee || !!isSwapAndAdd || performAggregatedSlippageCheck
+    const routerMustCustody = true // outputIsNative || !!options.fee || !!isSwapAndAdd || performAggregatedSlippageCheck
 
     // encode permit if necessary
     if (options.inputTokenPermit) {
@@ -768,7 +787,7 @@ export abstract class SwapRouter {
   }
 
   // if price impact is very high, there's a chance of hitting max/min prices resulting in a partial fill of the swap
-  public static riskOfPartialFill(trades: AnyTradeType): boolean {
+  private static riskOfPartialFill(trades: AnyTradeType): boolean {
     if (Array.isArray(trades)) {
       return trades.some((trade) => {
         return SwapRouter.v3TradeWithHighPriceImpact(trade)

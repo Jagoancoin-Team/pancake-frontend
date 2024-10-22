@@ -6,7 +6,6 @@ export interface DropdownMenuProps extends BoxProps {
   items?: DropdownMenuItems[];
   isDisabled?: boolean;
   activeItem?: string;
-  activeSubItemChildItem?: string;
   /**
    * As BottomNav styles
    */
@@ -36,10 +35,10 @@ export interface LinkStatus {
   color: keyof Colors;
 }
 
-export interface DropdownMenuItemsDetails {
+export interface DropdownMenuItems {
   label?: string | React.ReactNode;
   href?: string;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick?: () => void;
   image?: string;
   type?: DropdownMenuItemType;
   status?: LinkStatus;
@@ -47,8 +46,4 @@ export interface DropdownMenuItemsDetails {
   iconName?: string;
   isMobileOnly?: boolean;
   confirmModalId?: string;
-}
-
-export interface DropdownMenuItems extends DropdownMenuItemsDetails {
-  items?: DropdownMenuItemsDetails[];
 }

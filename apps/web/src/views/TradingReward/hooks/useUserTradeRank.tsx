@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import useSWR from 'swr'
+import { useAccount } from 'wagmi'
 import { TRADING_REWARD_API } from 'config/constants/endpoints'
 import { RewardType } from 'views/TradingReward/hooks/useAllTradingRewardPair'
-import { useAccount } from 'wagmi'
 
 const initialState = {
   topTradersIndex: 0,
@@ -13,10 +13,9 @@ const initialState = {
 
 export const useUserTradeRank = ({ campaignId }: { campaignId: string }) => {
   const { address: account } = useAccount()
-  const { data, isPending } = useQuery({
-    queryKey: ['tradingReward', 'user-trade-rank', campaignId, account],
-
-    queryFn: async () => {
+  const { data, isLoading } = useSWR(
+    Number(campaignId) > 0 && account && ['/user-trade-rank', campaignId, account],
+    async () => {
       try {
         const response = await fetch(
           `${TRADING_REWARD_API}/rank_index/campaignId/${campaignId}/address/${account}/type/${RewardType.TOP_TRADERS}`,
@@ -34,15 +33,16 @@ export const useUserTradeRank = ({ campaignId }: { campaignId: string }) => {
         return initialState
       }
     },
-
-    enabled: Boolean(Number(campaignId) > 0 && account),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    initialData: initialState,
-  })
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
+      fallbackData: initialState,
+    },
+  )
 
   return {
     data,
-    isFetching: isPending,
+    isFetching: isLoading,
   }
 }

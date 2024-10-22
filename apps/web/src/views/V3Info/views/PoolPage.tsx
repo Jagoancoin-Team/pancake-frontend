@@ -1,39 +1,35 @@
 import { useTranslation } from '@pancakeswap/localization'
+import dayjs from 'dayjs'
 import {
   AutoColumn,
   Box,
   Breadcrumbs,
-  Button,
   Card,
-  CopyButton,
   Flex,
   Heading,
-  ScanLink,
+  NextLinkFromReactRouter,
   Spinner,
   Text,
   useMatchBreakpoints,
+  Button,
+  ScanLink,
 } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-import dayjs from 'dayjs'
-
 import Page from 'components/Layout/Page'
 import { TabToggle, TabToggleGroup } from 'components/TabToggle'
 import { CHAIN_QUERY_NAME } from 'config/chains'
 // import { useActiveChainId } from 'hooks/useActiveChainId'
 import useTheme from 'hooks/useTheme'
 import { useEffect, useMemo, useState } from 'react'
-import { ChainLinkSupportChains, multiChainId, multiChainScan } from 'state/info/constant'
-import { useChainIdByQuery, useChainNameByQuery, useMultiChainPath, useStableSwapPath } from 'state/info/hooks'
+import { multiChainId, multiChainScan } from 'state/info/constant'
+import { useChainNameByQuery, useMultiChainPath, useStableSwapPath } from 'state/info/hooks'
 import { styled } from 'styled-components'
 import { getBlockExploreLink } from 'utils'
 import { formatAmount } from 'utils/formatInfoNumbers'
-
-import { getTokenSymbolAlias } from 'utils/getTokenAlias'
 import { CurrencyLogo, DoubleCurrencyLogo } from 'views/Info/components/CurrencyLogo'
 import BarChart from '../components/BarChart/alt'
+import LineChart from '../components/LineChart/alt'
 import { GreyBadge } from '../components/Card'
 import DensityChart from '../components/DensityChart'
-import LineChart from '../components/LineChart/alt'
 import { LocalLoader } from '../components/Loader'
 import Percent from '../components/Percent'
 import { RowBetween, RowFixed } from '../components/Row'
@@ -136,17 +132,9 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
   }, [chartData])
 
   const chainName = useChainNameByQuery()
-  const chainId = useChainIdByQuery()
   const chainPath = useMultiChainPath()
   const infoTypeParam = useStableSwapPath()
   const { t } = useTranslation()
-
-  const [poolSymbol, symbol0, symbol1] = useMemo(() => {
-    const s0 = getTokenSymbolAlias(poolData?.token0.address, chainId, poolData?.token0.symbol)
-    const s1 = getTokenSymbolAlias(poolData?.token1.address, chainId, poolData?.token1.symbol)
-    return [`${s0} / ${s1}`, s0, s1]
-  }, [chainId, poolData?.token0.address, poolData?.token0.symbol, poolData?.token1.address, poolData?.token1.symbol])
-
   return (
     <Page>
       {poolData ? (
@@ -161,7 +149,8 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
               </NextLinkFromReactRouter>
               <Flex>
                 <Text mr="8px">
-                  {poolSymbol}
+                  {`${poolData.token0.symbol} / ${poolData.token1.symbol}
+                `}
                   <GreyBadge ml="4px" style={{ display: 'inline-block' }}>
                     {feeTierPercent(poolData.feeTier)}
                   </GreyBadge>
@@ -171,13 +160,12 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
 
             <Flex justifyContent={[null, null, 'flex-end']} mt={['8px', '8px', 0]}>
               <ScanLink
-                useBscCoinFallback={ChainLinkSupportChains.includes(multiChainId[chainName])}
+                chainId={multiChainId[chainName]}
                 href={getBlockExploreLink(address, 'address', multiChainId[chainName])}
                 mr="8px"
               >
                 {t('View on %site%', { site: multiChainScan[chainName] })}
               </ScanLink>
-              <CopyButton text={address} tooltipMessage={t('Token address copied')} />
               {/* <SaveIcon fill={watchlistPools.includes(address)} onClick={() => addPoolToWatchlist(address)} /> */}
             </Flex>
           </Flex>
@@ -190,7 +178,7 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
                 chainName={chainName}
               />
               <Text ml="38px" bold fontSize={isXs || isSm ? '24px' : '40px'} id="info-pool-pair-title">
-                {`${symbol0} / ${symbol1}`}{' '}
+                {`${poolData.token0.symbol} / ${poolData.token1.symbol}`}{' '}
                 <GreyBadge ml="4px" style={{ display: 'inline-block' }}>
                   {feeTierPercent(poolData.feeTier)}
                 </GreyBadge>
@@ -204,11 +192,11 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
                   <TokenButton>
                     <CurrencyLogo address={poolData.token0.address} size="24px" chainName={chainName} />
                     <Text fontSize="16px" ml="4px" style={{ whiteSpace: 'nowrap' }} width="fit-content">
-                      {`1 ${symbol0} =  ${formatAmount(poolData.token1Price, {
+                      {`1 ${poolData.token0.symbol} =  ${formatAmount(poolData.token1Price, {
                         notation: 'standard',
                         displayThreshold: 0.001,
                         tokenPrecision: hasSmallDifference ? 'enhanced' : 'normal',
-                      })} ${symbol1}`}
+                      })} ${poolData.token1.symbol}`}
                     </Text>
                   </TokenButton>
                 </NextLinkFromReactRouter>
@@ -218,11 +206,11 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
                   <TokenButton ml={[null, null, '10px']}>
                     <CurrencyLogo address={poolData.token1.address} size="24px" chainName={chainName} />
                     <Text fontSize="16px" ml="4px" style={{ whiteSpace: 'nowrap' }} width="fit-content">
-                      {`1 ${symbol1} =  ${formatAmount(poolData.token0Price, {
+                      {`1 ${poolData.token1.symbol} =  ${formatAmount(poolData.token0Price, {
                         notation: 'standard',
                         displayThreshold: 0.001,
                         tokenPrecision: hasSmallDifference ? 'enhanced' : 'normal',
-                      })} ${symbol0}`}
+                      })} ${poolData.token0.symbol}`}
                     </Text>
                   </TokenButton>
                 </NextLinkFromReactRouter>
@@ -257,27 +245,19 @@ const PoolPage: React.FC<{ address: string }> = ({ address }) => {
                       <RowFixed>
                         <CurrencyLogo address={poolData.token0.address} size="20px" chainName={chainName} />
                         <Text fontSize="14px" ml="8px">
-                          {symbol0}
+                          {poolData.token0.symbol}
                         </Text>
                       </RowFixed>
-                      <Text fontSize="14px">
-                        {formatAmount(poolData.tvlToken0, {
-                          displayThreshold: 0.001,
-                        })}
-                      </Text>
+                      <Text fontSize="14px">{formatAmount(poolData.tvlToken0)}</Text>
                     </RowBetween>
                     <RowBetween>
                       <RowFixed>
                         <CurrencyLogo address={poolData.token1.address} size="20px" chainName={chainName} />
                         <Text fontSize="14px" ml="8px">
-                          {symbol1}
+                          {poolData.token1.symbol}
                         </Text>
                       </RowFixed>
-                      <Text fontSize="14px">
-                        {formatAmount(poolData.tvlToken1, {
-                          displayThreshold: 0.001,
-                        })}
-                      </Text>
+                      <Text fontSize="14px">{formatAmount(poolData.tvlToken1)}</Text>
                     </RowBetween>
                   </AutoColumn>
                 </Card>

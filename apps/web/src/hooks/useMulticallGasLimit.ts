@@ -1,11 +1,11 @@
-import { ChainId } from '@pancakeswap/chains'
-import { getDefaultGasLimit, getGasLimitOnChain } from '@pancakeswap/multicall'
+import { ChainId } from '@pancakeswap/sdk'
+import { getGasLimitOnChain, getDefaultGasLimit } from '@pancakeswap/multicall'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { getViemClients } from 'utils/viem'
 
-const CHAINS_TO_USE_DEFAULT = [ChainId.BASE]
+const CHAINS_TO_USE_DEFAULT = []
 
 export function useMulticallGasLimit(chainId?: ChainId) {
   const shouldUseDefault = useMemo(() => Boolean(chainId && CHAINS_TO_USE_DEFAULT.includes(chainId)), [chainId])
@@ -14,12 +14,7 @@ export function useMulticallGasLimit(chainId?: ChainId) {
 
   const { data: gasLimitOnChain } = useQuery({
     queryKey: [chainId],
-    queryFn: async () => {
-      if (!chainId) {
-        throw new Error('chainId is not defined')
-      }
-      return getGasLimitOnChain({ chainId, client })
-    },
+    queryFn: async () => getGasLimitOnChain({ chainId, client }),
     enabled: Boolean(chainId && client && !shouldUseDefault),
     refetchOnMount: false,
     refetchOnReconnect: false,

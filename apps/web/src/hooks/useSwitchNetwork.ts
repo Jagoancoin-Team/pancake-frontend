@@ -1,81 +1,50 @@
-import { useRouter } from 'next/router'
+/* eslint-disable consistent-return */
 import { useTranslation } from '@pancakeswap/localization'
+import { ChainId } from '@pancakeswap/sdk'
 import { useToast } from '@pancakeswap/uikit'
-import { CHAIN_QUERY_NAME } from 'config/chains'
-import { ExtendEthereum } from 'global'
 import { useCallback, useMemo } from 'react'
-import { useAppDispatch } from 'state'
-import { clearUserStates } from 'utils/clearUserStates'
-import { useAccount, useSwitchChain } from 'wagmi'
-import { useAtom } from 'jotai/index'
-import { queryChainIdAtom } from 'hooks/useActiveChainId'
+import replaceBrowserHistory from '@pancakeswap/utils/replaceBrowserHistory'
+import { useAccount, useSwitchNetwork as useSwitchNetworkWallet } from 'wagmi'
+import { CHAIN_QUERY_NAME } from 'config/chains'
+import { useSessionChainId } from './useSessionChainId'
 import { useSwitchNetworkLoading } from './useSwitchNetworkLoading'
 
 export function useSwitchNetworkLocal() {
-  const [, setQueryChainId] = useAtom(queryChainIdAtom)
-  const dispatch = useAppDispatch()
-  const router = useRouter()
-
-  const isBloctoMobileApp = useMemo(() => {
-    return typeof window !== 'undefined' && Boolean((window.ethereum as ExtendEthereum)?.isBlocto)
-  }, [])
-
+  const [, setSessionChainId] = useSessionChainId()
   return useCallback(
     (chainId: number) => {
-      router.replace(
-        {
-          pathname: router.pathname,
-          query: {
-            ...router.query,
-            chain: CHAIN_QUERY_NAME[chainId],
-          },
-        },
-        undefined,
-        {
-          shallow: true,
-        },
-      )
-      setQueryChainId(chainId)
-      // Blocto in-app browser throws change event when no account change which causes user state reset therefore
-      // this event should not be handled to avoid unexpected behaviour.
-      if (!isBloctoMobileApp) {
-        clearUserStates(dispatch, { chainId, newChainId: chainId })
-      }
+      setSessionChainId(chainId)
+      replaceBrowserHistory('chain', CHAIN_QUERY_NAME[chainId])
     },
-    [dispatch, isBloctoMobileApp, setQueryChainId, router],
+    [setSessionChainId],
   )
 }
 
 export function useSwitchNetwork() {
   const [loading, setLoading] = useSwitchNetworkLoading()
   const {
-    status,
-    switchChainAsync: _switchNetworkAsync,
-    switchChain: _switchNetwork,
+    switchNetworkAsync: _switchNetworkAsync,
+    isLoading: _isLoading,
+    switchNetwork: _switchNetwork,
     ...switchNetworkArgs
-  } = useSwitchChain()
-
-  const _isLoading = status === 'pending'
-
+  } = useSwitchNetworkWallet()
   const { t } = useTranslation()
-
   const { toastError } = useToast()
   const { isConnected } = useAccount()
 
   const switchNetworkLocal = useSwitchNetworkLocal()
-
   const isLoading = _isLoading || loading
 
   const switchNetworkAsync = useCallback(
     async (chainId: number) => {
       if (isConnected && typeof _switchNetworkAsync === 'function') {
-        if (isLoading) return undefined
+        if (isLoading) return
         setLoading(true)
-        return _switchNetworkAsync({ chainId })
+        return _switchNetworkAsync(chainId)
           .then((c) => {
-            switchNetworkLocal(chainId)
             // well token pocket
             if (window.ethereum?.isTokenPocket === true) {
+              switchNetworkLocal(chainId)
               window.location.reload()
             }
             return c
@@ -90,13 +59,13 @@ export function useSwitchNetwork() {
         switchNetworkLocal(chainId)
       })
     },
-    [isConnected, _switchNetworkAsync, isLoading, setLoading, switchNetworkLocal, toastError, t],
+    [isConnected, _switchNetworkAsync, isLoading, setLoading, toastError, t, switchNetworkLocal],
   )
 
   const switchNetwork = useCallback(
     (chainId: number) => {
       if (isConnected && typeof _switchNetwork === 'function') {
-        return _switchNetwork({ chainId })
+        return _switchNetwork(chainId)
       }
       return switchNetworkLocal(chainId)
     },
@@ -110,7 +79,7 @@ export function useSwitchNetwork() {
           !(
             typeof window !== 'undefined' &&
             // @ts-ignore // TODO: add type later
-            window.ethereum?.isMathWallet
+            (window.ethereum?.isSafePal || window.ethereum?.isMathWallet)
           )
         : true,
     [_switchNetworkAsync, isConnected],

@@ -3,33 +3,32 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 import {
   BigintIsh,
-  Currency,
   CurrencyAmount,
+  Currency,
   Native,
-  Pair,
   Percent,
   Token,
   TradeType,
+  WNATIVE,
+  Pair,
   Route as V2Route,
   Trade as V2Trade,
-  WNATIVE,
 } from '@pancakeswap/sdk'
 import {
-  FeeAmount,
-  Position,
-  TICK_SPACINGS,
-  TickMath,
-  Pool as V3PoolSDK,
-  Route as V3Route,
-  Trade as V3Trade,
   encodeSqrtRatioX96,
+  FeeAmount,
   nearestUsableTick,
+  Position,
+  Route as V3Route,
+  TickMath,
+  TICK_SPACINGS,
+  Trade as V3Trade,
+  Pool as V3PoolSDK,
 } from '@pancakeswap/v3-sdk'
-import { describe, expect, it } from 'vitest'
-import { Pool, PoolType, RouteType, SmartRouterTrade, V2Pool, V3Pool } from '../types'
+import { SwapRouter } from './swapRouter'
+import { SmartRouterTrade, V3Pool, PoolType, V2Pool, RouteType, Pool } from '../types'
 import { ApprovalTypes } from './approveAndCall'
 import { isV2Pool, isV3Pool } from './pool'
-import { SwapRouter } from './swapRouter'
 
 describe('SwapRouter', () => {
   const ETHER = Native.onChain(1)
@@ -426,7 +425,7 @@ describe('SwapRouter', () => {
           }
 
           it('generates the same calldata', async () => {
-            const trades = [mixedRouteTrade1, mixedRouteTrade2]
+            const trades = [v2Trade, v3Trade]
             const { calldata, value } = SwapRouter.swapCallParameters(trades, {
               slippageTolerance,
               recipient,

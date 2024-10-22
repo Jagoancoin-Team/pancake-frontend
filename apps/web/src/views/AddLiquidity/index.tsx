@@ -1,45 +1,44 @@
-import { useTranslation } from '@pancakeswap/localization'
+import { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Currency, CurrencyAmount, Pair, Percent, Price, Token } from '@pancakeswap/sdk'
 import { useModal } from '@pancakeswap/uikit'
+import { useTranslation } from '@pancakeswap/localization'
 import { useUserSlippage } from '@pancakeswap/utils/user'
-import { ReactElement, useCallback, useMemo, useState } from 'react'
 
 import { V2_ROUTER_ADDRESS } from 'config/constants/exchange'
 import { useIsTransactionUnsupported, useIsTransactionWarning } from 'hooks/Trades'
 import { useLPApr } from 'state/swap/useLPApr'
-import { logGTMAddLiquidityTxSentEvent, logGTMClickAddLiquidityConfirmEvent } from 'utils/customGTMEventTracking'
-import { formatCurrencyAmount } from 'utils/formatCurrencyAmount'
 import { isUserRejected, logError } from 'utils/sentry'
 import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
-import { Address, Hash } from 'viem'
-import { useWalletClient } from 'wagmi'
+import { formatCurrencyAmount } from 'utils/formatCurrencyAmount'
+import { Hash } from 'viem'
+import { SendTransactionResult } from 'wagmi/actions'
 
 import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
 import { PairState } from 'hooks/usePairs'
-import { CurrencyField as Field } from 'utils/types'
+import { Field } from 'state/mint/actions'
 import { useDerivedMintInfo, useMintActionHandlers } from 'state/mint/hooks'
 
-import { SettingsMode } from 'components/Menu/GlobalSettings/types'
-import { useAddLiquidityV2FormState } from 'state/mint/reducer'
 import { useTransactionAdder } from 'state/transactions/hooks'
 import { useGasPrice, usePairAdder } from 'state/user/hooks'
 import { calculateGasMargin } from 'utils'
 import { calculateSlippageAmount, useRouterContract } from 'utils/exchange'
 import { maxAmountSpend } from 'utils/maxAmountSpend'
-import SettingsModal from '../../components/Menu/GlobalSettings/SettingsModal'
-import { useTransactionDeadline } from '../../hooks/useTransactionDeadline'
+import { SettingsMode } from 'components/Menu/GlobalSettings/types'
+import { useAddLiquidityV2FormState } from 'state/mint/reducer'
 import ConfirmAddLiquidityModal from './components/ConfirmAddLiquidityModal'
 import { useCurrencySelectRoute } from './useCurrencySelectRoute'
+import SettingsModal from '../../components/Menu/GlobalSettings/SettingsModal'
+import useTransactionDeadline from '../../hooks/useTransactionDeadline'
 
 export interface LP2ChildrenProps {
-  error?: string
+  error: string
   currencies: {
     [Field.CURRENCY_A]?: Currency
     [Field.CURRENCY_B]?: Currency
   }
   isOneWeiAttack?: boolean
-  noLiquidity?: boolean
+  noLiquidity: boolean
   handleCurrencyASelect: (currencyA_: Currency) => void
   formattedAmounts: {
     [Field.CURRENCY_A]?: string
@@ -50,29 +49,25 @@ export interface LP2ChildrenProps {
   handleCurrencyBSelect: (currencyB_: Currency) => void
   onFieldBInput: (typedValue: string) => void
   pairState: PairState
-  poolTokenPercentage?: Percent
-  price?: Price<Currency, Currency>
+  poolTokenPercentage: Percent
+  price: Price<Currency, Currency>
   onPresentSettingsModal: () => void
   allowedSlippage: number
-  pair?: Pair | null
-  poolData?: {
-    lpApr: number
-  } | null
+  pair: Pair
+  poolData: {
+    lpApr7d: number
+  }
   shouldShowApprovalGroup: boolean
   showFieldAApproval: boolean
-  approveACallback: () => Promise<{ hash: Address } | undefined>
-  revokeACallback: () => Promise<{ hash: Address } | undefined>
-  currentAllowanceA: CurrencyAmount<Currency> | undefined
+  approveACallback: () => Promise<SendTransactionResult>
   approvalA: ApprovalState
   showFieldBApproval: boolean
-  approveBCallback: () => Promise<{ hash: Address } | undefined>
-  revokeBCallback: () => Promise<{ hash: Address } | undefined>
-  currentAllowanceB: CurrencyAmount<Currency> | undefined
+  approveBCallback: () => Promise<SendTransactionResult>
   approvalB: ApprovalState
   onAdd: () => Promise<void>
   onPresentAddLiquidityModal: () => void
   buttonDisabled: boolean
-  errorText?: string
+  errorText: string
   addIsWarning: boolean
   addIsUnsupported: boolean
   pendingText: string
@@ -83,11 +78,10 @@ export default function AddLiquidity({
   currencyB,
   children,
 }: {
-  currencyA?: Currency | null
-  currencyB?: Currency | null
+  currencyA: Currency
+  currencyB: Currency
   children: (props: LP2ChildrenProps) => ReactElement
 }) {
-  const { data: walletClient } = useWalletClient()
   const { account, chainId } = useAccountActiveChain()
 
   const addPair = usePairAdder()
@@ -116,7 +110,7 @@ export default function AddLiquidity({
     isOneWeiAttack,
   } = useDerivedMintInfo(currencyA ?? undefined, currencyB ?? undefined)
 
-  const poolData = useLPApr('v2', pair)
+  const poolData = useLPApr(pair)
 
   const { onFieldAInput, onFieldBInput } = useMintActionHandlers(noLiquidity)
 
@@ -132,7 +126,7 @@ export default function AddLiquidity({
   })
 
   // txn values
-  const [deadline] = useTransactionDeadline() // custom from users settings
+  const deadline = useTransactionDeadline() // custom from users settings
   const [allowedSlippage] = useUserSlippage() // custom from users
 
   // get the max amounts user can add
@@ -160,26 +154,21 @@ export default function AddLiquidity({
   )
 
   // check whether the user has approved the router on the tokens
-  const {
-    approvalState: approvalA,
-    approveCallback: approveACallback,
-    revokeCallback: revokeACallback,
-    currentAllowance: currentAllowanceA,
-  } = useApproveCallback(parsedAmounts[Field.CURRENCY_A], chainId ? V2_ROUTER_ADDRESS[chainId] : undefined)
-  const {
-    approvalState: approvalB,
-    approveCallback: approveBCallback,
-    revokeCallback: revokeBCallback,
-    currentAllowance: currentAllowanceB,
-  } = useApproveCallback(parsedAmounts[Field.CURRENCY_B], chainId && V2_ROUTER_ADDRESS[chainId])
+  const { approvalState: approvalA, approveCallback: approveACallback } = useApproveCallback(
+    parsedAmounts[Field.CURRENCY_A],
+    V2_ROUTER_ADDRESS[chainId],
+  )
+  const { approvalState: approvalB, approveCallback: approveBCallback } = useApproveCallback(
+    parsedAmounts[Field.CURRENCY_B],
+    V2_ROUTER_ADDRESS[chainId],
+  )
 
   const addTransaction = useTransactionAdder()
 
   const routerContract = useRouterContract()
 
   async function onAdd() {
-    logGTMClickAddLiquidityConfirmEvent()
-    if (!chainId || !account || !routerContract || !walletClient) return
+    if (!chainId || !account || !routerContract) return
 
     const { [Field.CURRENCY_A]: parsedAmountA, [Field.CURRENCY_B]: parsedAmountB } = mintParsedAmounts
     if (!parsedAmountA || !parsedAmountB || !currencyA || !currencyB || !deadline) {
@@ -234,14 +223,14 @@ export default function AddLiquidity({
         ? { value, account: routerContract.account, chain: routerContract.chain }
         : { account: routerContract.account, chain: routerContract.chain },
     )
-      .then((estimatedGasLimit: any) =>
+      .then((estimatedGasLimit) =>
         method(args, {
           ...(value ? { value } : {}),
-          gas: calculateGasMargin(estimatedGasLimit),
+          gasLimit: calculateGasMargin(estimatedGasLimit),
           gasPrice,
         }).then((response: Hash) => {
           setLiquidityState({ attemptingTxn: false, liquidityErrorMessage: undefined, txHash: response })
-          logGTMAddLiquidityTxSentEvent()
+
           const symbolA = currencies[Field.CURRENCY_A]?.symbol
           const amountA = parsedAmounts[Field.CURRENCY_A]?.toSignificant(3)
           const symbolB = currencies[Field.CURRENCY_B]?.symbol
@@ -263,7 +252,7 @@ export default function AddLiquidity({
           }
         }),
       )
-      ?.catch((err: any) => {
+      ?.catch((err) => {
         if (err && !isUserRejected(err)) {
           logError(err)
           console.error(`Add Liquidity failed`, err, args, value)
@@ -362,13 +351,9 @@ export default function AddLiquidity({
     showFieldAApproval,
     approveACallback,
     approvalA,
-    revokeACallback,
-    currentAllowanceA,
     showFieldBApproval,
     approveBCallback,
     approvalB,
-    revokeBCallback,
-    currentAllowanceB,
     onAdd,
     onPresentAddLiquidityModal,
     buttonDisabled,

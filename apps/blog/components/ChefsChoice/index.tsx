@@ -1,15 +1,14 @@
-import { ArticleDataType } from '@pancakeswap/blog'
-import { useTranslation } from '@pancakeswap/localization'
+import { Swiper, SwiperSlide } from 'swiper/react'
 import { Flex } from '@pancakeswap/uikit'
-import { useQuery } from '@tanstack/react-query'
-import ArticleView from 'components/Article/ArticleView'
-import BlogCard from 'components/BlogCard'
-import dynamic from 'next/dynamic'
 import NextLink from 'next/link'
 import { styled } from 'styled-components'
-import 'swiper/css/bundle'
+import BlogCard from 'components/BlogCard'
+import { useTranslation } from '@pancakeswap/localization'
 import { Autoplay } from 'swiper/modules'
-import { Swiper, SwiperSlide } from 'swiper/react'
+import ArticleView from 'components/Article/ArticleView'
+import useSWR from 'swr'
+import { ArticleDataType } from 'utils/transformArticle'
+import 'swiper/css/bundle'
 
 const StyledChefsChoiceContainer = styled(Flex)`
   margin: 61px auto 48px auto;
@@ -21,10 +20,7 @@ const StyledChefsChoiceContainer = styled(Flex)`
 
 const ChefsChoice = () => {
   const { t } = useTranslation()
-  const { data: articlesData } = useQuery<ArticleDataType[]>({
-    queryKey: ['/chefChoiceArticle'],
-    enabled: false,
-  })
+  const { data: articlesData } = useSWR<ArticleDataType[]>('/chefChoiceArticle')
 
   return (
     <StyledChefsChoiceContainer justifyContent="center">
@@ -74,6 +70,4 @@ const ChefsChoice = () => {
   )
 }
 
-export default dynamic(() => Promise.resolve(ChefsChoice), {
-  ssr: false,
-})
+export default ChefsChoice

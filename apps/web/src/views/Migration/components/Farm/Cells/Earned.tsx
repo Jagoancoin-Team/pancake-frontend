@@ -1,8 +1,6 @@
-import { Flex, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
 import React from 'react'
 import { styled } from 'styled-components'
-
+import { Flex, Text, useMatchBreakpoints, Pool } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
 
 const StyledCell = styled(Pool.BaseCell)`
@@ -22,7 +20,7 @@ export interface EarnedProps {
 const Earned: React.FC<React.PropsWithChildren<EarnedProps>> = ({ earnings }) => {
   const { t } = useTranslation()
   const { isMobile } = useMatchBreakpoints()
-  const labelText = t('%asset% Earned', { asset: 'CAKE' })
+  const labelText = t('%asset% Earned', { asset: 'ICE' })
 
   return (
     <StyledCell role="cell">
@@ -32,7 +30,7 @@ const Earned: React.FC<React.PropsWithChildren<EarnedProps>> = ({ earnings }) =>
         </Text>
         <Flex mt="4px">
           <Text fontSize={isMobile ? '14px' : '16px'} color={earnings > 0 ? 'text' : 'textDisabled'}>
-            {earnings.toFixed(4)}
+            {earnings}
           </Text>
         </Flex>
       </Pool.CellContent>

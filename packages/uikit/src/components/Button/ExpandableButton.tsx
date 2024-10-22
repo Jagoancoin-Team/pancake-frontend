@@ -1,23 +1,16 @@
 import React from "react";
-import { SpaceProps } from "styled-system";
-
 import { ChevronDownIcon, ChevronUpIcon } from "../Svg";
 import Button from "./Button";
 import IconButton from "./IconButton";
 
-interface Props extends SpaceProps {
+interface Props {
   onClick?: () => void;
   expanded?: boolean;
 }
 
-export const ExpandableButton: React.FC<React.PropsWithChildren<Props>> = ({
-  onClick,
-  expanded,
-  children,
-  ...rest
-}) => {
+export const ExpandableButton: React.FC<React.PropsWithChildren<Props>> = ({ onClick, expanded, children }) => {
   return (
-    <IconButton aria-label="Hide or show expandable content" onClick={onClick} {...rest}>
+    <IconButton aria-label="Hide or show expandable content" onClick={onClick}>
       {children}
       {expanded ? <ChevronUpIcon color="invertedContrast" /> : <ChevronDownIcon color="invertedContrast" />}
     </IconButton>
@@ -27,15 +20,14 @@ ExpandableButton.defaultProps = {
   expanded: false,
 };
 
-export const ExpandableLabel: React.FC<React.PropsWithChildren<Props>> = ({ onClick, expanded, children, ...rest }) => {
+export const ExpandableLabel: React.FC<React.PropsWithChildren<Props>> = ({ onClick, expanded, children }) => {
   return (
     <Button
-      pr={0}
+      paddingRight={0}
       variant="text"
       aria-label="Hide or show expandable content"
       onClick={onClick}
       endIcon={expanded ? <ChevronUpIcon color="primary" /> : <ChevronDownIcon color="primary" />}
-      {...rest}
     >
       {children}
     </Button>

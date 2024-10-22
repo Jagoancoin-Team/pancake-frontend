@@ -1,17 +1,18 @@
-import { ChainId } from '@pancakeswap/chains'
-import { BOOST_WEIGHT, DURATION_FACTOR, MAX_LOCK_DURATION } from '@pancakeswap/pools'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import BN from 'bignumber.js'
-import { BLOCKS_PER_YEAR } from 'config'
-import { masterChefV2ABI } from 'config/abi/masterchefV2'
 import toString from 'lodash/toString'
+import { blocksPerYear } from 'config'
 import { useCallback, useMemo } from 'react'
 import { useCakeVault } from 'state/pools/hooks'
+import useSWRImmutable from 'swr/immutable'
+import { masterChefV2ABI } from 'config/abi/masterchefV2'
 import { getMasterChefV2Address } from 'utils/addressHelpers'
+import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
+import { BOOST_WEIGHT, DURATION_FACTOR, MAX_LOCK_DURATION } from '@pancakeswap/pools'
 import { publicClient } from 'utils/wagmi'
-import { useQuery } from '@tanstack/react-query'
+import { ChainId } from '@pancakeswap/sdk'
+import { useActiveChainId } from "hooks/useActiveChainId";
 
-const masterChefAddress = getMasterChefV2Address(ChainId.BSC)!
+const masterChefAddress = getMasterChefV2Address()
 
 // default
 const DEFAULT_PERFORMANCE_FEE_DECIMALS = 2
@@ -39,46 +40,41 @@ export function useVaultApy({ duration = MAX_LOCK_DURATION }: { duration?: numbe
     pricePerFullShare = BIG_ZERO,
     fees: { performanceFeeAsDecimal } = { performanceFeeAsDecimal: DEFAULT_PERFORMANCE_FEE_DECIMALS },
   } = useCakeVault()
+  const { chainId } = useActiveChainId()
 
   const totalSharesAsEtherBN = useMemo(() => new BN(totalShares.toString()), [totalShares])
   const pricePerFullShareAsEtherBN = useMemo(() => new BN(pricePerFullShare.toString()), [pricePerFullShare])
 
-  const { data: totalCakePoolEmissionPerYear } = useQuery({
-    queryKey: ['masterChef-total-cake-pool-emission'],
-    queryFn: async () => {
-      const bscClient = publicClient({ chainId: ChainId.BSC })
+  const { data: totalCakePoolEmissionPerYear } = useSWRImmutable('masterChef-total-cake-pool-emission', async () => {
+    const bscClient = publicClient({ chainId: ChainId.BSC })
 
-      const [specialFarmsPerBlock, cakePoolInfo, totalSpecialAllocPoint] = await bscClient.multicall({
-        contracts: [
-          {
-            address: masterChefAddress,
-            abi: masterChefV2ABI,
-            functionName: 'cakePerBlock',
-            args: [false],
-          },
-          {
-            address: masterChefAddress,
-            abi: masterChefV2ABI,
-            functionName: 'poolInfo',
-            args: [BigInt(cakePoolPID)],
-          },
-          {
-            address: masterChefAddress,
-            abi: masterChefV2ABI,
-            functionName: 'totalSpecialAllocPoint',
-          },
-        ],
-        allowFailure: false,
-      })
+    const [specialFarmsPerBlock, cakePoolInfo, totalSpecialAllocPoint] = await bscClient.multicall({
+      contracts: [
+        {
+          address: masterChefAddress,
+          abi: masterChefV2ABI,
+          functionName: 'cakePerBlock',
+          args: [false],
+        },
+        {
+          address: masterChefAddress,
+          abi: masterChefV2ABI,
+          functionName: 'poolInfo',
+          args: [BigInt(cakePoolPID)],
+        },
+        {
+          address: masterChefAddress,
+          abi: masterChefV2ABI,
+          functionName: 'totalSpecialAllocPoint',
+        },
+      ],
+      allowFailure: false,
+    })
 
-      const allocPoint = cakePoolInfo[2]
+    const allocPoint = cakePoolInfo[2]
 
-      const cakePoolSharesInSpecialFarms = new BN(allocPoint.toString()).div(new BN(totalSpecialAllocPoint.toString()))
-      return new BN(specialFarmsPerBlock.toString()).times(BLOCKS_PER_YEAR).times(cakePoolSharesInSpecialFarms)
-    },
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
+    const cakePoolSharesInSpecialFarms = new BN(allocPoint.toString()).div(new BN(totalSpecialAllocPoint.toString()))
+    return new BN(specialFarmsPerBlock.toString()).times(blocksPerYear(chainId)).times(cakePoolSharesInSpecialFarms)
   })
 
   const flexibleApy = useMemo(
@@ -93,7 +89,7 @@ export function useVaultApy({ duration = MAX_LOCK_DURATION }: { duration?: numbe
   const boostFactor = useMemo(() => _getBoostFactor(BOOST_WEIGHT, duration, DURATION_FACTOR), [duration])
 
   const lockedApy = useMemo(() => {
-    return flexibleApy ? getLockedApy(flexibleApy, boostFactor).toString() : '0'
+    return flexibleApy && getLockedApy(flexibleApy, boostFactor).toString()
   }, [boostFactor, flexibleApy])
 
   const getBoostFactor = useCallback(

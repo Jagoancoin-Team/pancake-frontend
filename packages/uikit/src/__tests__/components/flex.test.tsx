@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
-import Flex from "../../components/Box/Flex";
+import React from "react";
 import { renderWithProvider } from "../../testHelpers";
+import Flex from "../../components/Box/Flex";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(<Flex>flex</Flex>);

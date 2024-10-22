@@ -1,13 +1,8 @@
 import { NotFound } from '@pancakeswap/uikit'
-import { NextSeo } from 'next-seo'
-import Link from 'next/link'
+import { SUPPORT_ANY } from "config/constants/supportChains";
 
-const NotFoundPage = () => (
-  <NotFound LinkComp={Link}>
-    <NextSeo title="404" />
-  </NotFound>
-)
+const NotFoundPage = () => <NotFound />
 
-NotFoundPage.chains = []
+NotFoundPage.chains = SUPPORT_ANY
 
 export default NotFoundPage

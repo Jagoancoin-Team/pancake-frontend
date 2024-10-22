@@ -1,7 +1,5 @@
 import { Token } from '@pancakeswap/sdk'
-import { TooltipText, useTooltip, Balance } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-
+import { TooltipText, useTooltip, Balance, Pool } from '@pancakeswap/uikit'
 import AutoEarningsBreakdown from '../AutoEarningsBreakdown'
 
 interface RecentCakeProfitBalanceProps {

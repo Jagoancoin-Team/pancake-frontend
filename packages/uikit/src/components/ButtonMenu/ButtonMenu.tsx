@@ -1,3 +1,4 @@
+import shouldForwardProp from "@styled-system/should-forward-prop";
 import React, { cloneElement, Children, ReactElement } from "react";
 import { styled, DefaultTheme } from "styled-components";
 import { space } from "styled-system";
@@ -19,19 +20,12 @@ const getBorderColor = ({ theme, variant }: StyledButtonMenuProps) => {
 const StyledButtonMenu = styled.div.withConfig({
   shouldForwardProp: (props) => !["fullWidth"].includes(props),
 })<StyledButtonMenuProps>`
-  ${(props) => {
-    if (props.variant === variants.TEXT) {
-      return "";
-    }
-    return `
-    background-color: ${getBackgroundColor(props)};
-    border: 1px solid ${getBorderColor(props)};
-    `;
-  }}
+  background-color: ${getBackgroundColor};
   border-radius: 16px;
   display: ${({ fullWidth }) => (fullWidth ? "flex" : "inline-flex")};
+  border: 1px solid ${getBorderColor};
   width: ${({ fullWidth }) => (fullWidth ? "100%" : "auto")};
-  align-items: center;
+
   & > button,
   & > a {
     flex: ${({ fullWidth }) => (fullWidth ? 1 : "auto")};
@@ -53,6 +47,7 @@ const StyledButtonMenu = styled.div.withConfig({
         opacity: 0.5;
 
         & > button:disabled {
+          background-color: transparent;
           color: ${variant === variants.PRIMARY ? theme.colors.primary : theme.colors.textSubtle};
         }
     `;
@@ -77,7 +72,7 @@ const ButtonMenu: React.FC<React.PropsWithChildren<ButtonMenuProps>> = ({
       {Children.map(children, (child: ReactElement, index) => {
         return cloneElement(child, {
           isActive: activeIndex === index,
-          onClick: onItemClick ? (e: React.MouseEvent<HTMLElement>) => onItemClick(index, e) : undefined,
+          onClick: onItemClick ? () => onItemClick(index) : undefined,
           scale,
           variant,
           disabled,

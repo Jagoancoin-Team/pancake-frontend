@@ -1,40 +1,26 @@
+import { getAddress } from 'ethers/lib/utils'
 import memoize from 'lodash/memoize'
 import { Token } from '@pancakeswap/sdk'
-import { ChainId } from '@pancakeswap/chains'
-import { safeGetAddress } from 'utils'
-import { isAddress } from 'viem'
+import chainName from "../config/constants/chainName";
+import { TOKEN_LOGO_S3_BUCKET_NAME } from '@icecreamswap/constants';
 
-const mapping = {
-  [ChainId.BSC]: 'smartchain',
-  [ChainId.ETHEREUM]: 'ethereum',
-  [ChainId.POLYGON_ZKEVM]: 'polygonzkevm',
-  [ChainId.ZKSYNC]: 'zksync',
-  [ChainId.ARBITRUM_ONE]: 'arbitrum',
-  [ChainId.LINEA]: 'linea',
-}
 
 const getTokenLogoURL = memoize(
   (token?: Token) => {
-    if (token && mapping[token.chainId] && isAddress(token.address)) {
-      return `https://assets-cdn.trustwallet.com/blockchains/${mapping[token.chainId]}/assets/${safeGetAddress(
+    if (token && token.address && chainName[token.chainId]) {
+      return `https://${TOKEN_LOGO_S3_BUCKET_NAME}.s3.amazonaws.com/token/${token.chainId}/${getAddress(token.address)}.png`
+    }
+
+    /*
+    if (token && chainName[token.chainId]) {
+      return `https://raw.githubusercontent.com/simone1999/trustwallet-assets/master/blockchains/${chainName[token.chainId].toLowerCase()}/assets/${getAddress(
         token.address,
       )}/logo.png`
     }
+    */
     return null
   },
-  (t) => `${t?.chainId}#${t?.address}`,
-)
-
-export const getTokenLogoURLByAddress = memoize(
-  (address?: string, chainId?: number) => {
-    if (address && chainId && mapping[chainId] && isAddress(address)) {
-      return `https://assets-cdn.trustwallet.com/blockchains/${mapping[chainId]}/assets/${safeGetAddress(
-        address,
-      )}/logo.png`
-    }
-    return null
-  },
-  (address, chainId) => `${chainId}#${address}`,
+  (t) => `${t.chainId}#${t.address}`,
 )
 
 export default getTokenLogoURL

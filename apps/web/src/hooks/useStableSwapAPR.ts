@@ -1,23 +1,25 @@
-import { useQuery } from '@tanstack/react-query'
-import BigNumber from 'bignumber.js'
-import { multiChainId } from 'state/info/constant'
-import { useChainNameByQuery } from 'state/info/hooks'
+import useSWRImmutable from 'swr/immutable'
+import { SWRConfiguration } from 'swr'
 import { getAprsForStableFarm } from 'utils/getAprsForStableFarm'
+import BigNumber from 'bignumber.js'
+import { useGetChainName } from '../state/info/hooks'
 
 const refreshIntervalForInfo = 15000 // 15s
+const SWR_SETTINGS_WITHOUT_REFETCH = {
+  errorRetryCount: 3,
+  errorRetryInterval: 3000,
+}
+const SWR_SETTINGS: SWRConfiguration = {
+  refreshInterval: refreshIntervalForInfo,
+  ...SWR_SETTINGS_WITHOUT_REFETCH,
+}
 
-export const useStableSwapAPR = (address: string | undefined): number | undefined => {
-  const chainName = useChainNameByQuery()
-  const { data } = useQuery<BigNumber>({
-    queryKey: [`info/pool/stableAPR/${address}/`, chainName],
-    queryFn: () => getAprsForStableFarm(address, multiChainId[chainName!]),
-    enabled: Boolean(address) && !!chainName,
-    refetchInterval: refreshIntervalForInfo,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-    retry: 3,
-    retryDelay: 3000,
-  })
+export const useStableSwapAPR = (address: string | undefined): number => {
+  const chainName = useGetChainName()
+  const { data } = useSWRImmutable<BigNumber>(
+    address && [`info/pool/stableAPR/${address}/`, chainName],
+    () => getAprsForStableFarm(address),
+    SWR_SETTINGS,
+  )
   return data?.toNumber()
 }

@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-export function wait(ms: number): Promise<void> {
+function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -28,22 +28,16 @@ export class RetryableError extends Error {}
  * @param n how many times to retry
  * @param minWait min wait between retries in ms
  * @param maxWait max wait between retries in ms
- * @param delay the function should be run after some time without running the function
  */
 export function retry<T>(
   fn: () => Promise<T>,
-  { n, minWait, maxWait, delay }: { n: number; minWait: number; maxWait: number; delay?: number },
+  { n, minWait, maxWait }: { n: number; minWait: number; maxWait: number },
 ): { promise: Promise<T>; cancel: () => void } {
   let completed = false
-  let firstRun = true
   let rejectCancelled: (error: Error) => void
   const promise = new Promise<T>(async (resolve, reject) => {
     rejectCancelled = reject
     while (true) {
-      if (delay && firstRun) {
-        await wait(delay)
-        firstRun = false
-      }
       let result: T
       try {
         result = await fn()

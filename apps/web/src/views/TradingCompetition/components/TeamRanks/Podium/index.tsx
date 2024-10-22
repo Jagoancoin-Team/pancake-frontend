@@ -106,9 +106,7 @@ const Podium: React.FC<React.PropsWithChildren<PodiumProps>> = ({ teamsSortedByV
         <Flex justifyContent="space-between" mt="8px">
           <StyledVolumeFlex>
             {secondTeam ? (
-              <StyledVolumeText bold>
-                ${localiseTradingVolume(secondTeam.leaderboardData?.volume || 0)}
-              </StyledVolumeText>
+              <StyledVolumeText bold>${localiseTradingVolume(secondTeam.leaderboardData.volume)}</StyledVolumeText>
             ) : (
               <Skeleton width="77px" height="24px" />
             )}
@@ -118,7 +116,7 @@ const Podium: React.FC<React.PropsWithChildren<PodiumProps>> = ({ teamsSortedByV
           </StyledVolumeFlex>
           <StyledVolumeFlex>
             {firstTeam ? (
-              <StyledVolumeText bold>${localiseTradingVolume(firstTeam.leaderboardData?.volume || 0)}</StyledVolumeText>
+              <StyledVolumeText bold>${localiseTradingVolume(firstTeam.leaderboardData.volume)}</StyledVolumeText>
             ) : (
               <Skeleton width="77px" height="24px" />
             )}
@@ -128,7 +126,7 @@ const Podium: React.FC<React.PropsWithChildren<PodiumProps>> = ({ teamsSortedByV
           </StyledVolumeFlex>
           <StyledVolumeFlex>
             {thirdTeam ? (
-              <StyledVolumeText bold>${localiseTradingVolume(thirdTeam.leaderboardData?.volume || 0)}</StyledVolumeText>
+              <StyledVolumeText bold>${localiseTradingVolume(thirdTeam.leaderboardData.volume)}</StyledVolumeText>
             ) : (
               <Skeleton width="77px" height="24px" />
             )}

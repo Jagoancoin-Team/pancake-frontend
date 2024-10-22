@@ -3,7 +3,7 @@ import { Box, Button, Card, CardBody, Flex, Step, Stepper, Text } from '@pancake
 import { useTranslation } from '@pancakeswap/localization'
 import { StyledWaveContainer, LandingBodyWrapper } from 'views/PancakeSquad/styles'
 import useTheme from 'hooks/useTheme'
-import { useBSCCakeBalance } from 'hooks/useTokenBalance'
+import { useBitgertIceBalance } from 'hooks/useTokenBalance'
 import EventStepsBottomWave from '../../assets/EventStepsBottomWave'
 import EventStepsTopWave from '../../assets/EventStepsTopWave'
 import stepsConfigBuilder from './config'
@@ -19,7 +19,7 @@ const EventStepsSection: React.FC<React.PropsWithChildren<EventStepsProps>> = ({
 }) => {
   const { t } = useTranslation()
   const { theme, isDark } = useTheme()
-  const { balance: cakeBalance } = useBSCCakeBalance()
+  const { balance: cakeBalance } = useBitgertIceBalance()
   const stepsConfig = stepsConfigBuilder({ t, eventInfos, userInfos, userStatus, account, theme, cakeBalance })
   const isMintingFinished = userInfos && eventInfos && eventInfos.maxSupply === eventInfos.totalSupplyMinted
   return (
@@ -41,8 +41,8 @@ const EventStepsSection: React.FC<React.PropsWithChildren<EventStepsProps>> = ({
                 {t('Head to the NFT Marketplace to buy!')}
               </Text>
               <Box>
-                <Link href="/nfts" passHref>
-                  <Button>{t('View market')}</Button>
+                <Link href="/nfts" passHref prefetch={false}>
+                  <Button as="a">{t('View market')}</Button>
                 </Link>
               </Box>
             </Flex>

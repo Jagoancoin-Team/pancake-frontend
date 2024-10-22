@@ -1,13 +1,12 @@
 import { LanguageProvider } from "@pancakeswap/localization";
 import { Meta, Story } from "@storybook/react";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
 import { Box } from "../Box";
-import { PairDataTimeWindowEnum, PairPriceChart, PairPriceChartNewProps } from "./PairPriceChart";
+import { PairDataTimeWindowEnum, SwapLineChart, SwapLineChartNewProps } from "./PairPriceChart";
 
 export default {
   title: "Components/SwapLineChart",
-  component: PairPriceChart,
+  component: SwapLineChart,
   argTypes: {
     data: { control: "array" },
     isChangePositive: { control: "boolean" },
@@ -16,7 +15,6 @@ export default {
       control: {
         type: "select",
         options: [
-          PairDataTimeWindowEnum.HOUR,
           PairDataTimeWindowEnum.DAY,
           PairDataTimeWindowEnum.WEEK,
           PairDataTimeWindowEnum.MONTH,
@@ -34,10 +32,10 @@ export default {
   },
 } as Meta;
 
-const Template: Story<PairPriceChartNewProps> = (props) => (
+const Template: Story<SwapLineChartNewProps> = (props) => (
   <LanguageProvider>
     <Box width="500px" height="300px">
-      <PairPriceChart {...props} />
+      <SwapLineChart {...props} />
     </Box>
   </LanguageProvider>
 );

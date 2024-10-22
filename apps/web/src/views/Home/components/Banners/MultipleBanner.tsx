@@ -1,19 +1,20 @@
 import { appearAnimation, useIsomorphicEffect, useMatchBreakpoints } from '@pancakeswap/uikit'
+import { useAccount } from 'wagmi'
 import { useState } from 'react'
+import { ChainId } from '@pancakeswap/sdk'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import { styled } from 'styled-components'
 import type SwiperCore from 'swiper'
+import { Autoplay, EffectFade, Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/effect-fade'
 import 'swiper/css/pagination'
-import { Autoplay, EffectFade, Pagination } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { useMultipleBannerConfig } from './hooks/useMultipleBannerConfig'
 
-const BannerPlaceHolder = styled.div`
+const BannerPlaceHolder = styled.div<{ walletConnected: boolean }>`
   position: relative;
   height: 179px;
-  max-width: 100%;
-  box-sizing: border-box;
   ${({ theme }) => theme.mediaQueries.sm} {
     height: 221px;
   }
@@ -36,20 +37,20 @@ const BannerPlaceHolder = styled.div`
       bottom: 20px;
     }
   }
-  margin-top: 0px;
-  margin-bottom: 0px;
+  margin-top: ${({ walletConnected }) => (walletConnected ? '250px' : '0px')};
+  margin-bottom: ${({ walletConnected }) => (walletConnected ? '-220px' : '0px')};
   ${({ theme }) => theme.mediaQueries.sm} {
-    margin-top: -32px;
+    margin-top: ${({ walletConnected }) => (walletConnected ? '190px' : '-32px')};
     margin-bottom: 30px;
   }
   ${({ theme }) => theme.mediaQueries.md} {
-    margin-top: -32px;
-    margin-bottom: 30px;
+    margin-top: ${({ walletConnected }) => (walletConnected ? '90px' : '-32px')};
+    margin-bottom: ${({ walletConnected }) => (walletConnected ? '40px' : '30px')};
   }
   ${({ theme }) => theme.mediaQueries.lg},${({ theme }) => theme.mediaQueries.md} {
     padding-top: 0;
-    margin-top: -32px;
-    margin-bottom: 30px;
+    margin-top: ${({ walletConnected }) => (walletConnected ? '60px' : '-32px')};
+    margin-bottom: ${({ walletConnected }) => (walletConnected ? '60px' : '30px')};
   }
   .swiper-slide {
     overflow: visible;
@@ -98,8 +99,10 @@ const StyledSwiper = styled(Swiper)`
 
 const MultipleBanner: React.FC<React.PropsWithChildren> = () => {
   const bannerList = useMultipleBannerConfig()
+  const { address: account } = useAccount()
   const { isDesktop, isTablet } = useMatchBreakpoints()
-  const [swiperRef, setSwiperRef] = useState<SwiperCore | null>(null)
+  const { chainId } = useActiveChainId()
+  const [swiperRef, setSwiperRef] = useState<SwiperCore>(null)
 
   useIsomorphicEffect(() => {
     if (swiperRef) {
@@ -112,7 +115,7 @@ const MultipleBanner: React.FC<React.PropsWithChildren> = () => {
   }, [bannerList, swiperRef])
 
   return (
-    <BannerPlaceHolder>
+    <BannerPlaceHolder walletConnected={Boolean(account) && chainId === ChainId.BSC}>
       <StyledSwiper
         onSwiper={setSwiperRef}
         modules={[Autoplay, Pagination, EffectFade]}
@@ -129,7 +132,7 @@ const MultipleBanner: React.FC<React.PropsWithChildren> = () => {
         {bannerList.map((banner, index) => {
           const childKey = `Banner${index}`
           return (
-            <SwiperSlide style={{ padding: isDesktop || isTablet ? 20 : 0, height: 'auto' }} key={childKey}>
+            <SwiperSlide style={{ padding: isDesktop || isTablet ? 20 : 0 }} key={childKey}>
               {banner}
             </SwiperSlide>
           )

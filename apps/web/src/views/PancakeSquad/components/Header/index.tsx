@@ -1,11 +1,11 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Flex, lightColors, Spinner, Text, Timeline } from '@pancakeswap/uikit'
-import ConnectWalletButton from 'components/ConnectWalletButton'
-import useTheme from 'hooks/useTheme'
-import { useBSCCakeBalance } from 'hooks/useTokenBalance'
 import Link from 'next/link'
+import { Box, Flex, lightColors, Spinner, Text, Timeline } from '@pancakeswap/uikit'
+import { useTranslation } from '@pancakeswap/localization'
+import { useBitgertIceBalance } from 'hooks/useTokenBalance'
+import useTheme from 'hooks/useTheme'
 import { StyledWaveContainer } from 'views/PancakeSquad/styles'
 import { UserStatusEnum } from 'views/PancakeSquad/types'
+import ConnectWalletButton from 'components/ConnectWalletButton'
 import HeaderBottomWave from '../../assets/HeaderBottomWave'
 import nftSaleConfigBuilder from '../../config'
 import CtaButtons from './CtaButtons'
@@ -20,7 +20,7 @@ import {
 } from './styles'
 import { PancakeSquadHeaderType } from './types'
 
-const DEFAULT_CAKE_COST = 15
+const DEFAULT_ICE_COST = 15
 const DEFAULT_MAX_TICKETS = 10
 
 const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderType>> = ({
@@ -32,7 +32,7 @@ const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderTyp
 }) => {
   const { t } = useTranslation()
   const { theme, isDark } = useTheme()
-  const { balance: cakeBalance } = useBSCCakeBalance()
+  const { balance: cakeBalance } = useBitgertIceBalance()
   const displayEventBlock = !!eventInfos || isLoading
   const {
     ticketsOfUser,
@@ -62,7 +62,7 @@ const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderTyp
       alignItems="center"
     >
       <Flex width="100%">
-        <Link href="/nfts" passHref>
+        <Link href="/nfts" passHref prefetch={false}>
           <Text color="primary" bold>{`< ${t('NFT Marketplace')}`}</Text>
         </Link>
       </Flex>
@@ -76,15 +76,15 @@ const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderTyp
         {`${t('Public Sale:')} 08:00 UTC, Oct. 7`}
       </Text>
       <Text color={lightColors.warning} textAlign="center" bold>
-        {t('Mint Cost: %minCost% CAKE each', {
-          minCost: DEFAULT_CAKE_COST,
+        {t('Mint Cost: %minCost% ICE each', {
+          minCost: DEFAULT_ICE_COST,
         })}
       </Text>
       <Text color={lightColors.warning} textAlign="center" bold>
         {t('Max per wallet: %maxPerWallet%', { maxPerWallet: DEFAULT_MAX_TICKETS })}
       </Text>
       <Text color={lightColors.invertedContrast} textAlign="center">
-        {t('PancakeSwap’s first official generative NFT collection.')}
+        {t('IceCreamSwap’s first official generative NFT collection.')}
       </Text>
       <Text color={lightColors.invertedContrast} mb={!displayEventBlock ? '80px' : '32px'} textAlign="center">
         {t('Join the squad.')}
@@ -126,7 +126,7 @@ const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderTyp
                         numberTokensOfUser={numberTokensOfUser}
                       />
                     )}
-                    {userInfos && saleStatus && (
+                    {userInfos && (
                       <CtaButtons
                         t={t}
                         account={account}
@@ -134,7 +134,7 @@ const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderTyp
                         userStatus={userStatus}
                         saleStatus={saleStatus}
                         numberTokensOfUser={numberTokensOfUser}
-                        canClaimForGen0={Boolean(canClaimForGen0)}
+                        canClaimForGen0={canClaimForGen0}
                         maxPerAddress={maxPerAddress}
                         maxSupply={maxSupply}
                         numberTicketsOfUser={numberTicketsOfUser}
@@ -143,9 +143,9 @@ const PancakeSquadHeader: React.FC<React.PropsWithChildren<PancakeSquadHeaderTyp
                         cakeBalance={cakeBalance}
                         maxPerTransaction={maxPerTransaction}
                         numberTicketsForGen0={numberTicketsForGen0}
-                        pricePerTicket={pricePerTicket ?? 0n}
-                        ticketsOfUser={ticketsOfUser ?? []}
-                        startTimestamp={startTimestamp ?? 0}
+                        pricePerTicket={pricePerTicket}
+                        ticketsOfUser={ticketsOfUser}
+                        startTimestamp={startTimestamp}
                       />
                     )}
                   </>

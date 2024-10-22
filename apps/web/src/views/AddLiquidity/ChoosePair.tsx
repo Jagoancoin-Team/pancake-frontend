@@ -6,8 +6,8 @@ import ConnectWalletButton from 'components/ConnectWalletButton'
 import { CurrencySelect } from 'components/CurrencySelect'
 import { RowBetween } from 'components/Layout/Row'
 import { useV2Pair } from 'hooks/usePairs'
-import { useLPApr } from 'state/swap/useLPApr'
 import { formatAmount } from 'utils/formatInfoNumbers'
+import { useLPApr } from 'state/swap/useLPApr'
 import { useAccount } from 'wagmi'
 import { AppHeader } from '../../components/App'
 import { CommonBasesType } from '../../components/SearchModal/types'
@@ -29,9 +29,9 @@ export function ChoosePair({
   const isValid = !error
   const { handleCurrencyASelect, handleCurrencyBSelect } = useCurrencySelectRoute()
   const [, pair] = useV2Pair(currencyA, currencyB)
-  const poolData = useLPApr('v2', pair)
+  const poolData = useLPApr(pair)
   const { targetRef, tooltip, tooltipVisible } = useTooltip(
-    t(`Based on last 24 hours' performance. Does not account for impermanent loss`),
+    t(`Based on last 7 days' performance. Does not account for impermanent loss`),
     {
       placement: 'bottom',
     },
@@ -41,11 +41,11 @@ export function ChoosePair({
     <>
       <AppHeader
         title={t('Add Liquidity')}
-        subtitle={t('Receive LP tokens and earn 0.17% trading fees')}
+        subtitle={t('Receive LP tokens and earn 0.25% trading fees')}
         helper={t(
-          'Liquidity providers earn a 0.17% trading fee on all trades made for that token pair, proportional to their share of the liquidity pair.',
+          'Liquidity providers earn a 0.25% trading fee on all trades made for that token pair, proportional to their share of the liquidity pair.',
         )}
-        backTo="/liquidity/pools"
+        backTo="/liquidity"
       />
       <CardBody>
         <Box>
@@ -76,7 +76,7 @@ export function ChoosePair({
               </TooltipText>
               {tooltipVisible && tooltip}
               <Text bold color="primary">
-                {formatAmount(poolData.lpApr)}%
+                {formatAmount(poolData.lpApr7d)}%
               </Text>
             </RowBetween>
           )}

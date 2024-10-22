@@ -3,13 +3,13 @@
  */
 const tokens = {
   cake: {
-    symbol: "CAKE",
+    symbol: "ICE",
     address: {
       56: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
       97: "0xFa60D973F7642B748046464e165A65B7323b0DEE",
     },
     decimals: 18,
-    projectLink: "https://pancakeswap.finance/",
+    projectLink: "https://icecreamswap.com/",
   },
   txl: {
     symbol: "TXL",
@@ -221,7 +221,7 @@ const tokens = {
   swgb: {
     symbol: "SWGb",
     address: {
-      56: "0xE40255C5d7fa7ceEc5120408C78C787CECB4cfdb",
+      56: "0xe40255c5d7fa7ceec5120408c78c787cecb4cfdb",
       97: "",
     },
     decimals: 18,
@@ -293,7 +293,7 @@ const tokens = {
   ust: {
     symbol: "UST",
     address: {
-      56: "0x23396cF899Ca06c4472205fC903bDB4de249D6fC",
+      56: "0x23396cf899ca06c4472205fc903bdb4de249d6fc",
       97: "",
     },
     decimals: 18,
@@ -441,7 +441,7 @@ const tokens = {
       97: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
     },
     decimals: 18,
-    projectLink: "https://pancakeswap.finance/",
+    projectLink: "https://icecreamswap.com/",
   },
   blink: {
     symbol: "BLINK",
@@ -585,7 +585,7 @@ const tokens = {
       97: "0xfE1e507CeB712BDe086f3579d2c03248b2dB77f9",
     },
     decimals: 18,
-    projectLink: "https://pancakeswap.finance/",
+    projectLink: "https://icecreamswap.com/",
   },
   bifi: {
     symbol: "BIFI",

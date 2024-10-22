@@ -1,6 +1,4 @@
-import { Flex, Text, Skeleton, useModal, Button, CalculateIcon, FlexGap, Balance } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-
+import { Flex, Text, Skeleton, useModal, Button, CalculateIcon, FlexGap, Balance, Pool } from '@pancakeswap/uikit'
 import { LightGreyCard } from 'components/Card'
 import { useTranslation } from '@pancakeswap/localization'
 import { useVaultApy } from 'hooks/useVaultApy'

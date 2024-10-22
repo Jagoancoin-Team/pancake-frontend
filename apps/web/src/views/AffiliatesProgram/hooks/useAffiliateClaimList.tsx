@@ -1,20 +1,21 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { FAST_INTERVAL } from 'config/constants'
+import useSWR from 'swr'
+import { useAccount } from 'wagmi'
 import qs from 'qs'
 import useAuthAffiliate from 'views/AffiliatesProgram/hooks/useAuthAffiliate'
 import useAuthAffiliateExist from 'views/AffiliatesProgram/hooks/useAuthAffiliateExist'
-import { MAX_PER_PAGE, UserClaimListResponse } from 'views/AffiliatesProgram/hooks/useUserClaimList'
-import { useAccount } from 'wagmi'
+import { UserClaimListResponse, MAX_PER_PAGE } from 'views/AffiliatesProgram/hooks/useUserClaimList'
+import { FAST_INTERVAL } from 'config/constants'
 
 const useAffiliateClaimList = ({ currentPage }) => {
   const { address } = useAccount()
   const { isAffiliate } = useAuthAffiliate()
   const { isAffiliateExist } = useAuthAffiliateExist()
 
-  const { data, isPending, refetch } = useQuery({
-    queryKey: ['affiliates-program', 'affiliate-claim-list', isAffiliateExist, isAffiliate, address, currentPage],
-
-    queryFn: async () => {
+  const { data, isLoading, mutate } = useSWR(
+    address &&
+      isAffiliateExist &&
+      isAffiliate && ['/affiliate-claim-list', isAffiliateExist, isAffiliate, address, currentPage],
+    async () => {
       try {
         const skip = currentPage === 1 ? 0 : (currentPage - 1) * MAX_PER_PAGE
         const urlParamsObject = { skip, take: MAX_PER_PAGE }
@@ -34,16 +35,16 @@ const useAffiliateClaimList = ({ currentPage }) => {
         }
       }
     },
-
-    enabled: Boolean(address && isAffiliateExist !== null && isAffiliate),
-    refetchInterval: FAST_INTERVAL * 3,
-    placeholderData: keepPreviousData,
-  })
+    {
+      refreshInterval: FAST_INTERVAL * 3,
+      keepPreviousData: true,
+    },
+  )
 
   return {
     data,
-    isFetching: isPending,
-    mutate: refetch,
+    isFetching: isLoading,
+    mutate,
   }
 }
 

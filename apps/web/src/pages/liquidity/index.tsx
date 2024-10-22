@@ -1,53 +1,55 @@
-import { PositionDetails } from '@pancakeswap/farms'
-import { useTranslation } from '@pancakeswap/localization'
-import { isStableSwapSupported } from '@pancakeswap/stable-swap-sdk'
 import {
   AddIcon,
   Button,
-  ButtonMenu,
-  ButtonMenuItem,
   CardBody,
   CardFooter,
-  Checkbox,
+  Text,
   Dots,
   Flex,
-  HistoryIcon,
-  IconButton,
   Tag,
-  Text,
+  ButtonMenu,
+  ButtonMenuItem,
+  Checkbox,
+  IconButton,
+  HistoryIcon,
   useModal,
+  Liquidity,
 } from '@pancakeswap/uikit'
-import { Liquidity, NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-import { AppBody, AppHeader } from 'components/App'
-import TransactionsModal from 'components/App/Transactions/TransactionsModal'
-import { RangeTag } from 'components/RangeTag'
-import { V3_MIGRATION_SUPPORTED_CHAINS } from 'config/constants/supportChains'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
-import useV2PairsByAccount from 'hooks/useV2Pairs'
-import { useV3Positions } from 'hooks/v3/useV3Positions'
-import { useAtom } from 'jotai'
+import { PositionDetails } from '@pancakeswap/farms'
+import { isStableSwapSupported } from '@pancakeswap/smart-router/evm'
 import NextLink from 'next/link'
-import { useRouter } from 'next/router'
-import React, { ReactNode, useCallback, useMemo, useState } from 'react'
 import { styled } from 'styled-components'
-import atomWithStorageWithErrorCatch from 'utils/atomWithStorageWithErrorCatch'
-import { CHAIN_IDS } from 'utils/wagmi'
-import { LiquidityCardRow } from 'views/AddLiquidity/components/LiquidityCardRow'
-import { StablePairCard } from 'views/AddLiquidityV3/components/StablePairCard'
-import { V2PairCard } from 'views/AddLiquidityV3/components/V2PairCard'
+import { AppBody, AppHeader } from 'components/App'
+import { useV3Positions } from 'hooks/v3/useV3Positions'
 import PositionListItem from 'views/AddLiquidityV3/formViews/V3FormView/components/PoolListItem'
 import Page from 'views/Page'
+import { useTranslation } from '@pancakeswap/localization'
+import { Pair } from '@pancakeswap/sdk'
+import { RangeTag } from 'components/RangeTag'
+import useV2PairsByAccount from 'hooks/useV2Pairs'
 import useStableConfig, {
   LPStablePair,
   StableConfigContext,
   useLPTokensWithBalanceByAccount,
 } from 'views/Swap/hooks/useStableConfig'
+import { useMemo, useState } from 'react'
+import { V2PairCard } from 'views/AddLiquidityV3/components/V2PairCard'
+import { StablePairCard } from 'views/AddLiquidityV3/components/StablePairCard'
+import FarmV3MigrationBanner from 'views/Home/components/Banners/FarmV3MigrationBanner'
+import TransactionsModal from 'components/App/Transactions/TransactionsModal'
+import { LiquidityCardRow } from 'components/LiquidityCardRow'
+import atomWithStorageWithErrorCatch from 'utils/atomWithStorageWithErrorCatch'
+import { useAtom } from 'jotai'
+import { V3SubgraphHealthIndicator } from 'components/SubgraphHealthIndicator'
+import { isV3MigrationSupported } from 'utils/isV3MigrationSupported'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import { SUPPORT_SWAP } from "config/constants/supportChains";
 
 const Body = styled(CardBody)`
   background-color: ${({ theme }) => theme.colors.dropdownDeep};
 `
 
-export const StableContextProvider = (props: { pair: LPStablePair; account: string | undefined }) => {
+export const StableContextProvider = (props: { pair: LPStablePair; account: string }) => {
   const stableConfig = useStableConfig({
     tokenA: props.pair?.token0,
     tokenB: props.pair?.token1,
@@ -76,9 +78,8 @@ function useHideClosePosition() {
 }
 
 export default function PoolListPage() {
-  const { t } = useTranslation()
-  const router = useRouter()
   const { account, chainId } = useAccountActiveChain()
+  const { t } = useTranslation()
 
   const [selectedTypeIndex, setSelectedTypeIndex] = useState(FILTER.ALL)
   const [hideClosedPositions, setHideClosedPositions] = useHideClosePosition()
@@ -89,26 +90,25 @@ export default function PoolListPage() {
 
   const stablePairs = useLPTokensWithBalanceByAccount(account)
 
-  const { token0, token1, fee } = router.query as { token0: string; token1: string; fee: string }
-  const isNeedFilterByQuery = useMemo(() => token0 || token1 || fee, [token0, token1, fee])
-  const [showAllPositionWithQuery, setShowAllPositionWithQuery] = useState(false)
+  let v2PairsSection = null
 
-  const v2PairsSection: null | ReactNode[] = v2Pairs?.length
-    ? v2Pairs.map((pair, index) => (
-        // eslint-disable-next-line react/no-array-index-key
-        <V2PairCard key={`${pair?.token0}-${pair?.token1}-${index}`} pair={pair} account={account} />
-      ))
-    : null
+  if (v2Pairs?.length) {
+    v2PairsSection = v2Pairs.map((pair) => (
+      <V2PairCard key={Pair.getAddress(pair.token0, pair.token1)} pair={pair} account={account} />
+    ))
+  }
 
-  const stablePairsSection: null | ReactNode[] = useMemo(() => {
-    if (!stablePairs?.length) return null
+  let stablePairsSection = null
 
-    return stablePairs.map((pair) => <StableContextProvider key={pair.lpAddress} pair={pair} account={account} />)
-  }, [account, stablePairs])
+  if (stablePairs?.length) {
+    stablePairsSection = stablePairs.map((pair) => (
+      <StableContextProvider key={pair.lpAddress} pair={pair} account={account} />
+    ))
+  }
 
-  const v3PairsSection: null | React.JSX.Element[] = useMemo(() => {
-    if (!positions?.length) return null
+  let v3PairsSection = null
 
+  if (positions?.length) {
     const [openPositions, closedPositions] = positions?.reduce<[PositionDetails[], PositionDetails[]]>(
       (acc, p) => {
         acc[p.liquidity === 0n ? 1 : 0].push(p)
@@ -117,12 +117,9 @@ export default function PoolListPage() {
       [[], []],
     ) ?? [[], []]
 
-    const filteredPositions = [
-      ...openPositions,
-      ...(hideClosedPositions ? [] : closedPositions.sort((p1, p2) => Number(p2.tokenId - p1.tokenId))),
-    ]
+    const filteredPositions = [...openPositions, ...(hideClosedPositions ? [] : closedPositions)]
 
-    return filteredPositions.map((p) => {
+    v3PairsSection = filteredPositions.map((p) => {
       return (
         <PositionListItem key={p.tokenId.toString()} positionDetails={p}>
           {({
@@ -172,79 +169,17 @@ export default function PoolListPage() {
         </PositionListItem>
       )
     })
-  }, [hideClosedPositions, positions, t])
-
-  const filteredWithQueryFilter = useMemo(() => {
-    if (isNeedFilterByQuery && !showAllPositionWithQuery && v3PairsSection) {
-      return v3PairsSection
-        .filter((pair) => {
-          const pairToken0 = pair?.props?.positionDetails?.token0?.toLowerCase()
-          const pairToken1 = pair?.props?.positionDetails?.token1?.toLowerCase()
-          const token0ToLowerCase = token0?.toLowerCase()
-          const token1ToLowerCase = token1?.toLowerCase()
-
-          if (token0 && token1 && fee) {
-            if (
-              ((pairToken0 === token0ToLowerCase && pairToken1 === token1ToLowerCase) ||
-                (pairToken0 === token1ToLowerCase && pairToken1 === token0ToLowerCase)) &&
-              pair?.props?.positionDetails?.fee === Number(fee ?? 0)
-            ) {
-              return pair
-            }
-            return null
-          }
-
-          if (token0 && (pairToken0 === token0ToLowerCase || pairToken1 === token0ToLowerCase)) {
-            return pair
-          }
-
-          if (token1 && (pairToken0 === token1ToLowerCase || pairToken1 === token1ToLowerCase)) {
-            return pair
-          }
-
-          if (fee && pair?.props?.positionDetails?.fee === Number(fee ?? 0)) {
-            return pair
-          }
-
-          return null
-        })
-        .filter(Boolean)
-    }
-
-    return []
-  }, [fee, isNeedFilterByQuery, showAllPositionWithQuery, token0, token1, v3PairsSection])
-
-  const showAllPositionButton = useMemo(() => {
-    if (v3PairsSection && filteredWithQueryFilter) {
-      return (
-        v3PairsSection?.length > filteredWithQueryFilter?.length &&
-        isNeedFilterByQuery &&
-        !showAllPositionWithQuery &&
-        !v3Loading &&
-        !v2Loading &&
-        (selectedTypeIndex === FILTER.ALL || selectedTypeIndex === FILTER.V3)
-      )
-    }
-    return false
-  }, [
-    filteredWithQueryFilter,
-    isNeedFilterByQuery,
-    showAllPositionWithQuery,
-    v3PairsSection,
-    v3Loading,
-    v2Loading,
-    selectedTypeIndex,
-  ])
+  }
 
   const mainSection = useMemo(() => {
-    let resultSection: null | ReactNode | (ReactNode[] | null | undefined)[]
+    let resultSection = null
     if (v3Loading || v2Loading) {
       resultSection = (
         <Text color="textSubtle" textAlign="center">
           <Dots>{t('Loading')}</Dots>
         </Text>
       )
-    } else if (!v2PairsSection && !stablePairsSection && !filteredWithQueryFilter) {
+    } else if (!v2PairsSection && !stablePairsSection && !v3PairsSection) {
       resultSection = (
         <Text color="textSubtle" textAlign="center">
           {t('No liquidity found.')}
@@ -252,38 +187,24 @@ export default function PoolListPage() {
       )
     } else {
       // Order should be v3, stable, v2
-      const sections = showAllPositionButton
-        ? [filteredWithQueryFilter]
-        : [v3PairsSection, stablePairsSection, v2PairsSection]
+      const sections = [v3PairsSection, stablePairsSection, v2PairsSection]
 
       resultSection = selectedTypeIndex ? sections.filter((_, index) => selectedTypeIndex === index + 1) : sections
     }
 
     return resultSection
-  }, [
-    selectedTypeIndex,
-    stablePairsSection,
-    t,
-    v2Loading,
-    v2PairsSection,
-    v3Loading,
-    v3PairsSection,
-    filteredWithQueryFilter,
-    showAllPositionButton,
-  ])
+  }, [selectedTypeIndex, stablePairsSection, t, v2Loading, v2PairsSection, v3Loading, v3PairsSection])
 
   const [onPresentTransactionsModal] = useModal(<TransactionsModal />)
-
-  const handleClickShowAllPositions = useCallback(() => {
-    setShowAllPositionWithQuery(true)
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    })
-  }, [])
+  const isMigrationSupported = useMemo(() => isV3MigrationSupported(chainId), [chainId])
 
   return (
     <Page>
+      {isMigrationSupported && (
+        <Flex m="24px 0" maxWidth="854px">
+          <FarmV3MigrationBanner />
+        </Flex>
+      )}
       <AppBody
         style={{
           maxWidth: '854px',
@@ -331,27 +252,7 @@ export default function PoolListPage() {
         />
         <Body>
           {mainSection}
-          {selectedTypeIndex === FILTER.V2 ? (
-            <Liquidity.FindOtherLP>
-              {chainId && V3_MIGRATION_SUPPORTED_CHAINS.includes(chainId) && (
-                <NextLinkFromReactRouter style={{ marginTop: '8px' }} to="/migration">
-                  <Button id="migration-link" variant="secondary" scale="sm">
-                    {t('Migrate to V3')}
-                  </Button>
-                </NextLinkFromReactRouter>
-              )}
-            </Liquidity.FindOtherLP>
-          ) : null}
-          {showAllPositionButton && (
-            <Flex alignItems="center" flexDirection="column">
-              <Text color="textSubtle" mb="10px">
-                {t("Don't see a pair you joined?")}
-              </Text>
-              <Button scale="sm" width="fit-content" variant="secondary" onClick={handleClickShowAllPositions}>
-                {t('Show all positions')}
-              </Button>
-            </Flex>
-          )}
+          {selectedTypeIndex === FILTER.V2 ? <Liquidity.FindOtherLP /> : null}
         </Body>
         <CardFooter style={{ textAlign: 'center' }}>
           <NextLink href="/add" passHref>
@@ -360,9 +261,10 @@ export default function PoolListPage() {
             </Button>
           </NextLink>
         </CardFooter>
+        <V3SubgraphHealthIndicator />
       </AppBody>
     </Page>
   )
 }
 
-PoolListPage.chains = CHAIN_IDS
+PoolListPage.chains = SUPPORT_SWAP

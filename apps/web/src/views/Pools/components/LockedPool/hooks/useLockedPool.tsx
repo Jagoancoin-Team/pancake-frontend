@@ -1,5 +1,6 @@
 import { useState, useCallback, Dispatch, SetStateAction, useMemo } from 'react'
 import { useAccount } from 'wagmi'
+import { useSWRConfig } from 'swr'
 import { useTranslation } from '@pancakeswap/localization'
 import { ONE_WEEK_DEFAULT } from '@pancakeswap/pools'
 import { useAppDispatch } from 'state'
@@ -12,12 +13,11 @@ import { fetchCakeVaultUserData } from 'state/pools'
 import { Token } from '@pancakeswap/sdk'
 import { vaultPoolConfig } from 'config/constants/pools'
 import { VaultKey } from 'state/types'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 
 import { ToastDescriptionWithTx } from 'components/Toast'
 import { useCallWithGasPrice } from 'hooks/useCallWithGasPrice'
-import { useQueryClient } from '@tanstack/react-query'
 import { PrepConfirmArg } from '../types'
+import { useActiveChainId } from '../../../../../hooks/useActiveChainId'
 
 interface HookArgs {
   lockedAmount: BigNumber
@@ -47,9 +47,9 @@ export default function useLockedPool(hookArgs: HookArgs): HookReturn {
   } = hookArgs
 
   const dispatch = useAppDispatch()
-  const { chainId } = useActiveChainId()
 
   const { address: account } = useAccount()
+  const { chainId } = useActiveChainId()
   const { fetchWithCatchTxError, loading: pendingTx } = useCatchTxError()
   const vaultPoolContract = useVaultPoolContract(VaultKey.CakeVault)
   const { callWithGasPrice } = useCallWithGasPrice()
@@ -63,13 +63,12 @@ export default function useLockedPool(hookArgs: HookArgs): HookReturn {
   )
 
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
+  const { mutate } = useSWRConfig()
   const { toastSuccess } = useToast()
   const [duration, setDuration] = useState(() => defaultDuration)
 
   const handleDeposit = useCallback(
     async (convertedStakeAmount: BigNumber, lockDuration: number) => {
-      if (!account || !chainId) return
       const callOptions = {
         gas: vaultPoolConfig[VaultKey.CakeVault].gasLimit,
       }
@@ -88,9 +87,7 @@ export default function useLockedPool(hookArgs: HookArgs): HookReturn {
         )
         onDismiss?.()
         dispatch(fetchCakeVaultUserData({ account, chainId }))
-        queryClient.invalidateQueries({
-          queryKey: ['userCakeLockStatus', account],
-        })
+        mutate(['userCakeLockStatus', account])
       }
     },
     [
@@ -102,7 +99,7 @@ export default function useLockedPool(hookArgs: HookArgs): HookReturn {
       vaultPoolContract,
       t,
       callWithGasPrice,
-      queryClient,
+      mutate,
       chainId,
     ],
   )

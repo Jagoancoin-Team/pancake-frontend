@@ -1,13 +1,12 @@
 {
   "env": {
     "es6": true,
-    "browser": true
+    "browser": true,
+    "jest": true
   },
-  "plugins": ["lodash", "address"],
+  "plugins": ["lodash"],
   "extends": ["@pancakeswap/eslint-config-pancake", "plugin:react/jsx-runtime"],
   "rules": {
-    "address/addr-type": ["warn", "checksum"],
-    "no-empty-function": 0,
     "no-restricted-syntax": 0,
     "import/no-unresolved": 0,
     "no-console": ["warn", { "allow": ["info", "warn", "error", "debug", "time", "timeLog", "timeEnd"] }],
@@ -18,8 +17,6 @@
     "lodash/import-scope": [2, "method"],
     "@next/next/no-img-element": 0,
     "no-sparse-arrays": 0,
-    "react/no-unknown-property": 0,
-    "jsx-a11y/control-has-associated-label": 0,
     "react-hooks/exhaustive-deps": [
       "warn",
       {

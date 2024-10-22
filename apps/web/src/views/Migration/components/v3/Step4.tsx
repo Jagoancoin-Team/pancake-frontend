@@ -1,6 +1,5 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
-import { Token } from '@pancakeswap/sdk'
+import { ChainId, Token } from '@pancakeswap/sdk'
 import {
   AtomBox,
   AutoRow,
@@ -18,6 +17,7 @@ import { AppBody, AppHeader } from 'components/App'
 import { LightGreyCard } from 'components/Card'
 import { CommitButton } from 'components/CommitButton'
 import ConnectWalletButton from 'components/ConnectWalletButton'
+import { LiquidityCardRow } from 'components/LiquidityCardRow'
 import { DoubleCurrencyLogo } from 'components/Logo'
 import { RangeTag } from 'components/RangeTag'
 import { useToken } from 'hooks/Tokens'
@@ -26,11 +26,10 @@ import useNativeCurrency from 'hooks/useNativeCurrency'
 import { useV3Positions } from 'hooks/v3/useV3Positions'
 import { useAtom } from 'jotai'
 import Image from 'next/image'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { unwrappedToken } from 'utils/wrappedCurrency'
-import { LiquidityCardRow } from 'views/AddLiquidity/components/LiquidityCardRow'
-import { AddLiquidityV3Modal } from 'views/AddLiquidityV3/Modal'
 import PositionListItem from 'views/AddLiquidityV3/formViews/V3FormView/components/PoolListItem'
+import { AddLiquidityV3Modal } from 'views/AddLiquidityV3/Modal'
 import { useAccount } from 'wagmi'
 import { removedPairsAtom } from './Step2'
 
@@ -45,24 +44,13 @@ export function Step4() {
 
   const [removedPairs] = useAtom(removedPairsAtom)
 
-  const removedPairsCurrentChainAndAccount =
-    chainId && account ? removedPairs[chainId as ChainId]?.[account] : undefined
+  const removedPairsCurrentChainAndAccount = removedPairs[chainId as ChainId]?.[account]
 
-  const removedPairsCurrentChainAsArray = removedPairsCurrentChainAndAccount
-    ? Object.keys(removedPairsCurrentChainAndAccount)
-    : []
+  const removedPairsCurrentChainAsArray = Object.keys(removedPairsCurrentChainAndAccount || {})
 
   const addLiquidityModal = useModalV2()
 
   const native = useNativeCurrency()
-
-  const closeModal = useCallback(() => {
-    setOpen(false)
-  }, [])
-
-  const openModal = useCallback(() => {
-    setOpen(true)
-  }, [])
 
   return (
     <AppBody style={{ maxWidth: '700px' }} m="auto">
@@ -117,8 +105,8 @@ export function Step4() {
           ))
         )}
       </AtomBox>
-      <ModalV2 isOpen={open} closeOnOverlayClick onDismiss={closeModal}>
-        <Modal title={t('List of removed v2 liquidity')} onDismiss={closeModal}>
+      <ModalV2 isOpen={open} closeOnOverlayClick onDismiss={() => setOpen(false)}>
+        <Modal title={t('List of removed v2 liquidity')} onDismiss={() => setOpen(false)}>
           <PreTitle mb="12px">{t('Previous LP')}</PreTitle>
           {removedPairsCurrentChainAsArray.map((tokenAddresses) => (
             <Flex key={tokenAddresses} alignItems="center" justifyContent="space-between" mb="8px">
@@ -140,7 +128,7 @@ export function Step4() {
             </Button>
           </>
         ) : (
-          <CommitButton onClick={openModal} width="100%">
+          <CommitButton onClick={() => setOpen(true)} width="100%">
             {t('Add Liquidity')}
           </CommitButton>
         )}

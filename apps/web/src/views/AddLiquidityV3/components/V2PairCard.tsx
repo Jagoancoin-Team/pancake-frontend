@@ -1,28 +1,21 @@
-import { Pair } from '@pancakeswap/sdk'
-import { Tag } from '@pancakeswap/uikit'
-import { useTokensDeposited } from 'components/PositionCard'
-import useTotalSupply from 'hooks/useTotalSupply'
-import React from 'react'
 import { useTokenBalance } from 'state/wallet/hooks'
-import currencyId from 'utils/currencyId'
+import useTotalSupply from 'hooks/useTotalSupply'
+import { useTokensDeposited } from 'components/PositionCard'
+import { Tag } from '@pancakeswap/uikit'
+import { Pair } from '@pancakeswap/sdk'
+import { LiquidityCardRow } from 'components/LiquidityCardRow'
 import { unwrappedToken } from 'utils/wrappedCurrency'
-import { LiquidityCardRow } from 'views/AddLiquidity/components/LiquidityCardRow'
+import currencyId from 'utils/currencyId'
 
-export const V2PairCard = React.memo(({ pair, account }: { pair: null | Pair; account: string | undefined }) => {
-  const userPoolBalance = useTokenBalance(account ?? undefined, pair?.liquidityToken)
+export function V2PairCard({ pair, account }: { pair: Pair; account: string }) {
+  const userPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
 
-  const totalPoolTokens = useTotalSupply(pair?.liquidityToken)
+  const totalPoolTokens = useTotalSupply(pair.liquidityToken)
 
   const [token0Deposited, token1Deposited] = useTokensDeposited({ pair, userPoolBalance, totalPoolTokens })
 
-  if (!pair) {
-    return null
-  }
-
   const unwrappedToken0 = unwrappedToken(pair.token0)
   const unwrappedToken1 = unwrappedToken(pair.token1)
-
-  if (!unwrappedToken0 || !unwrappedToken1) return null
 
   return (
     <LiquidityCardRow
@@ -35,4 +28,4 @@ export const V2PairCard = React.memo(({ pair, account }: { pair: null | Pair; ac
       tags={<Tag variant="secondary">V2 LP</Tag>}
     />
   )
-})
+}

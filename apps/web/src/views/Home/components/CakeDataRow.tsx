@@ -1,60 +1,65 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useIntersectionObserver } from '@pancakeswap/hooks'
 import { useTranslation } from '@pancakeswap/localization'
-import { cakeVaultV2ABI } from '@pancakeswap/pools'
+import { ChainId } from '@pancakeswap/sdk'
 import { bscTokens } from '@pancakeswap/tokens'
-import { Balance, Flex, Heading, Skeleton, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
+import { Balance, Flex, Heading, Skeleton, Text } from '@pancakeswap/uikit'
 import { formatBigInt, formatLocalisedCompactNumber, formatNumber } from '@pancakeswap/utils/formatBalance'
-import { useQuery } from '@tanstack/react-query'
+import { cakeVaultV2ABI } from '@pancakeswap/pools'
 import { SLOW_INTERVAL } from 'config/constants'
-import addresses from 'config/constants/contracts'
-import { useCakePrice } from 'hooks/useCakePrice'
 import { useEffect, useState } from 'react'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import { styled } from 'styled-components'
+import useSWR from 'swr'
 import { getCakeVaultAddress } from 'utils/addressHelpers'
 import { publicClient } from 'utils/wagmi'
-import { erc20Abi } from 'viem'
 import { useCakeEmissionPerBlock } from 'views/Home/hooks/useCakeEmissionPerBlock'
+import { erc20ABI } from 'wagmi'
 
 const StyledColumn = styled(Flex)<{ noMobileBorder?: boolean; noDesktopBorder?: boolean }>`
   flex-direction: column;
-  flex-grow: 1;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 16px;
-  &:not(:last-child) {
-    border-right: 1px solid ${({ theme }) => theme.colors.cardBorder};
-    border-bottom: 1px solid ${({ theme }) => theme.colors.cardBorder};
-  }
-  &:nth-child(2n) {
-    border-right: none;
-  }
-  width: 50%;
+  ${({ noMobileBorder, theme }) =>
+    noMobileBorder
+      ? `${theme.mediaQueries.md} {
+           padding: 0 16px;
+           border-left: 1px ${theme.colors.inputSecondary} solid;
+         }
+       `
+      : `border-left: 1px ${theme.colors.inputSecondary} solid;
+         padding: 0 8px;
+         ${theme.mediaQueries.sm} {
+           padding: 0 16px;
+         }
+       `}
+
+  ${({ noDesktopBorder, theme }) =>
+    noDesktopBorder &&
+    `${theme.mediaQueries.md} {
+           padding: 0;
+           border-left: none;
+         }
+       `}
+`
+
+const Grid = styled.div`
+  display: grid;
+  grid-gap: 16px 8px;
+  margin-top: 24px;
+  grid-template-columns: repeat(2, auto);
+  grid-template-areas:
+    'a d'
+    'b e'
+    'c f';
+
   ${({ theme }) => theme.mediaQueries.sm} {
-    &:not(:last-child) {
-      border-right: 1px solid ${({ theme }) => theme.colors.cardBorder};
-      border-bottom: none;
-    }
-    &:nth-child(3) {
-      border-right: none;
-    }
-    width: 33%;
+    grid-gap: 16px;
   }
 
-  ${({ theme }) => theme.mediaQueries.lg} {
-    width: auto;
-    &:not(:last-child) {
-      border-right: 1px solid ${({ theme }) => theme.colors.cardBorder};
-    }
-  }
-`
-const StyledWrapper = styled(Flex)`
-  margin-top: 24px;
-  flex-direction: row;
-  flex-wrap: wrap;
-  ${({ theme }) => theme.mediaQueries.lg} {
-    flex-direction: row;
-    flex-wrap: nowrap;
+  ${({ theme }) => theme.mediaQueries.md} {
+    grid-template-areas:
+      'a b c'
+      'd e f';
+    grid-gap: 32px;
+    grid-template-columns: repeat(3, auto);
   }
 `
 
@@ -74,7 +79,6 @@ const CakeDataRow = () => {
   const { observerRef, isIntersecting } = useIntersectionObserver()
   const [loadData, setLoadData] = useState(false)
   const emissionsPerBlock = useCakeEmissionPerBlock(loadData)
-  const { isMobile } = useMatchBreakpoints()
 
   const {
     data: { cakeSupply, burnedBalance, circulatingSupply } = {
@@ -82,17 +86,14 @@ const CakeDataRow = () => {
       burnedBalance: 0,
       circulatingSupply: 0,
     },
-  } = useQuery({
-    queryKey: ['cakeDataRow'],
-
-    queryFn: async () => {
-      const [totalSupply, burned, totalVaultLockedAmount, totalVeLockedAmount] = await publicClient({
-        chainId: ChainId.BSC,
-      }).multicall({
+  } = useSWR(
+    loadData ? ['cakeDataRow'] : null,
+    async () => {
+      const [totalSupply, burned, totalLockedAmount] = await publicClient({ chainId: ChainId.BSC }).multicall({
         contracts: [
-          { abi: erc20Abi, address: bscTokens.cake.address, functionName: 'totalSupply' },
+          { abi: erc20ABI, address: bscTokens.cake.address, functionName: 'totalSupply' },
           {
-            abi: erc20Abi,
+            abi: erc20ABI,
             address: bscTokens.cake.address,
             functionName: 'balanceOf',
             args: ['0x000000000000000000000000000000000000dEaD'],
@@ -102,17 +103,11 @@ const CakeDataRow = () => {
             address: cakeVaultAddress,
             functionName: 'totalLockedAmount',
           },
-          {
-            abi: erc20Abi,
-            address: bscTokens.cake.address,
-            functionName: 'balanceOf',
-            args: [addresses.veCake[ChainId.BSC]],
-          },
         ],
         allowFailure: false,
       })
       const totalBurned = planetFinanceBurnedTokensWei + burned
-      const circulating = totalSupply - (totalBurned + totalVaultLockedAmount + totalVeLockedAmount)
+      const circulating = totalSupply - (totalBurned + totalLockedAmount)
 
       return {
         cakeSupply: totalSupply && burned ? +formatBigInt(totalSupply - totalBurned) : 0,
@@ -120,13 +115,13 @@ const CakeDataRow = () => {
         circulatingSupply: circulating ? +formatBigInt(circulating) : 0,
       }
     },
-
-    enabled: Boolean(loadData),
-    refetchInterval: SLOW_INTERVAL,
-  })
-  const cakePrice = useCakePrice()
-  const mcap = cakePrice.times(circulatingSupply)
-  const mcapString = formatLocalisedCompactNumber(mcap.toNumber(), isMobile)
+    {
+      refreshInterval: SLOW_INTERVAL,
+    },
+  )
+  const cakePriceBusd = usePriceCakeUSD()
+  const mcap = cakePriceBusd.times(circulatingSupply)
+  const mcapString = formatLocalisedCompactNumber(mcap.toNumber())
 
   useEffect(() => {
     if (isIntersecting) {
@@ -135,23 +130,19 @@ const CakeDataRow = () => {
   }, [isIntersecting])
 
   return (
-    <StyledWrapper mb={isMobile ? '30px' : '50px'}>
-      <StyledColumn>
-        <Text color="text" bold fontSize={isMobile ? '14px' : undefined}>
-          {t('Circulating Supply')}
-        </Text>
+    <Grid>
+      <Flex flexDirection="column" style={{ gridArea: 'a' }}>
+        <Text color="textSubtle">{t('Circulating Supply')}</Text>
         {circulatingSupply ? (
-          <Balance decimals={0} lineHeight="1.1" fontSize="24px" bold value={circulatingSupply} color="secondary" />
+          <Balance decimals={0} lineHeight="1.1" fontSize="24px" bold value={circulatingSupply} />
         ) : (
           <Skeleton height={24} width={126} my="4px" />
         )}
-      </StyledColumn>
-      <StyledColumn noMobileBorder>
-        <Text bold fontSize={isMobile ? '14px' : undefined}>
-          {t('Total supply')}
-        </Text>
+      </Flex>
+      <StyledColumn noMobileBorder style={{ gridArea: 'b' }}>
+        <Text color="textSubtle">{t('Total supply')}</Text>
         {cakeSupply ? (
-          <Balance color="secondary" decimals={0} lineHeight="1.1" fontSize="24px" bold value={cakeSupply} />
+          <Balance decimals={0} lineHeight="1.1" fontSize="24px" bold value={cakeSupply} />
         ) : (
           <>
             <div ref={observerRef} />
@@ -159,40 +150,37 @@ const CakeDataRow = () => {
           </>
         )}
       </StyledColumn>
-      <StyledColumn>
-        <Text bold fontSize={isMobile ? '14px' : undefined}>
-          {t('Market cap')}
-        </Text>
+      <StyledColumn noMobileBorder style={{ gridArea: 'c' }}>
+        <Text color="textSubtle">{t('Max Supply')}</Text>
+
+        <Balance decimals={0} lineHeight="1.1" fontSize="24px" bold value={750000000} />
+      </StyledColumn>
+      <StyledColumn noDesktopBorder style={{ gridArea: 'd' }}>
+        <Text color="textSubtle">{t('Market cap')}</Text>
         {mcap?.gt(0) && mcapString ? (
-          <Heading color="secondary" scale="lg">
-            {t('$%marketCap%', { marketCap: mcapString })}
-          </Heading>
+          <Heading scale="lg">{t('$%marketCap%', { marketCap: mcapString })}</Heading>
         ) : (
           <Skeleton height={24} width={126} my="4px" />
         )}
       </StyledColumn>
-      <StyledColumn>
-        <Text bold fontSize={isMobile ? '14px' : undefined}>
-          {t('Token Burn')}
-        </Text>
+      <StyledColumn style={{ gridArea: 'e' }}>
+        <Text color="textSubtle">{t('Burned to date')}</Text>
         {burnedBalance ? (
-          <Balance color="secondary" decimals={0} lineHeight="1.1" fontSize="24px" bold value={burnedBalance} />
+          <Balance decimals={0} lineHeight="1.1" fontSize="24px" bold value={burnedBalance} />
         ) : (
           <Skeleton height={24} width={126} my="4px" />
         )}
       </StyledColumn>
-      <StyledColumn>
-        <Text bold>{t('Current emissions')}</Text>
+      <StyledColumn style={{ gridArea: 'f' }}>
+        <Text color="textSubtle">{t('Current emissions')}</Text>
 
         {emissionsPerBlock ? (
-          <Heading color="secondary" scale="lg">
-            {t('%cakeEmissions%/block', { cakeEmissions: formatNumber(emissionsPerBlock) })}
-          </Heading>
+          <Heading scale="lg">{t('%cakeEmissions%/block', { cakeEmissions: formatNumber(emissionsPerBlock) })}</Heading>
         ) : (
           <Skeleton height={24} width={126} my="4px" />
         )}
       </StyledColumn>
-    </StyledWrapper>
+    </Grid>
   )
 }
 

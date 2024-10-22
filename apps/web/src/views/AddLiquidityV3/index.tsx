@@ -1,53 +1,56 @@
 import { CurrencySelect } from 'components/CurrencySelect'
 import { CommonBasesType } from 'components/SearchModal/types'
 
-import { Currency, NATIVE, WNATIVE } from '@pancakeswap/sdk'
+import { ChainId, Currency, NATIVE, WNATIVE } from '@pancakeswap/sdk'
 import {
-  AddIcon,
-  AutoColumn,
-  Card,
-  CardBody,
-  DynamicSection,
-  FlexGap,
-  IconButton,
-  PreTitle,
-  RefreshIcon,
+    FlexGap,
+    AutoColumn,
+    CardBody,
+    Card,
+    AddIcon,
+    PreTitle,
+    DynamicSection,
+    RefreshIcon,
+    IconButton,
+    Message,
+    Link,
 } from '@pancakeswap/uikit'
 
-import { FeeAmount, Pool } from '@pancakeswap/v3-sdk'
-import React, { ReactNode, useCallback, useEffect, useMemo } from 'react'
+import { FeeAmount } from '@pancakeswap/v3-sdk'
+import { useCallback, useEffect, useMemo } from 'react'
 
-import { Trans, useTranslation } from '@pancakeswap/localization'
-import { useRouter } from 'next/router'
 import currencyId from 'utils/currencyId'
+import { useRouter } from 'next/router'
+import { Trans, useTranslation } from '@pancakeswap/localization'
 
-import { AppHeader } from 'components/App'
-import { atom, useAtom } from 'jotai'
-import { styled } from 'styled-components'
 import Page from 'views/Page'
+import { AppHeader } from 'components/App'
+import { styled } from 'styled-components'
+import { atom, useAtom } from 'jotai'
 
-import { usePreviousValue } from '@pancakeswap/hooks'
 import { useCurrency } from 'hooks/Tokens'
-import AddLiquidity from 'views/AddLiquidity'
-import AddStableLiquidity from 'views/AddLiquidity/AddStableLiquidity'
 import useStableConfig, { StableConfigContext } from 'views/Swap/hooks/useStableConfig'
+import AddStableLiquidity from 'views/AddLiquidity/AddStableLiquidity'
+import AddLiquidity from 'views/AddLiquidity'
+import { usePreviousValue } from '@pancakeswap/hooks'
+import { getAddress } from 'viem'
 
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import noop from 'lodash/noop'
-import { resetMintState } from 'state/mint/actions'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import { useAddLiquidityV2FormDispatch } from 'state/mint/reducer'
-import { safeGetAddress } from 'utils'
-import { usePoolInfo } from 'state/farmsV4/state/extendPools/hooks'
+import { resetMintState } from 'state/mint/actions'
 import FeeSelector from './formViews/V3FormView/components/FeeSelector'
 
-import { AprCalculatorV2 } from './components/AprCalculatorV2'
-import { StableV3Selector } from './components/StableV3Selector'
-import { V2Selector } from './components/V2Selector'
-import StableFormView from './formViews/StableFormView'
-import V2FormView from './formViews/V2FormView'
 import V3FormView from './formViews/V3FormView'
-import { useCurrencyParams } from './hooks/useCurrencyParams'
 import { HandleFeePoolSelectFn, SELECTOR_TYPE } from './types'
+import { StableV3Selector } from './components/StableV3Selector'
+import StableFormView from './formViews/StableFormView'
+import { V2Selector } from './components/V2Selector'
+import V2FormView from './formViews/V2FormView'
+import { AprCalculator } from './components/AprCalculator'
+import { useCurrencyParams } from './hooks/useCurrencyParams'
+import { SUPPORT_SWAP_V3 } from "config/constants/supportChains";
+import {coreTokens} from "@pancakeswap/tokens";
 
 export const BodyWrapper = styled(Card)`
   border-radius: 24px;
@@ -74,13 +77,15 @@ export const ResponsiveTwoColumns = styled.div`
 const selectTypeAtom = atom(SELECTOR_TYPE.V3)
 
 interface UniversalAddLiquidityPropsType {
-  currencyIdA?: string
-  currencyIdB?: string
+  currencyIdA: string
+  currencyIdB: string
+  isV2?: boolean
   preferredSelectType?: SELECTOR_TYPE
   preferredFeeAmount?: FeeAmount
 }
 
 export function UniversalAddLiquidity({
+  isV2,
   currencyIdA,
   currencyIdB,
   preferredSelectType,
@@ -96,6 +101,8 @@ export function UniversalAddLiquidity({
       dispatch(resetMintState())
     }
   }, [dispatch, currencyIdA, currencyIdB])
+
+  const isV2Safe = isV2 || !SUPPORT_SWAP_V3.includes(chainId)
 
   const router = useRouter()
   const baseCurrency = useCurrency(currencyIdA)
@@ -134,8 +141,8 @@ export function UniversalAddLiquidity({
         currencyNew?.isNative || (chainId !== undefined && currencyIdNew === WNATIVE[chainId]?.address)
       const isNATIVEOrWNATIVEOther =
         currencyIdOther !== undefined &&
-        ((chainId && currencyIdOther === NATIVE[chainId]?.symbol) ||
-          (chainId !== undefined && safeGetAddress(currencyIdOther) === WNATIVE[chainId]?.address))
+        (currencyIdOther === NATIVE[chainId]?.symbol ||
+          (chainId !== undefined && getAddress(currencyIdOther) === WNATIVE[chainId]?.address))
 
       if (isNATIVEOrWNATIVENew && isNATIVEOrWNATIVEOther) {
         return [currencyIdNew, undefined]
@@ -149,14 +156,13 @@ export function UniversalAddLiquidity({
   const handleCurrencyASelect = useCallback(
     (currencyANew: Currency) => {
       const [idA, idB] = handleCurrencySelect(currencyANew, currencyIdB)
-      const newPathname = router.pathname.replace('/v2', '').replace('/stable', '')
       if (idB === undefined) {
         router.replace(
           {
-            pathname: newPathname,
+            pathname: router.pathname,
             query: {
               ...router.query,
-              currency: [idA!],
+              currency: [idA],
             },
           },
           undefined,
@@ -165,10 +171,10 @@ export function UniversalAddLiquidity({
       } else {
         router.replace(
           {
-            pathname: newPathname,
+            pathname: router.pathname,
             query: {
               ...router.query,
-              currency: [idA!, idB!],
+              currency: [idA, idB],
             },
           },
           undefined,
@@ -182,14 +188,13 @@ export function UniversalAddLiquidity({
   const handleCurrencyBSelect = useCallback(
     (currencyBNew: Currency) => {
       const [idB, idA] = handleCurrencySelect(currencyBNew, currencyIdA)
-      const newPathname = router.pathname.replace('/v2', '').replace('/stable', '')
       if (idA === undefined) {
         router.replace(
           {
-            pathname: newPathname,
+            pathname: router.pathname,
             query: {
               ...router.query,
-              currency: [idB!],
+              currency: [idB],
             },
           },
           undefined,
@@ -198,10 +203,10 @@ export function UniversalAddLiquidity({
       } else {
         router.replace(
           {
-            pathname: newPathname,
+            pathname: router.pathname,
             query: {
               ...router.query,
-              currency: [idA!, idB!],
+              currency: [idA, idB],
             },
           },
           undefined,
@@ -224,36 +229,39 @@ export function UniversalAddLiquidity({
     }
 
     // if fee selection from url, don't change the selector type to avoid keep selecting stable when url changes, e.g. toggle rate
-    if (!stableConfig.stableSwapConfig && feeAmountFromUrl) return
-    if (preferredSelectType === SELECTOR_TYPE.STABLE && stableConfig.stableSwapConfig) {
+    if (feeAmountFromUrl) return
+    if (stableConfig.stableSwapConfig) {
       setSelectorType(SELECTOR_TYPE.STABLE)
     } else {
-      setSelectorType(preferredSelectType || SELECTOR_TYPE.V3)
+      if(!SUPPORT_SWAP_V3.includes(chainId)) {
+        setSelectorType(SELECTOR_TYPE.V2)
+      } else {
+        setSelectorType(preferredSelectType || isV2Safe ? SELECTOR_TYPE.V2 : SELECTOR_TYPE.V3)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currencyIdA,
     currencyIdB,
     feeAmountFromUrl,
+    isV2Safe,
     preferredSelectType,
     prevPreferredSelectType,
     setSelectorType,
     stableConfig.stableSwapConfig,
+    chainId
   ])
 
   const handleFeePoolSelect = useCallback<HandleFeePoolSelectFn>(
     ({ type, feeAmount: newFeeAmount }) => {
       setSelectorType(type)
-      if (type === SELECTOR_TYPE.V3) {
-        const newPathname = router.pathname.replace('/stable', '').replace('/v2', '')
+      if (newFeeAmount) {
         router.replace(
           {
-            pathname: newPathname,
+            pathname: router.pathname,
             query: {
               ...router.query,
-              currency: newFeeAmount
-                ? [currencyIdA!, currencyIdB!, newFeeAmount.toString()]
-                : [currencyIdA!, currencyIdB!],
+              currency: [currencyIdA, currencyIdB, newFeeAmount.toString()],
             },
           },
           undefined,
@@ -262,18 +270,31 @@ export function UniversalAddLiquidity({
       } else {
         router.replace(
           {
-            pathname: router.pathname,
-            query: router.query,
+            pathname: router.pathname.replace('/v2', ''),
+            query: {
+              ...router.query,
+              currency: [currencyIdA, currencyIdB],
+            },
           },
-          type === SELECTOR_TYPE.STABLE
-            ? `/stable/add/${currencyIdA}/${currencyIdB}`
-            : `/v2/add/${currencyIdA}/${currencyIdB}`,
+          undefined,
           { shallow: true },
         )
       }
     },
     [currencyIdA, currencyIdB, router, setSelectorType],
   )
+
+  const handleSelectV2 = useCallback(() => {
+    setSelectorType(SELECTOR_TYPE.V2)
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: router.query,
+      },
+      `/v2/add/${currencyIdA}/${currencyIdB}`,
+      { shallow: true },
+    )
+  }, [currencyIdA, currencyIdB, router, setSelectorType])
 
   useEffect(() => {
     if (preferredFeeAmount && !feeAmountFromUrl && selectorType === SELECTOR_TYPE.V3) {
@@ -284,6 +305,20 @@ export function UniversalAddLiquidity({
   return (
     <>
       <CardBody>
+          { chainId === ChainId.CORE && (
+              currencyIdA && currencyIdA === coreTokens.wcore_old.address ||
+              currencyIdB && currencyIdB === coreTokens.wcore_old.address
+          ) && (
+              <Message variant="warning" mb="16px">
+                <span>
+                  {t("It looks like you still use our old WCORE. Simply unwrap it by")}{' '}
+                  <Link href="/swap?chain=core&inputCurrency=0x40375C92d9FAf44d2f9db9Bd9ba41a3317a2404f&outputCurrency=CORE" display="inline-flex">
+                    {t("\"swapping\"")}
+                  </Link>{' '}
+                  {t('it to CORE.')}
+                </span>
+              </Message>
+          )}
         <ResponsiveTwoColumns>
           <AutoColumn alignSelf="stretch">
             <PreTitle mb="8px">{t('Choose Token Pair')}</PreTitle>
@@ -307,7 +342,7 @@ export function UniversalAddLiquidity({
               />
             </FlexGap>
             <DynamicSection disabled={!baseCurrency || !currencyB}>
-              {preferredSelectType !== SELECTOR_TYPE.V2 &&
+              {!isV2Safe &&
                 stableConfig.stableSwapConfig &&
                 [SELECTOR_TYPE.STABLE, SELECTOR_TYPE.V3].includes(selectorType) && (
                   <StableV3Selector
@@ -319,8 +354,7 @@ export function UniversalAddLiquidity({
                   />
                 )}
 
-              {((preferredSelectType === SELECTOR_TYPE.V2 && selectorType !== SELECTOR_TYPE.V3) ||
-                selectorType === SELECTOR_TYPE.V2) && (
+              {((isV2Safe && selectorType !== SELECTOR_TYPE.V3) || selectorType === SELECTOR_TYPE.V2) && (
                 <V2Selector
                   isStable={Boolean(stableConfig.stableSwapConfig)}
                   selectorType={selectorType}
@@ -337,7 +371,7 @@ export function UniversalAddLiquidity({
                   currencyB={quoteCurrency ?? undefined}
                   handleFeePoolSelect={handleFeePoolSelect}
                   feeAmount={feeAmount}
-                  handleSelectV2={() => handleFeePoolSelect({ type: SELECTOR_TYPE.V2 })}
+                  handleSelectV2={handleSelectV2}
                 />
               )}
             </DynamicSection>
@@ -345,9 +379,7 @@ export function UniversalAddLiquidity({
           {selectorType === SELECTOR_TYPE.STABLE && (
             <StableConfigContext.Provider value={stableConfig}>
               <AddStableLiquidity currencyA={baseCurrency} currencyB={quoteCurrency}>
-                {(props) => (
-                  <StableFormView {...props} stableTotalFee={stableConfig?.stableSwapConfig?.stableTotalFee} />
-                )}
+                {(props) => <StableFormView {...props} stableLpFee={stableConfig?.stableSwapConfig?.stableLpFee} />}
               </AddStableLiquidity>
             </StableConfigContext.Provider>
           )}
@@ -375,7 +407,7 @@ const SELECTOR_TYPE_T = {
   [SELECTOR_TYPE.STABLE]: <Trans>Add Stable Liquidity</Trans>,
   [SELECTOR_TYPE.V2]: <Trans>Add V2 Liquidity</Trans>,
   [SELECTOR_TYPE.V3]: <Trans>Add V3 Liquidity</Trans>,
-} as const satisfies Record<SELECTOR_TYPE, ReactNode>
+} as const satisfies Record<SELECTOR_TYPE, JSX.Element>
 
 export function AddLiquidityV3Layout({
   showRefreshButton = false,
@@ -387,45 +419,31 @@ export function AddLiquidityV3Layout({
   children: React.ReactNode
 }) {
   const { t } = useTranslation()
-  const { chainId } = useActiveChainId()
 
   const [selectType] = useAtom(selectTypeAtom)
   const { currencyIdA, currencyIdB, feeAmount } = useCurrencyParams()
 
   const baseCurrency = useCurrency(currencyIdA)
   const quoteCurrency = useCurrency(currencyIdB)
-  const poolAddress = useMemo(
-    () =>
-      baseCurrency?.wrapped && quoteCurrency?.wrapped && feeAmount
-        ? Pool.getAddress(baseCurrency.wrapped, quoteCurrency.wrapped, feeAmount)
-        : null,
-    [baseCurrency?.wrapped, feeAmount, quoteCurrency?.wrapped],
-  )
 
   const title = SELECTOR_TYPE_T[selectType] || t('Add Liquidity')
-
-  const pool = usePoolInfo({ poolAddress, chainId })
-
-  const inverted = useMemo(
-    () =>
-      Boolean(
-        pool?.token0 &&
-          pool?.token1 &&
-          pool?.token0?.wrapped.address !== pool?.token1?.wrapped.address &&
-          pool?.token0?.wrapped.address !== baseCurrency?.wrapped.address,
-      ),
-    [pool, baseCurrency],
-  )
 
   return (
     <Page>
       <BodyWrapper>
         <AppHeader
           title={title}
-          backTo="/liquidity/positions"
+          backTo="/liquidity"
           IconSlot={
             <>
-              {selectType === SELECTOR_TYPE.V3 && <AprCalculatorV2 derived pool={pool} inverted={inverted} />}
+              {selectType === SELECTOR_TYPE.V3 && (
+                <AprCalculator
+                  showQuestion
+                  baseCurrency={baseCurrency}
+                  quoteCurrency={quoteCurrency}
+                  feeAmount={feeAmount}
+                />
+              )}
               {showRefreshButton && (
                 <IconButton variant="text" scale="sm">
                   <RefreshIcon onClick={handleRefresh || noop} color="textSubtle" height={24} width={24} />

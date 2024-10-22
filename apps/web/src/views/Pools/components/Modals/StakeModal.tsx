@@ -1,26 +1,20 @@
-import { useToast } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-import { useBoostedPoolApr } from 'views/Pools/hooks/useBoostedPoolApr'
-
-import { useTranslation } from '@pancakeswap/localization'
-import { Token } from '@pancakeswap/sdk'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import { getDecimalAmount } from '@pancakeswap/utils/formatBalance'
-import BigNumber from 'bignumber.js'
-import { ToastDescriptionWithTx } from 'components/Toast'
-import { tokenImageChainNameMapping } from 'components/TokenImage'
-import { useActiveChainId } from 'hooks/useActiveChainId'
-import useCatchTxError from 'hooks/useCatchTxError'
-import { useERC20 } from 'hooks/useContract'
-import { useCallback, useMemo, useState } from 'react'
-import { useAppDispatch } from 'state'
-import { updateUserAllowance, updateUserBalance, updateUserPendingReward, updateUserStakedBalance } from 'state/pools'
-import { usePool } from 'state/pools/hooks'
-import { useApprovePool } from 'views/Pools/hooks/useApprove'
+import { Pool, useToast } from '@pancakeswap/uikit'
 import { useAccount } from 'wagmi'
+import { useTranslation } from '@pancakeswap/localization'
+import { useCallback, useState, useMemo } from 'react'
+import { useAppDispatch } from 'state'
+import { updateUserBalance, updateUserPendingReward, updateUserStakedBalance, updateUserAllowance } from 'state/pools'
+import { ToastDescriptionWithTx } from 'components/Toast'
+import useCatchTxError from 'hooks/useCatchTxError'
+import { Token } from '@pancakeswap/sdk'
+import BigNumber from 'bignumber.js'
+import { useERC20 } from 'hooks/useContract'
+import { getDecimalAmount } from '@pancakeswap/utils/formatBalance'
+import { useApprovePool } from 'views/Pools/hooks/useApprove'
+import { usePool } from 'state/pools/hooks'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import useStakePool from '../../hooks/useStakePool'
 import useUnstakePool from '../../hooks/useUnstakePool'
-import ZkSyncWarning from './ZkSyncWarning'
 
 const StakeModalContainer = ({
   isBnbPool,
@@ -32,12 +26,6 @@ const StakeModalContainer = ({
 }: Pool.StakeModalPropsType<Token>) => {
   const { t } = useTranslation()
   const { chainId } = useActiveChainId()
-
-  const boostedApr = useBoostedPoolApr({
-    chainId,
-    enabled: !pool.isFinished ?? true,
-    contractAddress: pool.contractAddress,
-  })
 
   const {
     sousId,
@@ -66,17 +54,12 @@ const StakeModalContainer = ({
     earningToken.symbol,
   )
 
-  const tokenImageUrl = useMemo(
-    () => (chainId ? `https://tokens.pancakeswap.finance/images/${tokenImageChainNameMapping[chainId]}` : ''),
-    [chainId],
-  )
+  const tokenImageUrl = useMemo(() => `https://icecreamswap-assets.s3.amazonaws.com/token/${chainId}/`, [chainId])
 
   const onDone = useCallback(() => {
-    if (account && chainId) {
-      dispatch(updateUserStakedBalance({ sousId, account, chainId }))
-      dispatch(updateUserPendingReward({ sousId, account, chainId }))
-      dispatch(updateUserBalance({ sousId, account, chainId }))
-    }
+    dispatch(updateUserStakedBalance({ sousId, account, chainId }))
+    dispatch(updateUserPendingReward({ sousId, account, chainId }))
+    dispatch(updateUserBalance({ sousId, account, chainId }))
   }, [dispatch, sousId, account, chainId])
 
   const handleConfirmClick = useCallback(
@@ -128,46 +111,35 @@ const StakeModalContainer = ({
   )
 
   const needEnable = useMemo(() => {
-    if (!isRemovingStake && !pendingTx) {
+    if (!isRemovingStake && !pendingTx && !isBnbPool) {
       const stakeAmount = getDecimalAmount(new BigNumber(amount), stakingToken.decimals)
-      return stakeAmount.gt(singlePool?.userData?.allowance ?? 0)
+      return stakeAmount.gt(singlePool.userData.allowance)
     }
     return false
   }, [singlePool, amount, pendingTx, isRemovingStake, stakingToken.decimals])
 
   const handleEnableApprove = async () => {
-    if (account && chainId) {
-      await handleApprove()
-      dispatch(updateUserAllowance({ sousId, account, chainId }))
-    }
+    await handleApprove()
+    dispatch(updateUserAllowance({ sousId, account, chainId }))
   }
-
-  const totalApr = useMemo(() => {
-    let finalApr = apr ?? 0
-    if (boostedApr) {
-      finalApr = new BigNumber(boostedApr).plus(apr ?? 0).toNumber() ?? 0
-    }
-
-    return finalApr
-  }, [boostedApr, apr])
 
   return (
     <Pool.StakeModal
-      enableEmergencyWithdraw={enableEmergencyWithdraw ?? false}
-      stakingLimit={stakingLimit ?? BIG_ZERO}
+      enableEmergencyWithdraw={enableEmergencyWithdraw}
+      stakingLimit={stakingLimit}
       stakingTokenPrice={stakingTokenPrice}
-      earningTokenPrice={earningTokenPrice ?? 0}
+      earningTokenPrice={earningTokenPrice}
       stakingTokenDecimals={stakingToken.decimals}
       earningTokenSymbol={earningToken.symbol}
       stakingTokenSymbol={stakingToken.symbol}
       stakingTokenAddress={stakingToken.address}
       stakingTokenBalance={stakingTokenBalance}
-      apr={totalApr}
-      userDataStakedBalance={userData?.stakedBalance ?? BIG_ZERO}
-      userDataStakingTokenBalance={userData?.stakingTokenBalance ?? BIG_ZERO}
+      apr={apr}
+      userDataStakedBalance={userData?.stakedBalance}
+      userDataStakingTokenBalance={userData?.stakingTokenBalance}
       onDismiss={onDismiss}
       pendingTx={pendingTx}
-      account={account ?? ''}
+      account={account}
       needEnable={needEnable}
       enablePendingTx={enablePendingTx}
       handleEnableApprove={handleEnableApprove}
@@ -175,7 +147,6 @@ const StakeModalContainer = ({
       handleConfirmClick={handleConfirmClick}
       isRemovingStake={isRemovingStake}
       imageUrl={tokenImageUrl}
-      warning={<ZkSyncWarning />}
     />
   )
 }

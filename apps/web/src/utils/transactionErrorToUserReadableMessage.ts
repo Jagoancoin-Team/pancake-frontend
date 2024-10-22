@@ -1,5 +1,5 @@
 import { TranslateFunction } from '@pancakeswap/localization'
-import { parseViemError } from './errors'
+import { parseError } from 'hooks/useCatchTxError'
 
 /**
  * This is hacking out the revert reason from the ethers provider thrown error however it can.
@@ -9,9 +9,9 @@ import { parseViemError } from './errors'
  */
 export function transactionErrorToUserReadableMessage(error: any, t: TranslateFunction) {
   let reason: string | undefined
-  const parsedError = parseViemError(error)
+  const parsedError = parseError(error)
   if (parsedError) {
-    reason = parsedError.details || parsedError.shortMessage || parsedError.message
+    reason = parsedError.shortMessage || parsedError.message
   } else {
     while (error) {
       reason = error.reason ?? error.data?.message ?? error.message ?? reason
@@ -51,11 +51,11 @@ export function transactionErrorToUserReadableMessage(error: any, t: TranslateFu
     case 'Too much requested':
     case 'STF':
       return t(
-        'This transaction will not succeed due to price movement. Try increasing your slippage tolerance. Note: fee on transfer and rebase tokens are incompatible with Pancakeswap V3.',
+        'This transaction will not succeed due to price movement. Try increasing your slippage tolerance. Note: fee on transfer and rebase tokens are incompatible with DynastySwap V3.',
       )
     case 'TF':
       return t(
-        'The output token cannot be transferred. There may be an issue with the output token. Note: fee on transfer and rebase tokens are incompatible with Pancakeswap V3.',
+        'The output token cannot be transferred. There may be an issue with the output token. Note: fee on transfer and rebase tokens are incompatible with DynastySwap V3.',
       )
     default:
       if (reason?.indexOf('undefined is not an object') !== -1) {

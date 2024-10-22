@@ -1,17 +1,19 @@
 import { Currency } from '@pancakeswap/sdk'
-import { CAKE, USDC } from '@pancakeswap/tokens'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import useNativeCurrency from 'hooks/useNativeCurrency'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import { useRouter } from 'next/router'
 import { useCallback } from 'react'
 import currencyId from 'utils/currencyId'
+import { ICE, USD } from '@pancakeswap/tokens'
 
 export const useCurrencySelectRoute = () => {
   const native = useNativeCurrency()
   const router = useRouter()
   const { chainId } = useActiveChainId()
-  const [currencyIdA, currencyIdB] =
-    router.query.currency || (chainId ? [native.symbol, CAKE[chainId]?.address ?? USDC[chainId]?.address] : [])
+  const [currencyIdA, currencyIdB] = router.query.currency || [
+    native.symbol,
+    ICE[chainId]?.address ?? USD[chainId]?.address,
+  ]
 
   const handleCurrencyASelect = useCallback(
     (currencyA_: Currency) => {

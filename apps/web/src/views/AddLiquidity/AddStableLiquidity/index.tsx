@@ -1,39 +1,37 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, Percent, Price, Token } from '@pancakeswap/sdk'
-import { useModal } from '@pancakeswap/uikit'
-import { useIsExpertMode, useUserSlippage } from '@pancakeswap/utils/user'
-import { ONE_HUNDRED_PERCENT } from 'config/constants/exchange'
-import { useStableSwapNativeHelperContract } from 'hooks/useContract'
-import { PairState } from 'hooks/usePairs'
-import { useStableSwapAPR } from 'hooks/useStableSwapAPR'
 import { Dispatch, ReactElement, SetStateAction, useCallback, useContext, useMemo, useState } from 'react'
-import { logGTMAddLiquidityTxSentEvent, logGTMClickAddLiquidityConfirmEvent } from 'utils/customGTMEventTracking'
-import { formatCurrencyAmount } from 'utils/formatCurrencyAmount'
+import { CurrencyAmount, Token, Percent, Currency, Price } from '@pancakeswap/sdk'
+import { useModal } from '@pancakeswap/uikit'
 import { isUserRejected, logError } from 'utils/sentry'
+import { useTranslation } from '@pancakeswap/localization'
 import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
 import { StableConfigContext } from 'views/Swap/hooks/useStableConfig'
+import { ONE_HUNDRED_PERCENT } from 'config/constants/exchange'
+import { useStableSwapAPR } from 'hooks/useStableSwapAPR'
+import { useStableSwapNativeHelperContract } from 'hooks/useContract'
+import { PairState } from 'hooks/usePairs'
+import { useUserSlippage, useIsExpertMode } from '@pancakeswap/utils/user'
+import { formatCurrencyAmount } from 'utils/formatCurrencyAmount'
 
 import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
-import { CurrencyField as Field } from 'utils/types'
+import { Field } from 'state/mint/actions'
 import { useMintActionHandlers } from 'state/mint/hooks'
 
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
-import { useAddLiquidityV2FormState } from 'state/mint/reducer'
 import { useTransactionAdder } from 'state/transactions/hooks'
 import { useGasPrice } from 'state/user/hooks'
+import { SendTransactionResult } from 'wagmi/actions'
 import { calculateGasMargin } from 'utils'
 import { calculateSlippageAmount } from 'utils/exchange'
 import { maxAmountSpend } from 'utils/maxAmountSpend'
-import { Address } from 'viem'
-
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import { useAddLiquidityV2FormState } from 'state/mint/reducer'
 import ConfirmAddLiquidityModal from '../components/ConfirmAddLiquidityModal'
 
-import { useDerivedLPInfo } from './hooks/useDerivedLPInfo'
 import { StablePair, useStableLPDerivedMintInfo } from './hooks/useStableLPDerivedMintInfo'
+import { useDerivedLPInfo } from './hooks/useDerivedLPInfo'
 import { warningSeverity } from './utils/slippage'
 
 export interface AddStableChildrenProps {
-  noLiquidity?: boolean
+  noLiquidity: boolean
   formattedAmounts: {
     [Field.CURRENCY_A]?: string
     [Field.CURRENCY_B]?: string
@@ -46,24 +44,24 @@ export interface AddStableChildrenProps {
     [Field.CURRENCY_B]?: Currency
   }
   pairState: PairState
-  poolTokenPercentage?: Percent
-  price: Price<Currency, Currency> | null
-  executionSlippage?: Percent
+  poolTokenPercentage: Percent
+  price: Price<Currency, Currency>
+  executionSlippage: Percent
   loading: boolean
-  infoLoading?: boolean
+  infoLoading: boolean
   allowedSlippage: number
-  stableAPR?: number
+  stableAPR: number
   shouldShowApprovalGroup: boolean
   showFieldAApproval: boolean
-  approveACallback: () => Promise<{ hash: Address } | undefined>
+  approveACallback: () => Promise<SendTransactionResult>
   approvalA: ApprovalState
   showFieldBApproval: boolean
   approvalB: ApprovalState
-  approveBCallback: () => Promise<{ hash: Address } | undefined>
+  approveBCallback: () => Promise<SendTransactionResult>
   onAdd: () => Promise<void>
   onPresentAddLiquidityModal: () => void
   buttonDisabled: boolean
-  errorText?: string
+  errorText: string
   setLiquidityState: Dispatch<
     SetStateAction<{
       attemptingTxn: boolean
@@ -72,7 +70,7 @@ export interface AddStableChildrenProps {
     }>
   >
   reserves: readonly [bigint, bigint]
-  pair?: StablePair | null
+  pair: StablePair
 }
 
 export default function AddStableLiquidity({
@@ -80,8 +78,8 @@ export default function AddStableLiquidity({
   currencyB,
   children,
 }: {
-  currencyA?: Currency | null
-  currencyB?: Currency | null
+  currencyA: Currency
+  currencyB: Currency
   children: (props: AddStableChildrenProps) => ReactElement
 }) {
   const { account, chainId } = useAccountActiveChain()
@@ -140,12 +138,12 @@ export default function AddStableLiquidity({
   )
   const executionSlippage = useMemo(() => {
     if (!liquidityMinted || !expectedOutputWithoutFee) {
-      return undefined
+      return null
     }
     return ONE_HUNDRED_PERCENT.subtract(new Percent(liquidityMinted.quotient, expectedOutputWithoutFee.quotient))
   }, [liquidityMinted, expectedOutputWithoutFee])
 
-  const slippageSeverity = executionSlippage && warningSeverity(executionSlippage)
+  const slippageSeverity = warningSeverity(executionSlippage)
 
   // get the max amounts user can add
   const maxAmounts: { [field in Field]?: CurrencyAmount<Token> } = [Field.CURRENCY_A, Field.CURRENCY_B].reduce(
@@ -167,8 +165,8 @@ export default function AddStableLiquidity({
     [dependentField, independentField, otherTypedValue, typedValue],
   )
 
-  const { stableSwapContract, stableSwapConfig } = useContext(StableConfigContext) || {}
-  const stableAPR = useStableSwapAPR(stableSwapConfig?.liquidityToken.address)
+  const { stableSwapContract, stableSwapConfig } = useContext(StableConfigContext)
+  const stableAPR = useStableSwapAPR(stableSwapContract?.address)
 
   const needWrapped = currencyA?.isNative || currencyB?.isNative
 
@@ -185,7 +183,6 @@ export default function AddStableLiquidity({
   const addTransaction = useTransactionAdder()
 
   async function onAdd() {
-    logGTMClickAddLiquidityConfirmEvent()
     const contract = needWrapped ? nativeHelperContract : stableSwapContract
 
     if (!chainId || !account || !contract) return
@@ -199,8 +196,7 @@ export default function AddStableLiquidity({
       return
     }
 
-    const lpMintedSlippage =
-      liquidityMinted && calculateSlippageAmount(liquidityMinted, noLiquidity ? 0 : allowedSlippage)[0]
+    const lpMintedSlippage = calculateSlippageAmount(liquidityMinted, noLiquidity ? 0 : allowedSlippage)[0]
 
     const quotientA = parsedAmountA?.quotient || 0n
     const quotientB = parsedAmountB?.quotient || 0n
@@ -213,53 +209,39 @@ export default function AddStableLiquidity({
 
     let args_
 
-    let value_: bigint | undefined
+    let value_: bigint | null = null
     let call: Promise<`0x${string}`>
-
     if (needWrapped) {
-      if (!stableSwapContract) {
-        return
-      }
-      const args = [stableSwapContract.address, tokenAmounts, (minLPOutput || lpMintedSlippage)!] as const
+      const args = [stableSwapContract.address, tokenAmounts, minLPOutput || lpMintedSlippage] as const
       args_ = args
-      const value = (currencyB?.isNative ? parsedAmountB : parsedAmountA)?.quotient
+      const value = (currencyB?.isNative ? parsedAmountB : parsedAmountA).quotient
       value_ = value
       call = nativeHelperContract.estimateGas
-        .add_liquidity(
-          args, // TODO: Fix viem
-          // @ts-ignore
-          {
-            value,
-            account: contract.account!,
-          },
-        )
+        .add_liquidity(args, {
+          value,
+          account: contract.account,
+        })
         .then((estimatedGasLimit) => {
           return nativeHelperContract.write.add_liquidity(args, {
             gas: calculateGasMargin(estimatedGasLimit),
             gasPrice,
             value,
-            account: contract.account!,
+            account: contract.account,
             chain: contract.chain,
           })
         })
     } else {
-      const args = [tokenAmounts, (minLPOutput || lpMintedSlippage)!] as const
+      const args = [tokenAmounts, minLPOutput || lpMintedSlippage] as const
       args_ = args
-      if (!stableSwapContract || !contract.account) {
-        return
-      }
-
-      const contractAccount = contract.account
-
       call = stableSwapContract.estimateGas
         .add_liquidity(args, {
-          account: contractAccount!,
+          account: contract.account,
         })
         .then((estimatedGasLimit) => {
           return stableSwapContract.write.add_liquidity(args, {
             gas: calculateGasMargin(estimatedGasLimit),
             gasPrice,
-            account: contractAccount,
+            account: contract.account,
             chain: contract.chain,
           })
         })
@@ -269,7 +251,7 @@ export default function AddStableLiquidity({
     await call
       .then((response) => {
         setLiquidityState({ attemptingTxn: false, liquidityErrorMessage: undefined, txHash: response })
-        logGTMAddLiquidityTxSentEvent()
+
         const symbolA = currencies[Field.CURRENCY_A]?.symbol
         const amountA = parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) || '0'
         const symbolB = currencies[Field.CURRENCY_B]?.symbol
@@ -359,7 +341,7 @@ export default function AddStableLiquidity({
     (parsedAmountA?.greaterThan(0) && approvalA !== ApprovalState.APPROVED) ||
     (parsedAmountB?.greaterThan(0) && approvalB !== ApprovalState.APPROVED)
 
-  const buttonDisabled = !isValid || notApprovalYet || (!!slippageSeverity && slippageSeverity > 2 && !expertMode)
+  const buttonDisabled = !isValid || notApprovalYet || (slippageSeverity > 2 && !expertMode)
 
   const showFieldAApproval = approvalA === ApprovalState.NOT_APPROVED || approvalA === ApprovalState.PENDING
   const showFieldBApproval = approvalB === ApprovalState.NOT_APPROVED || approvalB === ApprovalState.PENDING

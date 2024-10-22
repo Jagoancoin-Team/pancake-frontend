@@ -1,50 +1,29 @@
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 
-import { GRAPH_API_PREDICTION_BNB } from '@pancakeswap/prediction'
-import { getPortalRoot } from '@pancakeswap/uikit'
-import { GRAPH_API_LOTTERY } from 'config/constants/endpoints'
 import { useActiveChainId } from 'hooks/useActiveChainId'
+import { V3_SUBGRAPH_URLS } from 'config/constants/endpoints'
+
 import { SubgraphHealthIndicator, SubgraphHealthIndicatorProps } from './SubgraphHealthIndicator'
 
 interface FactoryParams {
-  getSubgraph: (chainId: ChainId) => string
+  getSubgraphName: (chainId: ChainId) => string
 }
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
-export function subgraphHealthIndicatorFactory({ getSubgraph }: FactoryParams) {
-  return function Indicator(props: PartialBy<SubgraphHealthIndicatorProps, 'subgraph' | 'chainId'>) {
+export function subgraphHealthIndicatorFactory({ getSubgraphName }: FactoryParams) {
+  return function Indicator(props: PartialBy<SubgraphHealthIndicatorProps, 'subgraphName'>) {
     const { chainId } = useActiveChainId()
+    const subgraphName = useMemo(() => getSubgraphName(chainId), [chainId])
 
-    const subgraph = useMemo(() => {
-      if (props.chainId) {
-        return getSubgraph(props.chainId)
-      }
-      if (chainId) {
-        return getSubgraph(chainId)
-      }
-      return undefined
-    }, [chainId, props?.chainId])
-
-    if (!subgraph) {
-      return null
-    }
-
-    const portalRoot = getPortalRoot()
-
-    return portalRoot
-      ? createPortal(<SubgraphHealthIndicator chainId={chainId} subgraph={subgraph} {...props} />, portalRoot)
-      : null
+    return createPortal(<SubgraphHealthIndicator subgraphName={subgraphName} {...props} />, document.body)
   }
 }
 
-export const LotterySubgraphHealthIndicator = subgraphHealthIndicatorFactory({
-  getSubgraph: () => GRAPH_API_LOTTERY,
-})
-
-export const PredictionSubgraphHealthIndicator = subgraphHealthIndicatorFactory({
-  getSubgraph: (chainId) => GRAPH_API_PREDICTION_BNB?.[chainId],
+export const V3SubgraphHealthIndicator = subgraphHealthIndicatorFactory({
+  getSubgraphName: (chainId) =>
+    V3_SUBGRAPH_URLS[chainId]?.replace('https://the-graph.icecreamswap.com/subgraphs/name/', '') || '',
 })

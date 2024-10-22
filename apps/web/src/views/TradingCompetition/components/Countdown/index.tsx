@@ -8,6 +8,7 @@ import { Heading2Text } from '../CompetitionHeadingText'
 import { CompetitionPhaseProps } from '../../types'
 import Timer from './Timer'
 import ProgressStepper from './ProgressStepper'
+import { useActiveChainId } from "hooks/useActiveChainId";
 
 const Wrapper = styled(Flex)`
   width: fit-content;
@@ -71,13 +72,14 @@ const StyledHeading = styled(Heading2Text)`
 const Countdown: React.FC<
   React.PropsWithChildren<{ currentPhase: CompetitionPhaseProps; hasCompetitionEnded: boolean }>
 > = ({ currentPhase, hasCompetitionEnded }) => {
+  const { chainId } = useActiveChainId()
   const { theme } = useTheme()
   const { t } = useTranslation()
   const finishMs = currentPhase.ends
   const currentMs = Date.now()
-  const secondsUntilNextEvent = finishMs !== null && finishMs !== undefined ? (finishMs - currentMs) / 1000 : undefined
+  const secondsUntilNextEvent = (finishMs - currentMs) / 1000
 
-  const { minutes, hours, days } = getTimePeriods(secondsUntilNextEvent || 0)
+  const { minutes, hours, days } = getTimePeriods(secondsUntilNextEvent)
 
   const renderTimer = () => {
     if (hasCompetitionEnded) {
@@ -93,6 +95,7 @@ const Countdown: React.FC<
         minutes={minutes}
         hours={hours}
         days={days}
+        chainId={chainId}
         HeadingTextComponent={({ children }) => (
           <StyledHeading background={theme.colors.gradientGold} $fill>
             {children}
@@ -123,7 +126,7 @@ const Countdown: React.FC<
         {!secondsUntilNextEvent ? (
           <Skeleton height={42} width={190} />
         ) : (
-          <ProgressStepper steps={CompetitionSteps} activeStepIndex={currentPhase.step?.index} />
+          <ProgressStepper steps={CompetitionSteps} activeStepIndex={currentPhase.step.index} />
         )}
       </Flex>
     </Wrapper>

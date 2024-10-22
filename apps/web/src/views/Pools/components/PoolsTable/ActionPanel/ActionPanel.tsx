@@ -1,47 +1,23 @@
-import {
-  BalanceWithLoading,
-  Box,
-  Flex,
-  HelpIcon,
-  Message,
-  MessageText,
-  Text,
-  useMatchBreakpoints,
-} from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-import { useMemo } from 'react'
-import { css, keyframes, styled } from 'styled-components'
-import { useIsMigratedToVeCake } from 'views/CakeStaking/hooks/useIsMigratedToVeCake'
-
+import { styled, keyframes, css } from 'styled-components'
+import { Box, Flex, HelpIcon, Text, useMatchBreakpoints, Pool, BalanceWithLoading } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
-import { Token } from '@pancakeswap/sdk'
+import { useVaultPoolByKey } from 'state/pools/hooks'
+import { getVaultPosition, VaultPosition } from 'utils/cakePool'
+import BigNumber from 'bignumber.js'
+import { VaultKey, DeserializedLockedCakeVault, DeserializedLockedVaultUser } from 'state/types'
 import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import { getBalanceNumber } from '@pancakeswap/utils/formatBalance'
-import BigNumber from 'bignumber.js'
-import { useVaultPoolByKey } from 'state/pools/hooks'
-import { DeserializedLockedCakeVault, DeserializedLockedVaultUser, VaultKey } from 'state/types'
-import { VaultPosition, getVaultPosition } from 'utils/cakePool'
-import {
-  LearnMoreLink,
-  VeCakeBunny,
-  VeCakeButton,
-  VeCakeCardTableView,
-  VeCakeDelegatedCard,
-  VeCakeMigrateCard,
-  VeCakeUpdateCard,
-  VeCakeUpdateCardTableView,
-} from 'views/CakeStaking/components/SyrupPool'
-import { useIsUserDelegated } from 'views/CakeStaking/hooks/useIsUserDelegated'
-import WithdrawAllButton from '../../LockedPool/Buttons/WithdrawAllButton'
-import LockDurationRow from '../../LockedPool/Common/LockDurationRow'
-import YieldBoostRow from '../../LockedPool/Common/YieldBoostRow'
-import useUserDataInVaultPresenter from '../../LockedPool/hooks/useUserDataInVaultPresenter'
-import PoolStatsInfo from '../../PoolStatsInfo'
-import PoolTypeTag from '../../PoolTypeTag'
-import { VaultPositionTagWithLabel } from '../../Vault/VaultPositionTag'
-import AutoHarvest from './AutoHarvest'
+import { Token } from '@pancakeswap/sdk'
 import Harvest from './Harvest'
 import Stake from './Stake'
+import AutoHarvest from './AutoHarvest'
+import { VaultPositionTagWithLabel } from '../../Vault/VaultPositionTag'
+import YieldBoostRow from '../../LockedPool/Common/YieldBoostRow'
+import LockDurationRow from '../../LockedPool/Common/LockDurationRow'
+import useUserDataInVaultPresenter from '../../LockedPool/hooks/useUserDataInVaultPresenter'
+import CakeVaultApr from './CakeVaultApr'
+import PoolStatsInfo from '../../PoolStatsInfo'
+import PoolTypeTag from '../../PoolTypeTag'
 
 const expandAnimation = keyframes`
   from {
@@ -61,7 +37,7 @@ const collapseAnimation = keyframes`
   }
 `
 
-export const StyledActionPanel = styled.div<{ expanded: boolean }>`
+const StyledActionPanel = styled.div<{ expanded: boolean }>`
   animation: ${({ expanded }) =>
     expanded
       ? css`
@@ -79,11 +55,11 @@ export const StyledActionPanel = styled.div<{ expanded: boolean }>`
 
   ${({ theme }) => theme.mediaQueries.lg} {
     flex-direction: row;
-    padding: 16px;
+    padding: 16px 32px;
   }
 `
 
-export const ActionContainer = styled(Box)<{ isAutoVault?: boolean; hasBalance?: boolean }>`
+const ActionContainer = styled.div<{ isAutoVault?: boolean; hasBalance?: boolean }>`
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -105,7 +81,7 @@ interface ActionPanelProps {
   expanded: boolean
 }
 
-export const InfoSection = styled(Box)`
+const InfoSection = styled(Box)`
   flex-grow: 0;
   flex-shrink: 0;
   flex-basis: auto;
@@ -114,7 +90,6 @@ export const InfoSection = styled(Box)`
   ${({ theme }) => theme.mediaQueries.lg} {
     padding: 0;
     flex-basis: 230px;
-    margin-right: 16px;
     ${Text} {
       font-size: 14px;
     }
@@ -140,11 +115,16 @@ const ActionPanel: React.FC<React.PropsWithChildren<ActionPanelProps>> = ({ acco
   const { userData, vaultKey } = pool
   const { isMobile } = useMatchBreakpoints()
 
-  const vaultData = useVaultPoolByKey(vaultKey as Pool.VaultKey) as DeserializedLockedCakeVault
-  const cakeAsBigNumber = vaultData.userData?.balance?.cakeAsBigNumber ?? new BigNumber(0)
+  const vaultData = useVaultPoolByKey(vaultKey)
+  const {
+    userData: {
+      balance: { cakeAsBigNumber },
+    },
+  } = vaultData
+
   const vaultPosition = getVaultPosition(vaultData.userData)
 
-  const isLocked = vaultData.userData?.locked
+  const isLocked = (vaultData as DeserializedLockedCakeVault).userData.locked
 
   const stakingTokenBalance = userData?.stakingTokenBalance ? new BigNumber(userData.stakingTokenBalance) : BIG_ZERO
   const stakedBalance = userData?.stakedBalance ? new BigNumber(userData.stakedBalance) : BIG_ZERO
@@ -155,21 +135,14 @@ const ActionPanel: React.FC<React.PropsWithChildren<ActionPanelProps>> = ({ acco
 
   const originalLockedAmount = getBalanceNumber(vaultData.userData?.lockedAmount)
 
-  const isCakePool = useMemo(
-    () => pool.vaultKey === VaultKey.CakeVault || pool.vaultKey === VaultKey.CakeFlexibleSideVault,
-    [pool.vaultKey],
-  )
-  const isMigratedToVeCake = useIsMigratedToVeCake()
-  const isUserDelegated = useIsUserDelegated()
-
   return (
     <StyledActionPanel expanded={expanded}>
       <InfoSection>
         {isMobile && vaultKey === VaultKey.CakeVault && isLocked && (
           <Box mb="16px">
             <YieldBoostDurationRow
-              lockEndTime={vaultData.userData?.lockEndTime}
-              lockStartTime={vaultData.userData?.lockStartTime}
+              lockEndTime={(vaultData as DeserializedLockedCakeVault).userData.lockEndTime}
+              lockStartTime={(vaultData as DeserializedLockedCakeVault).userData.lockStartTime}
             />
             <Flex alignItems="center" justifyContent="space-between">
               <Text color="textSubtle" textTransform="uppercase" bold fontSize="12px">
@@ -180,102 +153,35 @@ const ActionPanel: React.FC<React.PropsWithChildren<ActionPanelProps>> = ({ acco
           </Box>
         )}
         <Flex flexDirection="column" mb="8px">
-          <>
-            {!isMobile && vaultKey === VaultKey.CakeVault && !account ? (
-              <VeCakeBunny />
-            ) : (
-              <PoolStatsInfo pool={pool} account={account} showTotalStaked={isMobile} alignLinksToRight={isMobile} />
-            )}
-          </>
+          <PoolStatsInfo pool={pool} account={account} showTotalStaked={isMobile} alignLinksToRight={isMobile} />
         </Flex>
         <Flex alignItems="center">
-          {vaultKey !== VaultKey.CakeVault && (
-            <PoolTypeTag vaultKey={vaultKey} isLocked={isLocked} account={account}>
-              {(tagTargetRef: any) => (
-                <Flex ref={tagTargetRef}>
-                  <HelpIcon ml="4px" width="20px" height="20px" color="textSubtle" />
-                </Flex>
-              )}
-            </PoolTypeTag>
-          )}
+          <PoolTypeTag vaultKey={vaultKey} isLocked={isLocked} account={account}>
+            {(tagTargetRef) => (
+              <Flex ref={tagTargetRef}>
+                <HelpIcon ml="4px" width="20px" height="20px" color="textSubtle" />
+              </Flex>
+            )}
+          </PoolTypeTag>
         </Flex>
       </InfoSection>
       <ActionContainer>
+        {isMobile && vaultKey === VaultKey.CakeVault && vaultPosition === VaultPosition.None && (
+          <CakeVaultApr pool={pool} userData={vaultData.userData} vaultPosition={vaultPosition} />
+        )}
         <Box width="100%">
           {pool.vaultKey === VaultKey.CakeVault && (
             <VaultPositionTagWithLabel
               userData={vaultData.userData as DeserializedLockedVaultUser}
-              width={['auto', null, 'fit-content']}
-              ml={['12px', null, null, null, null, '32px']}
+              width={['auto', , 'fit-content']}
+              ml={['12px', , , , , '32px']}
             />
           )}
           <ActionContainer isAutoVault={!!pool.vaultKey} hasBalance={poolStakingTokenBalance.gt(0)}>
-            {pool.vaultKey ? (
-              <>
-                {account && vaultPosition !== VaultPosition.None ? (
-                  isUserDelegated ? null : (
-                    <AutoHarvest pool={pool} />
-                  )
-                ) : (
-                  <VeCakeCardTableView />
-                )}
-              </>
-            ) : (
-              <Harvest {...pool} />
-            )}
+            {pool.vaultKey ? <AutoHarvest pool={pool} /> : <Harvest {...pool} />}
             <Stake pool={pool} />
           </ActionContainer>
         </Box>
-        {isCakePool && account && vaultPosition !== VaultPosition.None && (
-          <Flex width="100%">
-            <Message
-              variant="warning"
-              style={{ width: '100%', margin: '16px', marginBottom: '0', flexWrap: 'wrap' }}
-              action={
-                <Flex
-                  alignItems="center"
-                  style={{ gap: isMobile ? 15 : 24, flexDirection: isMobile ? 'column' : 'row' }}
-                >
-                  {isUserDelegated && <VeCakeDelegatedCard isTableView />}
-                  {vaultPosition === VaultPosition.Locked && !isUserDelegated && (
-                    <VeCakeMigrateCard
-                      isTableView
-                      lockEndTime={(vaultData?.userData as DeserializedLockedVaultUser)?.lockEndTime}
-                    />
-                  )}
-                  {vaultPosition === VaultPosition.Flexible && <VeCakeUpdateCard isFlexibleStake isTableView />}
-                  {vaultPosition >= VaultPosition.LockedEnd && !isUserDelegated && <VeCakeUpdateCardTableView />}
-                  {vaultPosition >= VaultPosition.LockedEnd && !isUserDelegated && <WithdrawAllButton />}
-                  <VeCakeButton style={{ flexBasis: '50%' }} type={isUserDelegated ? 'check' : 'get'} />
-                </Flex>
-              }
-              showIcon={vaultPosition !== VaultPosition.Locked}
-            >
-              {vaultPosition !== VaultPosition.Locked && (
-                <MessageText marginBottom="10px">
-                  {vaultPosition === VaultPosition.Flexible ? (
-                    <>
-                      {t('Flexible CAKE pool is discontinued and no longer distributing rewards.')}
-                      <LearnMoreLink withArrow />
-                    </>
-                  ) : vaultPosition >= VaultPosition.LockedEnd ? (
-                    isUserDelegated ? (
-                      t('To check out your converted position, please visit the protocol page.')
-                    ) : isMigratedToVeCake ? (
-                      t(
-                        'Extending or adding CAKE is not available for migrated positions. To get more veCAKE, withdraw from the unlocked CAKE pool position, and add CAKE to veCAKE.',
-                      )
-                    ) : (
-                      t(
-                        'The lock period has ended. To get more veCAKE, withdraw from the unlocked CAKE pool position, and add CAKE to veCAKE.',
-                      )
-                    )
-                  ) : null}
-                </MessageText>
-              )}
-            </Message>
-          </Flex>
-        )}
       </ActionContainer>
     </StyledActionPanel>
   )

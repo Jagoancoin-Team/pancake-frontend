@@ -1,9 +1,17 @@
 import { TranslateFunction } from '@pancakeswap/localization'
 import { SalesSectionProps } from '.'
+import iceConeA from '../../../../../public/images/dynasty.png'
+import iceConeB from '../../../../../public/images/hero.png'
+import bridgeA from '../../../../../public/images/home/bridge/bridge_a.png'
+import bridgeB from '../../../../../public/images/home/bridge/bridge_b.png'
+import earnIce from '../../../../../public/images/home/hero-home.png'
 
 export const swapSectionData = (t: TranslateFunction): SalesSectionProps => ({
-  headingText: t('Trade anything. No registration, no hassle.'),
-  bodyText: t('Trade any token on BNB Smart Chain in seconds, just by connecting your wallet.'),
+  headingText: t('Trade any token at the best rate'),
+  bodyText: t(
+    'Our AI-powered DEX aggregator scans the entire blockchain to find the most efficient way to execute your trade. ' +
+    'Stop wasting money on inefficient trades!'
+  ),
   reverse: false,
   primaryButton: {
     to: '/swap',
@@ -11,68 +19,62 @@ export const swapSectionData = (t: TranslateFunction): SalesSectionProps => ({
     external: false,
   },
   secondaryButton: {
-    to: 'https://docs.pancakeswap.finance/',
+    to: 'https://wiki.icecreamswap.com/dex/swap',
     text: t('Learn'),
     external: true,
   },
   images: {
     path: '/images/home/trade/',
     attributes: [
-      { src: 'BNB', alt: t('BNB token') },
-      { src: 'BTC', alt: t('BTC token') },
-      { src: 'CAKE', alt: t('CAKE token') },
+      { src: iceConeA, alt: '' },
+      { src: iceConeB, alt: '' },
     ],
   },
 })
 
-export const earnSectionData = (t: TranslateFunction): SalesSectionProps => ({
-  headingText: t('Earn passive income with crypto.'),
-  bodyText: t('PancakeSwap makes it easy to make your crypto work for you.'),
+export const bridgeSectionData = (t: TranslateFunction): SalesSectionProps => ({
+  headingText: t('Bridge with built-in Faucet'),
+  bodyText: t(
+    'IceCreamSwap allows direct bridging between many chains with ' +
+      'its audited and battle tested smart contracts. ' +
+      'The unique built-in faucet automatically drops you native tokens so you never have to worry about gas fees again.'
+  ),
   reverse: true,
   primaryButton: {
-    to: '/liquidity/pools',
-    text: t('Explore'),
+    to: '/bridge',
+    text: t('Bridge Now'),
     external: false,
   },
   secondaryButton: {
-    to: 'https://docs.pancakeswap.finance/products/yield-farming',
+    to: 'https://wiki.icecreamswap.com/dex/bridge',
     text: t('Learn'),
     external: true,
   },
   images: {
     path: '/images/home/earn/',
     attributes: [
-      { src: 'pie', alt: t('Pie chart') },
-      { src: 'stonks', alt: t('Stocks chart') },
-      { src: 'folder', alt: t('Folder with cake token') },
+      { src: bridgeA, alt: '' },
+      { src: bridgeB, alt: '' },
     ],
   },
 })
 
-export const cakeSectionData = (t: TranslateFunction): SalesSectionProps => ({
-  headingText: t('CAKE makes our world go round.'),
-  bodyText: t(
-    'CAKE token is at the heart of the PancakeSwap ecosystem. Buy it, win it, farm it, spend it, stake it... heck, you can even vote with it!',
-  ),
+export const earnSectionData = (t: TranslateFunction): SalesSectionProps => ({
+  headingText: t('Earn. Provide liquidity and earn ICE tokens'),
+  bodyText: t('Not only do you earn trading fees by providing liquidity, but with Liquidity Farms, you can also earn ICE tokens on top.'),
   reverse: false,
   primaryButton: {
-    to: '/swap?outputCurrency=0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82&chainId=56',
-    text: t('Buy CAKE'),
+    to: '/farms',
+    text: t('Farms'),
     external: false,
   },
   secondaryButton: {
-    to: 'https://docs.pancakeswap.finance/tokenomics/cake',
+    to: 'https://wiki.icecreamswap.com/dex/farm',
     text: t('Learn'),
     external: true,
   },
-
   images: {
-    path: '/images/home/cake/',
-    attributes: [
-      { src: 'bottom-right', alt: t('Small 3d pancake') },
-      { src: 'top-right', alt: t('Small 3d pancake') },
-      { src: 'coin', alt: t('CAKE token') },
-      { src: 'top-left', alt: t('Small 3d pancake') },
-    ],
+    path: '/images/home/ice/',
+    attributes: [{ src: earnIce, alt: '' }],
   },
 })

@@ -1,36 +1,36 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Pair, Percent } from '@pancakeswap/sdk'
 import {
   AutoColumn,
-  Box,
-  BunnyKnownPlaceholder,
   Button,
+  Dots,
+  RowBetween,
+  Text,
+  Box,
   DynamicSection,
-  Flex,
-  LinkExternal,
   Message,
+  Flex,
   MessageText,
   ScanLink,
-  Text,
+  LinkExternal,
 } from '@pancakeswap/uikit'
 import { useIsExpertMode } from '@pancakeswap/utils/user'
-import { ReactNode, useCallback, useMemo } from 'react'
-import { ChainLinkSupportChains } from 'state/info/constant'
+import { useTranslation } from '@pancakeswap/localization'
+import { useCallback, useMemo } from 'react'
+import { Percent, Pair } from '@pancakeswap/sdk'
 
 import { CommitButton } from 'components/CommitButton'
-import ConnectWalletButton from 'components/ConnectWalletButton'
 import CurrencyInputPanel from 'components/CurrencyInputPanel'
-import { CommonBasesType } from 'components/SearchModal/types'
-import { Bound } from 'config/constants/types'
-import { useActiveChainId } from 'hooks/useActiveChainId'
+import { Field } from 'state/mint/actions'
+import { ApprovalState } from 'hooks/useApproveCallback'
 import useActiveWeb3React from 'hooks/useActiveWeb3React'
-import { CurrencyField as Field } from 'utils/types'
-import { getBlockExploreLink } from 'utils'
-import { logGTMClickAddLiquidityEvent } from 'utils/customGTMEventTracking'
+import ConnectWalletButton from 'components/ConnectWalletButton'
+import { Bound } from 'config/constants/types'
+import { InfoBox } from 'components/InfoBox'
 import { LP2ChildrenProps } from 'views/AddLiquidity'
+import { logGTMClickAddLiquidityEvent } from 'utils/customGTMEventTracking'
+import { CommonBasesType } from 'components/SearchModal/types'
+import { getBlockExploreLink } from 'utils'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 
-import { InfoBox } from '@pancakeswap/widgets-internal'
-import ApproveLiquidityTokens from 'views/AddLiquidityV3/components/ApproveLiquidityTokens'
 import { HideMedium, MediumOnly, RightContainer } from './V3FormView'
 import RangeSelector from './V3FormView/components/RangeSelector'
 
@@ -40,13 +40,9 @@ export default function V2FormView({
   addIsWarning,
   shouldShowApprovalGroup,
   approveACallback,
-  revokeACallback,
-  currentAllowanceA,
   approvalA,
   approvalB,
   approveBCallback,
-  revokeBCallback,
-  currentAllowanceB,
   showFieldBApproval,
   showFieldAApproval,
   currencies,
@@ -60,18 +56,18 @@ export default function V2FormView({
   isOneWeiAttack,
   pair,
 }: LP2ChildrenProps) {
-  const mockFn = useCallback(() => undefined, [])
+  const mockFn = useCallback(() => null, [])
 
   const { chainId } = useActiveChainId()
   const { account, isWrongNetwork } = useActiveWeb3React()
   const { t } = useTranslation()
   const expertMode = useIsExpertMode()
   const pairExplorerLink = useMemo(
-    () => (pair && getBlockExploreLink(Pair.getAddress(pair.token0, pair.token1), 'address', chainId)) || undefined,
+    () => pair && getBlockExploreLink(Pair.getAddress(pair.token0, pair.token1), 'address', chainId),
     [pair, chainId],
   )
 
-  let buttons: ReactNode = null
+  let buttons = null
   if (addIsUnsupported || addIsWarning) {
     buttons = (
       <Button disabled mb="4px">
@@ -85,26 +81,34 @@ export default function V2FormView({
   } else {
     buttons = (
       <AutoColumn gap="md">
-        <ApproveLiquidityTokens
-          approvalA={approvalA}
-          approvalB={approvalB}
-          showFieldAApproval={showFieldAApproval}
-          showFieldBApproval={showFieldBApproval}
-          approveACallback={approveACallback}
-          approveBCallback={approveBCallback}
-          revokeACallback={revokeACallback}
-          revokeBCallback={revokeBCallback}
-          currencies={currencies}
-          currentAllowanceA={currentAllowanceA}
-          currentAllowanceB={currentAllowanceB}
-          shouldShowApprovalGroup={shouldShowApprovalGroup}
-        />
+        {shouldShowApprovalGroup && (
+          <RowBetween style={{ gap: '8px' }}>
+            {showFieldAApproval && (
+              <Button onClick={approveACallback} disabled={approvalA === ApprovalState.PENDING} width="100%">
+                {approvalA === ApprovalState.PENDING ? (
+                  <Dots>{t('Enabling %asset%', { asset: currencies[Field.CURRENCY_A]?.symbol })}</Dots>
+                ) : (
+                  t('Enable %asset%', { asset: currencies[Field.CURRENCY_A]?.symbol })
+                )}
+              </Button>
+            )}
+            {showFieldBApproval && (
+              <Button onClick={approveBCallback} disabled={approvalB === ApprovalState.PENDING} width="100%">
+                {approvalB === ApprovalState.PENDING ? (
+                  <Dots>{t('Enabling %asset%', { asset: currencies[Field.CURRENCY_B]?.symbol })}</Dots>
+                ) : (
+                  t('Enable %asset%', { asset: currencies[Field.CURRENCY_B]?.symbol })
+                )}
+              </Button>
+            )}
+          </RowBetween>
+        )}
         {isOneWeiAttack ? (
           <Message variant="warning">
             <Flex flexDirection="column">
               <MessageText>
                 {t(
-                  'Adding liquidity to this V2 pair is currently not available on PancakeSwap UI. Please follow the instructions to resolve it using blockchain explorer.',
+                  'Adding liquidity to this V2 pair is currently not available on DynastySwap UI. Please follow the instructions to resolve it using blockchain explorer.',
                 )}
               </MessageText>
               <LinkExternal
@@ -113,11 +117,7 @@ export default function V2FormView({
               >
                 {t('Learn more how to fix')}
               </LinkExternal>
-              <ScanLink
-                useBscCoinFallback={chainId ? ChainLinkSupportChains.includes(chainId) : undefined}
-                href={pairExplorerLink}
-                mt="0.25rem"
-              >
+              <ScanLink chainId={chainId} href={pairExplorerLink} mt="0.25rem">
                 {t('View pool on explorer')}
               </ScanLink>
             </Flex>
@@ -158,7 +158,7 @@ export default function V2FormView({
               }
             }}
             disableCurrencySelect
-            value={formattedAmounts[Field.CURRENCY_A] ?? '0'}
+            value={formattedAmounts[Field.CURRENCY_A]}
             onUserInput={onFieldAInput}
             showQuickInputButton
             showMaxButton
@@ -181,7 +181,7 @@ export default function V2FormView({
           }}
           maxAmount={maxAmounts[Field.CURRENCY_B]}
           disableCurrencySelect
-          value={formattedAmounts[Field.CURRENCY_B] ?? '0'}
+          value={formattedAmounts[Field.CURRENCY_B]}
           onUserInput={onFieldBInput}
           showQuickInputButton
           showMaxButton
@@ -196,7 +196,7 @@ export default function V2FormView({
       <RightContainer>
         <AutoColumn pt="12px" gap="24px">
           <DynamicSection disabled gap="12px">
-            <InfoBox message={t('Your position will appear here.')} icon={<BunnyKnownPlaceholder />} />
+            <InfoBox message={t('Your position will appear here.')} icon={null} />
             <RangeSelector
               getDecrementLower={mockFn}
               getIncrementLower={mockFn}

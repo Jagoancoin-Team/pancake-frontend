@@ -1,5 +1,5 @@
 import { ErrorBoundary as SErrorBoundary } from '@sentry/nextjs'
-import Page from 'components/Layout/Page'
+import Page from '../Layout/Page'
 import { useTranslation } from '@pancakeswap/localization'
 import { Button, Text, LogoIcon, Flex, IconButton, CopyIcon, copyText } from '@pancakeswap/uikit'
 import { useCallback } from 'react'
@@ -33,7 +33,7 @@ export function SentryErrorBoundary({ children }) {
             </Flex>
             {process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' && (
               <pre>
-                <code>{error instanceof Error ? error?.message : (error as Error)?.message}</code>
+                <code>{error instanceof Error ? error.message : String(error)}</code>
                 <code>{componentStack}</code>
               </pre>
             )}

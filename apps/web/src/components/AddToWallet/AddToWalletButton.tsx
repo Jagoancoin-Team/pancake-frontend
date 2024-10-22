@@ -9,9 +9,7 @@ import {
   TokenPocketIcon,
   TrustWalletIcon,
 } from '@pancakeswap/uikit'
-import { Address } from 'viem'
-import { watchAsset } from 'viem/actions'
-import { useAccount, useWalletClient } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { canRegisterToken } from '../../utils/wallet'
 import { BAD_SRCS } from '../Logo/constants'
 
@@ -22,10 +20,10 @@ export enum AddToWalletTextOptions {
 }
 
 export interface AddToWalletButtonProps {
-  tokenAddress?: string
-  tokenSymbol?: string
-  tokenDecimals?: number
-  tokenLogo?: string
+  tokenAddress: string
+  tokenSymbol: string
+  tokenDecimals: number
+  tokenLogo: string
   textOptions?: AddToWalletTextOptions
   marginTextBetweenLogo?: string
 }
@@ -40,7 +38,7 @@ const Icons = {
   MetaMask: MetamaskIcon,
 }
 
-const getWalletText = (textOptions: AddToWalletTextOptions, tokenSymbol: string | undefined, t: any) => {
+const getWalletText = (textOptions: AddToWalletTextOptions, tokenSymbol: string, t: any) => {
   return (
     textOptions !== AddToWalletTextOptions.NO_TEXT &&
     (textOptions === AddToWalletTextOptions.TEXT
@@ -84,11 +82,10 @@ const AddToWalletButton: React.FC<AddToWalletButtonProps & ButtonProps> = ({
 }) => {
   const { t } = useTranslation()
   const { connector, isConnected } = useAccount()
-  const { data: walletClient } = useWalletClient()
   const isCanRegisterToken = canRegisterToken()
-  if (!walletClient) return null
+
   if (connector && connector.name === 'Binance') return null
-  if (!(connector && isConnected)) return null
+  if (!(connector && connector.watchAsset && isConnected)) return null
   if (!isCanRegisterToken) return null
 
   return (
@@ -96,16 +93,12 @@ const AddToWalletButton: React.FC<AddToWalletButtonProps & ButtonProps> = ({
       {...props}
       onClick={() => {
         const image = tokenLogo ? (BAD_SRCS[tokenLogo] ? undefined : tokenLogo) : undefined
-        if (!tokenAddress || !tokenSymbol || !tokenDecimals) return
-        watchAsset(walletClient, {
-          // TODO: Add more types
-          type: 'ERC20',
-          options: {
-            address: tokenAddress as Address,
-            symbol: tokenSymbol,
-            image,
-            decimals: tokenDecimals,
-          },
+        connector.watchAsset?.({
+          address: tokenAddress,
+          symbol: tokenSymbol,
+          image,
+          // @ts-ignore
+          decimals: tokenDecimals,
         })
       }}
     >

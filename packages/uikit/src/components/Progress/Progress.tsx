@@ -17,7 +17,6 @@ const stepGuard = (step: number) => {
 };
 
 const Progress: React.FC<React.PropsWithChildren<ProgressProps>> = ({
-  className,
   variant = variants.ROUND,
   scale = scales.MD,
   primaryStep = 0,
@@ -27,7 +26,7 @@ const Progress: React.FC<React.PropsWithChildren<ProgressProps>> = ({
   children,
 }) => {
   return (
-    <StyledProgress className={className} $useDark={useDark} variant={variant} scale={scale}>
+    <StyledProgress $useDark={useDark} variant={variant} scale={scale}>
       {children || (
         <>
           {showProgressBunny && (

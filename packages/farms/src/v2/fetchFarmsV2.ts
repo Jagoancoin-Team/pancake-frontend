@@ -1,14 +1,16 @@
-import { ChainId } from '@pancakeswap/chains'
-import { CurrencyParams, getCurrencyKey, getCurrencyListUsdPrice } from '@pancakeswap/price-api-sdk'
-import { BIG_ONE, BIG_TWO, BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import BN from 'bignumber.js'
 import { Address, PublicClient, formatUnits } from 'viem'
-import { FarmV2SupportedChainId, supportedChainIdV2 } from '../const'
-import { SerializedFarmConfig, isStableFarm } from '../types'
-import { getFarmLpTokenPrice, getFarmsPrices } from './farmPrices'
+import BN from 'bignumber.js'
+import { BIG_TWO, BIG_ZERO } from '@pancakeswap/utils/bigNumber'
+import { ChainId, FACTORY_ADDRESS_MAP, Pair, WETH9 } from '@pancakeswap/sdk'
+import { getFarmsPrices } from './farmPrices'
 import { fetchPublicFarmsData } from './fetchPublicFarmData'
 import { fetchStableFarmData } from './fetchStableFarmData'
+import { isStableFarm, SerializedFarmConfig } from '../types'
 import { getFullDecimalMultiplier } from './getFullDecimalMultiplier'
+import { FarmV2SupportedChainId, supportedChainIdV2 } from '../const'
+import { USD } from "@pancakeswap/tokens";
+import { chains } from '@icecreamswap/constants'
+
 
 const evmNativeStableLpMap: Record<
   FarmV2SupportedChainId,
@@ -17,33 +19,14 @@ const evmNativeStableLpMap: Record<
     wNative: string
     stable: string
   }
-> = {
-  [ChainId.ETHEREUM]: {
-    address: '0x2E8135bE71230c6B1B4045696d41C09Db0414226',
-    wNative: 'WETH',
-    stable: 'USDC',
-  },
-  [ChainId.GOERLI]: {
-    address: '0xf5bf0C34d3c428A74Ceb98d27d38d0036C587200',
-    wNative: 'WETH',
-    stable: 'tUSDC',
-  },
-  [ChainId.BSC]: {
-    address: '0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16',
-    wNative: 'WBNB',
-    stable: 'BUSD',
-  },
-  [ChainId.BSC_TESTNET]: {
-    address: '0x4E96D2e92680Ca65D58A0e2eB5bd1c0f44cAB897',
-    wNative: 'WBNB',
-    stable: 'BUSD',
-  },
-  [ChainId.ARBITRUM_ONE]: {
-    address: '0x4E96D2e92680Ca65D58A0e2eB5bd1c0f44cAB897',
-    wNative: 'WETH',
-    stable: 'USDC',
-  },
-}
+> = chains.reduce((acc, chain) => {
+  if (!WETH9[chain.id] || !USD[chain.id] || !FACTORY_ADDRESS_MAP[chain.id]) return acc
+  return {...acc, [chain.id]: {
+      address: Pair.getAddress(WETH9[chain.id], USD[chain.id]),
+      wNative: WETH9[chain.id].symbol,
+      stable: USD[chain.id].symbol,
+    }}
+}, {})
 
 export const getTokenAmount = (balance: BN, decimals: number) => {
   return balance.div(getFullDecimalMultiplier(decimals))
@@ -52,7 +35,6 @@ export const getTokenAmount = (balance: BN, decimals: number) => {
 export type FetchFarmsParams = {
   farms: SerializedFarmConfig[]
   provider: ({ chainId }: { chainId: number }) => PublicClient
-  isTestnet: boolean
   masterChefAddress: string
   chainId: number
   totalRegularAllocPoint: bigint
@@ -62,7 +44,6 @@ export type FetchFarmsParams = {
 export async function farmV2FetchFarms({
   farms,
   provider,
-  isTestnet,
   masterChefAddress,
   chainId,
   totalRegularAllocPoint,
@@ -76,7 +57,7 @@ export async function farmV2FetchFarms({
 
   const [stableFarmsResults, poolInfos, lpDataResults] = await Promise.all([
     fetchStableFarmData(stableFarms, chainId, provider),
-    fetchMasterChefData(farms, isTestnet, provider, masterChefAddress),
+    fetchMasterChefData(farms, chainId, provider, masterChefAddress),
     fetchPublicFarmsData(farms, chainId, provider, masterChefAddress),
   ])
 
@@ -109,11 +90,10 @@ export async function farmV2FetchFarms({
               token0Decimals: farm.token.decimals,
               token1Decimals: farm.quoteToken.decimals,
             })),
-        // TODO: remove hardcode allocPoint & totalRegularAllocPoint later
         ...getFarmAllocation({
-          allocPoint: BigInt(farm?.allocPoint ?? 0) ?? poolInfos[index]?.allocPoint,
+          allocPoint: poolInfos[index]?.allocPoint,
           isRegular: poolInfos[index]?.isRegular,
-          totalRegularAllocPoint: BigInt(2305) || totalRegularAllocPoint,
+          totalRegularAllocPoint,
           totalSpecialAllocPoint,
         }),
       }
@@ -130,51 +110,7 @@ export async function farmV2FetchFarms({
     }
   })
 
-  const decimals = 18
-  const farmsDataWithPrices = getFarmsPrices(
-    farmsData,
-    evmNativeStableLpMap[chainId as FarmV2SupportedChainId],
-    decimals,
-  )
-
-  const tokensWithoutPrice = farmsDataWithPrices.reduce<Map<string, CurrencyParams>>((acc, cur) => {
-    if (cur.tokenPriceBusd === '0') {
-      acc.set(cur.token.address, cur.token)
-    }
-    if (cur.quoteTokenPriceBusd === '0') {
-      acc.set(cur.quoteToken.address, cur.quoteToken)
-    }
-    return acc
-  }, new Map<string, CurrencyParams>())
-  const tokenInfoList = Array.from(tokensWithoutPrice.values())
-  if (tokenInfoList.length) {
-    const prices = await getCurrencyListUsdPrice(tokenInfoList)
-
-    return farmsDataWithPrices.map((f) => {
-      if (f.tokenPriceBusd !== '0' && f.quoteTokenPriceBusd !== '0') {
-        return f
-      }
-      const tokenKey = getCurrencyKey(f.token)
-      const quoteTokenKey = getCurrencyKey(f.quoteToken)
-      const tokenVsQuote = new BN(f.tokenPriceVsQuote)
-      let tokenPrice = new BN(tokenKey ? prices[tokenKey] ?? 0 : 0)
-      let quoteTokenPrice = new BN(quoteTokenKey ? prices[quoteTokenKey] ?? 0 : 0)
-      if (tokenVsQuote.gt(0)) {
-        if (tokenPrice.eq(0) && quoteTokenPrice.gt(0)) {
-          tokenPrice = quoteTokenPrice.div(tokenVsQuote)
-        } else if (quoteTokenPrice.eq(0) && tokenPrice.gt(0)) {
-          quoteTokenPrice = tokenPrice.times(tokenVsQuote)
-        }
-      }
-      const lpTokenPrice = getFarmLpTokenPrice(f, tokenPrice, quoteTokenPrice, decimals)
-      return {
-        ...f,
-        tokenPriceBusd: tokenPrice.toString(),
-        quoteTokenPriceBusd: quoteTokenPrice.toString(),
-        lpTokenPrice: lpTokenPrice.toString(),
-      }
-    })
-  }
+  const farmsDataWithPrices = getFarmsPrices(farmsData, evmNativeStableLpMap[chainId as FarmV2SupportedChainId], 18)
 
   return farmsDataWithPrices
 }
@@ -184,7 +120,7 @@ const masterChefV2Abi = [
     inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     name: 'poolInfo',
     outputs: [
-      { internalType: 'uint256', name: 'accCakePerShare', type: 'uint256' },
+      { internalType: 'uint256', name: 'accIcePerShare', type: 'uint256' },
       { internalType: 'uint256', name: 'lastRewardBlock', type: 'uint256' },
       { internalType: 'uint256', name: 'allocPoint', type: 'uint256' },
       { internalType: 'uint256', name: 'totalBoostedShare', type: 'uint256' },
@@ -216,7 +152,7 @@ const masterChefV2Abi = [
   },
   {
     inputs: [{ internalType: 'bool', name: '_isRegular', type: 'bool' }],
-    name: 'cakePerBlock',
+    name: 'icePerBlock',
     outputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
@@ -242,7 +178,7 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
 
 export const fetchMasterChefData = async (
   farms: SerializedFarmConfig[],
-  isTestnet: boolean,
+  chainId: ChainId,
   provider: ({ chainId }: { chainId: number }) => PublicClient,
   masterChefAddress: string,
 ) => {
@@ -250,7 +186,6 @@ export const fetchMasterChefData = async (
     const masterChefCalls = farms.map((farm) => masterChefFarmCalls(farm, masterChefAddress))
     const masterChefAggregatedCalls = masterChefCalls.filter(notEmpty)
 
-    const chainId = isTestnet ? ChainId.BSC_TESTNET : ChainId.BSC
     const masterChefMultiCallResult = await provider({ chainId }).multicall({
       contracts: masterChefAggregatedCalls,
       allowFailure: false,
@@ -279,16 +214,15 @@ export const fetchMasterChefData = async (
 
 export const fetchMasterChefV2Data = async ({
   provider,
-  isTestnet,
+  chainId,
   masterChefAddress,
 }: {
   provider: ({ chainId }: { chainId: number }) => PublicClient
-  isTestnet: boolean
+  chainId: ChainId
   masterChefAddress: Address
 }) => {
   try {
-    const chainId = isTestnet ? ChainId.BSC_TESTNET : ChainId.BSC
-    const [poolLength, totalRegularAllocPoint, totalSpecialAllocPoint, cakePerBlock] = await provider({
+    const [poolLength, totalRegularAllocPoint, totalSpecialAllocPoint, icePerBlock] = await provider({
       chainId,
     }).multicall({
       contracts: [
@@ -310,7 +244,7 @@ export const fetchMasterChefV2Data = async ({
         {
           abi: masterChefV2Abi,
           address: masterChefAddress,
-          functionName: 'cakePerBlock',
+          functionName: 'icePerBlock',
           args: [true],
         },
       ],
@@ -321,7 +255,7 @@ export const fetchMasterChefV2Data = async ({
       poolLength,
       totalRegularAllocPoint,
       totalSpecialAllocPoint,
-      cakePerBlock,
+      icePerBlock,
     }
   } catch (error) {
     console.error('Get MasterChef data error', error)
@@ -338,7 +272,7 @@ type FormatStableFarmResponse = {
 }
 
 const formatStableFarm = (stableFarmData: StableLpData): FormatStableFarmResponse => {
-  const [balance1, balance2, _, _price1] = stableFarmData
+  const [balance1, balance2, , _price1] = stableFarmData
   return {
     tokenBalanceLP: new BN(balance1.toString()),
     quoteTokenBalanceLP: new BN(balance2.toString()),
@@ -375,7 +309,7 @@ const getStableFarmDynamicData = ({
   // Amount of token in the LP that are staked in the MC
   const tokenAmountMcFixed = tokenAmountTotal.times(lpTokenRatio)
 
-  const quoteTokenAmountMcFixedByTokenAmount = tokenAmountMcFixed.times(BIG_ONE.div(tokenPriceVsQuote))
+  const quoteTokenAmountMcFixedByTokenAmount = tokenAmountMcFixed.times(tokenPriceVsQuote)
 
   const lpTotalInQuoteToken = quoteTokenAmountMcFixed.plus(quoteTokenAmountMcFixedByTokenAmount)
 

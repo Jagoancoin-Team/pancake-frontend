@@ -1,8 +1,14 @@
 import React, { useCallback } from 'react'
 import { Currency, CurrencyAmount, Pair, Percent, Token } from '@pancakeswap/sdk'
-import { AddIcon, Button, InjectedModalProps, Text, AutoColumn } from '@pancakeswap/uikit'
-import { ConfirmationModalContent } from '@pancakeswap/widgets-internal'
-
+import {
+  AddIcon,
+  Button,
+  InjectedModalProps,
+  Text,
+  TransactionErrorContent,
+  ConfirmationModalContent,
+  AutoColumn,
+} from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
 import TransactionConfirmationModal from 'components/TransactionConfirmationModal'
 import { RowBetween, RowFixed } from 'components/Layout/Row'
@@ -25,13 +31,13 @@ interface ConfirmRemoveLiquidityModalProps {
   }
   allowedSlippage: number
   onRemove: () => void
-  liquidityErrorMessage?: string
+  liquidityErrorMessage: string
   approval: ApprovalState
   signatureData?: any
   tokenA: Token
   tokenB: Token
-  currencyA?: Currency
-  currencyB?: Currency
+  currencyA: Currency | null | undefined
+  currencyB: Currency | null | undefined
 }
 
 const ConfirmRemoveLiquidityModal: React.FC<
@@ -138,8 +144,15 @@ const ConfirmRemoveLiquidityModal: React.FC<
   }, [currencyA, currencyB, parsedAmounts, approval, onRemove, pair, tokenA, tokenB, t, signatureData])
 
   const confirmationContent = useCallback(
-    () => <ConfirmationModalContent topContent={modalHeader} bottomContent={modalBottom} />,
-    [modalHeader, modalBottom],
+    () =>
+      liquidityErrorMessage ? (
+        <>
+          <TransactionErrorContent onDismiss={onDismiss} message={liquidityErrorMessage} />
+        </>
+      ) : (
+        <ConfirmationModalContent topContent={modalHeader} bottomContent={modalBottom} />
+      ),
+    [liquidityErrorMessage, onDismiss, modalHeader, modalBottom],
   )
 
   return (
@@ -149,7 +162,6 @@ const ConfirmRemoveLiquidityModal: React.FC<
       customOnDismiss={customOnDismiss}
       attemptingTxn={attemptingTxn}
       hash={hash}
-      errorMessage={liquidityErrorMessage}
       content={confirmationContent}
       pendingText={pendingText}
     />

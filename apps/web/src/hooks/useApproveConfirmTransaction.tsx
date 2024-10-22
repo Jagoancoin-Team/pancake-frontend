@@ -1,8 +1,8 @@
 import { ERC20Token, MaxUint256 } from '@pancakeswap/sdk'
 import noop from 'lodash/noop'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
-import { Address, TransactionReceipt } from 'viem'
-import { useAccount } from 'wagmi'
+import { Address, useAccount } from 'wagmi'
+import { SendTransactionResult, WaitForTransactionResult } from 'wagmi/actions'
 import { ApprovalState, useApproveCallbackFromAmount } from './useApproveCallback'
 import useCatchTxError from './useCatchTxError'
 
@@ -65,12 +65,12 @@ const reducer = (state: State, actions: Action): State => {
 
 interface OnSuccessProps {
   state: State
-  receipt: TransactionReceipt
+  receipt: WaitForTransactionResult
 }
 
 type CustomApproveProps = {
   onRequiresApproval: () => Promise<boolean>
-  onApprove: () => Promise<{ hash: Address } | undefined> | undefined
+  onApprove: () => Promise<SendTransactionResult>
 }
 
 type ERC20TokenApproveProps = {
@@ -81,7 +81,7 @@ type ERC20TokenApproveProps = {
 }
 
 type ApproveConfirmTransaction = {
-  onConfirm: (params?) => Promise<{ hash: Address }> | undefined
+  onConfirm: (params?) => Promise<SendTransactionResult>
   onSuccess: ({ state, receipt }: OnSuccessProps) => void
   onApproveSuccess?: ({ state, receipt }: OnSuccessProps) => void
 } & (CustomApproveProps | ERC20TokenApproveProps)
@@ -112,7 +112,7 @@ const useApproveConfirmTransaction = ({
   const { fetchWithCatchTxError } = useCatchTxError()
 
   const handleApprove = useCallback(async () => {
-    const receipt = await fetchWithCatchTxError(async () => {
+    const receipt = await fetchWithCatchTxError(() => {
       dispatch({ type: 'approve_sending' })
       return onApprove ? onApprove() : approveCallback()
     })
@@ -126,7 +126,7 @@ const useApproveConfirmTransaction = ({
 
   const handleConfirm = useCallback(
     async (params = {}) => {
-      const receipt = await fetchWithCatchTxError(async () => {
+      const receipt = await fetchWithCatchTxError(() => {
         dispatch({ type: 'confirm_sending' })
         return onConfirm(params)
       })

@@ -1,4 +1,4 @@
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 import { PublicClient, Address } from 'viem'
 import type { SerializedWrappedToken } from '@pancakeswap/token-lists'
 import BigNumber from 'bignumber.js'
@@ -15,6 +15,7 @@ export enum PoolCategory {
   'COMMUNITY' = 'Community',
   'CORE' = 'Core',
   'BINANCE' = 'Binance', // Pools using native BNB behave differently than pools using a token
+  'BINANCE_AUTO' = 'BINANCE_AUTO', // Pools using native BNB behave differently than pools using a token
   'AUTO' = 'Auto',
 }
 
@@ -27,6 +28,7 @@ export interface LegacyPoolConfigBaseProps {
   isFinished?: boolean
   enableEmergencyWithdraw?: boolean
   version?: number
+  fixedApr?: number
 }
 
 export interface PoolConfigBaseProps {

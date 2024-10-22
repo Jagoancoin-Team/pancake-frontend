@@ -1,17 +1,16 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Currency, Price, Token } from '@pancakeswap/swap-sdk-core'
-import { AddCircleIcon, AutoColumn, AutoRow, IconButton, RemoveIcon } from '@pancakeswap/uikit'
+import { AddCircleIcon, AutoColumn, AutoRow, IconButton, NumericalInput, RemoveIcon } from '@pancakeswap/uikit'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
-import { NumericalInput } from '@pancakeswap/widgets-internal'
 import { LightGreyCard } from 'components/Card'
-import { tryParsePrice } from 'hooks/v3/utils'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
+import { Price, Token, Currency } from '@pancakeswap/swap-sdk-core'
+import { tryParsePrice } from 'hooks/v3/utils'
 
 interface StepCounterProps {
   value: string
-  onUserInput: (value: Price<Token, Token> | undefined) => void
-  decrement: () => Price<Token, Token> | undefined
-  increment: () => Price<Token, Token> | undefined
+  onUserInput: (value: Price<Token, Token>) => void
+  decrement: () => Price<Token, Token>
+  increment: () => Price<Token, Token>
   decrementDisabled?: boolean
   incrementDisabled?: boolean
   feeAmount?: FeeAmount
@@ -19,8 +18,8 @@ interface StepCounterProps {
   width?: string
   locked?: boolean // disable input
   title: ReactNode
-  tokenA: Currency | undefined | null
-  tokenB: Currency | undefined | null
+  tokenA: Currency | undefined
+  tokenB: Currency | undefined
 }
 
 const StepCounter = ({
@@ -37,7 +36,7 @@ const StepCounter = ({
   tokenB,
 }: StepCounterProps) => {
   const { t } = useTranslation()
-  //  for focus state, styled components doesn't let you select input parent container
+  //  for focus state, styled components doesnt let you select input parent container
   const [, setActive] = useState(false)
 
   // let user type value and only update parent value on blur

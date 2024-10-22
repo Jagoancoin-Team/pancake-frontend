@@ -1,19 +1,11 @@
-import { ChainId } from '@pancakeswap/chains'
-import { PairDataTimeWindowEnum } from '@pancakeswap/uikit'
-import { PriceCalculator } from '@pancakeswap/widgets-internal/roi'
-import { useMemo } from 'react'
 import { usePairPriceChartTokenData } from 'views/V3Info/hooks'
+import { ChainId } from '@pancakeswap/sdk'
+import { PairDataTimeWindowEnum } from '@pancakeswap/uikit'
+import { useMemo } from 'react'
 
-export const usePairTokensPrice = (
-  pairAddress?: string,
-  duration?: PairDataTimeWindowEnum,
-  chainId?: ChainId,
-  enabled = true,
-) => {
+export const usePairTokensPrice = (pairAddress?: string, duration?: PairDataTimeWindowEnum, chainId?: ChainId) => {
   const priceTimeWindow = useMemo(() => {
     switch (duration) {
-      case PairDataTimeWindowEnum.HOUR:
-        return 'hour'
       case PairDataTimeWindowEnum.DAY:
         return 'day'
       case PairDataTimeWindowEnum.WEEK:
@@ -27,18 +19,16 @@ export const usePairTokensPrice = (
     }
   }, [duration])
 
-  const pairPrice = usePairPriceChartTokenData(pairAddress?.toLowerCase(), priceTimeWindow, chainId, enabled)
+  const pairPrice = usePairPriceChartTokenData(pairAddress?.toLowerCase(), priceTimeWindow, chainId)
 
   const pairPriceData: { time: Date; value: number }[] = useMemo(() => {
-    return (
-      pairPrice?.data?.map((d) => ({
-        time: new Date(d.time * 1000),
-        value: d.close,
-      })) || []
-    )
+    return pairPrice?.data?.map((d) => ({
+      time: new Date(d.time * 1000),
+      value: d.close,
+    }))
   }, [pairPrice])
 
-  return useMemo<PriceCalculator>(
+  return useMemo(
     () => ({
       pairPriceData,
       maxPrice: pairPrice?.maxPrice,

@@ -1,13 +1,15 @@
-import { RowBetween } from '@pancakeswap/uikit'
 import Card from 'components/Card'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import { RowBetween } from '@pancakeswap/uikit'
 import useTheme from 'hooks/useTheme'
-import React, { ComponentProps, Dispatch, ReactNode, SetStateAction } from 'react'
+import React, { Dispatch, ReactNode, SetStateAction } from 'react'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
-import { Margin } from 'recharts/types/util/types'
 import { styled } from 'styled-components'
 import { VolumeWindow } from '../../types'
 import { LoadingRows } from '../Loader'
+
+dayjs.extend(utc)
 
 const DEFAULT_HEIGHT = 300
 
@@ -23,15 +25,8 @@ const Wrapper = styled(Card)`
   }
 `
 
-const DEFAULT_MARGIN = {
-  top: 5,
-  right: 30,
-  left: 20,
-  bottom: 5,
-}
-
 export type LineChartProps = {
-  data: Array<{ time: string; value: number; [key: string]: any }>
+  data: any[]
   color?: string | undefined
   height?: number | undefined
   minHeight?: number
@@ -44,11 +39,7 @@ export type LineChartProps = {
   topRight?: ReactNode | undefined
   bottomLeft?: ReactNode | undefined
   bottomRight?: ReactNode | undefined
-  barSize?: number
-  barGap?: number
-  chartMargin?: Margin
-} & React.HTMLAttributes<HTMLDivElement> &
-  ComponentProps<typeof Card>
+} & React.HTMLAttributes<HTMLDivElement>
 
 const CustomBar = ({
   x,
@@ -83,9 +74,6 @@ const Chart = ({
   bottomLeft,
   bottomRight,
   minHeight = DEFAULT_HEIGHT,
-  barSize,
-  barGap,
-  chartMargin,
   ...rest
 }: LineChartProps) => {
   const { theme } = useTheme()
@@ -111,9 +99,12 @@ const Chart = ({
             width={500}
             height={300}
             data={data}
-            barSize={barSize}
-            barGap={barGap}
-            margin={chartMargin ?? DEFAULT_MARGIN}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
             onMouseLeave={() => {
               if (setLabel) setLabel(undefined)
               if (setValue) setValue(undefined)
@@ -157,7 +148,7 @@ const Chart = ({
                     setLabel(formattedTimeDaily)
                   }
                 }
-                return null as any
+                return null
               }}
             />
             <Bar

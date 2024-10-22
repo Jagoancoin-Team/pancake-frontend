@@ -1,16 +1,13 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useQuery } from '@tanstack/react-query'
-import { farmFetcher } from 'state/farms'
+import useSWR from 'swr'
+import { ChainId } from '@pancakeswap/sdk'
 import { fetchCProxyAddress } from 'state/farms/fetchFarmUser'
-import { Address } from 'viem'
+import { farmFetcher } from 'state/farms'
+import { Address } from 'wagmi'
 
-export const useFarmCProxyAddress = (account?: string | null, chainId?: number) => {
-  const multiCallChainId = chainId && farmFetcher.isTestnet(chainId) ? ChainId.BSC_TESTNET : ChainId.BSC
-  const { data } = useQuery({
-    queryKey: ['cProxyAddress', account, chainId],
-    queryFn: async () => fetchCProxyAddress(account as Address, multiCallChainId),
-    enabled: Boolean(account && chainId),
-  })
+export const useFarmCProxyAddress = (account?: string, chainId?: number) => {
+  const { data } = useSWR(account && chainId && ['cProxyAddress', account, chainId], async () =>
+    fetchCProxyAddress(account as Address, chainId),
+  )
 
   return {
     cProxyAddress: data,

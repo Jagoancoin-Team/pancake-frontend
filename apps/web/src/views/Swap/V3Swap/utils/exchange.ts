@@ -1,54 +1,31 @@
-import { OrderType } from '@pancakeswap/price-api-sdk'
-import {
-  Currency,
-  CurrencyAmount,
-  Fraction,
-  ONE_HUNDRED_PERCENT,
-  Percent,
-  Price,
-  Token,
-  TradeType,
-  ZERO,
-} from '@pancakeswap/sdk'
-import { Route, SmartRouter, SmartRouterTrade } from '@pancakeswap/smart-router'
-import { formatPrice, parseNumberToFraction } from '@pancakeswap/utils/formatFractions'
+import { Currency, CurrencyAmount, TradeType, Percent, ONE_HUNDRED_PERCENT, Token, Price, ZERO } from '@pancakeswap/sdk'
+import { SmartRouterTrade, SmartRouter } from '@pancakeswap/smart-router/evm'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
+import { formatPrice } from '@pancakeswap/utils/formatFractions'
 
 import { BIPS_BASE, INPUT_FRACTION_AFTER_FEE } from 'config/constants/exchange'
 import { Field } from 'state/swap/actions'
 import { basisPointsToPercent } from 'utils/exchange'
-import { InterfaceOrder } from 'views/Swap/utils'
 
 export type SlippageAdjustedAmounts = {
-  [field in Field]?: CurrencyAmount<Currency> | null
+  [field in Field]?: CurrencyAmount<Currency>
 }
 
 // computes the minimum amount out and maximum amount in for a trade given a user specified allowed slippage in bips
 export function computeSlippageAdjustedAmounts(
-  order: InterfaceOrder | undefined | null,
+  trade: SmartRouterTrade<TradeType> | undefined | null,
   allowedSlippage: number,
 ): SlippageAdjustedAmounts {
-  if (order?.type === OrderType.DUTCH_LIMIT) {
-    return {
-      [Field.INPUT]: order.trade.maximumAmountIn,
-      [Field.OUTPUT]: order.trade.minimumAmountOut,
-    }
-  }
-
   const pct = basisPointsToPercent(allowedSlippage)
 
   return {
-    [Field.INPUT]: order?.trade && SmartRouter.maximumAmountIn(order.trade, pct),
-    [Field.OUTPUT]: order?.trade && SmartRouter.minimumAmountOut(order.trade, pct),
+    [Field.INPUT]: trade && SmartRouter.maximumAmountIn(trade, pct),
+    [Field.OUTPUT]: trade && SmartRouter.minimumAmountOut(trade, pct),
   }
 }
 
-export type TradeEssentialForPriceBreakdown = Pick<SmartRouterTrade<TradeType>, 'inputAmount' | 'outputAmount'> & {
-  routes: Pick<Route, 'percent' | 'pools' | 'path' | 'inputAmount'>[]
-}
-
 // computes price breakdown for the trade
-export function computeTradePriceBreakdown(trade?: TradeEssentialForPriceBreakdown | null): {
+export function computeTradePriceBreakdown(trade?: SmartRouterTrade<TradeType> | null): {
   priceImpactWithoutFee?: Percent | null
   lpFeeAmount?: CurrencyAmount<Currency> | null
 } {
@@ -79,9 +56,7 @@ export function computeTradePriceBreakdown(trade?: TradeEssentialForPriceBreakdo
       }, ONE_HUNDRED_PERCENT),
     )
     // Not accurate since for stable swap, the lp fee is deducted on the output side
-    feePercent = feePercent.add(
-      routeFeePercent.multiply(Percent.toPercent(parseNumberToFraction(percent / 100) || new Fraction(0))),
-    )
+    feePercent = feePercent.add(routeFeePercent.multiply(new Percent(percent, 100)))
 
     const midPrice = SmartRouter.getMidPrice(route)
     outputAmountWithoutPriceImpact = outputAmountWithoutPriceImpact.add(

@@ -11,7 +11,7 @@ export const StyledList = styled.ul`
   list-style: none;
   margin-bottom: 40px;
 
-  ${({ theme }) => theme.mediaQueries.lg} {
+  ${({ theme }) => theme.mediaQueries.md} {
     margin-bottom: 0px;
   }
 `;

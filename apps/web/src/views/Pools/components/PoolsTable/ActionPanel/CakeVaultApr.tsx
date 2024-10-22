@@ -1,6 +1,4 @@
-import { Box, Button, Flex, Skeleton, Text, CalculateIcon, useModal, Balance } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-
+import { Box, Button, Flex, Skeleton, Text, CalculateIcon, useModal, Balance, Pool } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
 import { MAX_LOCK_DURATION } from '@pancakeswap/pools'
 import { Token } from '@pancakeswap/sdk'

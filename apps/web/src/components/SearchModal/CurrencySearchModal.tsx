@@ -1,26 +1,27 @@
-import { usePreviousValue } from '@pancakeswap/hooks'
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, Token } from '@pancakeswap/sdk'
-import { TokenList } from '@pancakeswap/token-lists'
-import { enableList, removeList, useFetchListCallback } from '@pancakeswap/token-lists/react'
+import { useCallback, useState, useRef, useEffect } from 'react'
+import { Currency, ERC20Token, Token } from '@pancakeswap/sdk'
 import {
-  Button,
-  Heading,
-  InjectedModalProps,
-  MODAL_SWIPE_TO_CLOSE_VELOCITY,
-  ModalBackButton,
-  ModalBody,
-  ModalCloseButton,
   ModalContainer,
   ModalHeader,
   ModalTitle,
+  ModalBackButton,
+  ModalCloseButton,
+  ModalBody,
+  InjectedModalProps,
+  Heading,
+  Button,
   useMatchBreakpoints,
+  MODAL_SWIPE_TO_CLOSE_VELOCITY,
+  ImportList,
 } from '@pancakeswap/uikit'
-import { ImportList } from '@pancakeswap/widgets-internal'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useAllLists } from 'state/lists/hooks'
-import { useListState } from 'state/lists/lists'
+import { useRouter } from 'next/router'
 import { styled } from 'styled-components'
+import { useListState } from 'state/lists/lists'
+import { useAllLists } from 'state/lists/hooks'
+import { usePreviousValue } from '@pancakeswap/hooks'
+import { TokenList } from '@pancakeswap/token-lists'
+import { useTranslation } from '@pancakeswap/localization'
+import { enableList, removeList, useFetchListCallback } from '@pancakeswap/token-lists/react'
 import CurrencySearch from './CurrencySearch'
 import ImportToken from './ImportToken'
 import Manage from './Manage'
@@ -53,12 +54,16 @@ const StyledModalBody = styled(ModalBody)`
 
 export interface CurrencySearchModalProps extends InjectedModalProps {
   selectedCurrency?: Currency | null
-  onCurrencySelect?: (currency: Currency) => void
+  onCurrencySelect: (currency: Currency) => void
   otherSelectedCurrency?: Currency | null
   showCommonBases?: boolean
   commonBasesType?: string
+  tokens?: { [address: string]: Token }
+  hideManage?: boolean
+  showNative?: boolean
   showSearchInput?: boolean
   tokensToShow?: Token[]
+  mode?: string
 }
 
 export default function CurrencySearchModal({
@@ -70,13 +75,19 @@ export default function CurrencySearchModal({
   commonBasesType,
   showSearchInput,
   tokensToShow,
+  tokens,
+  hideManage,
+  showNative,
+  mode,
 }: CurrencySearchModalProps) {
   const [modalView, setModalView] = useState<CurrencyModalView>(CurrencyModalView.search)
+  const { pathname } = useRouter()
+  const onRampFlow = pathname === '/buy-crypto'
 
   const handleCurrencySelect = useCallback(
     (currency: Currency) => {
       onDismiss?.()
-      onCurrencySelect?.(currency)
+      onCurrencySelect(currency)
     },
     [onDismiss, onCurrencySelect],
   )
@@ -95,7 +106,7 @@ export default function CurrencySearchModal({
 
   const [, dispatch] = useListState()
   const lists = useAllLists()
-  const adding = Boolean(listURL && lists[listURL]?.loadingRequestId)
+  const adding = Boolean(lists[listURL]?.loadingRequestId)
 
   const fetchList = useFetchListCallback(dispatch)
 
@@ -127,8 +138,7 @@ export default function CurrencySearchModal({
   }
   const { isMobile } = useMatchBreakpoints()
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState<number | undefined>(undefined)
-
+  const [height, setHeight] = useState(undefined)
   useEffect(() => {
     if (!wrapperRef.current) return
     setHeight(wrapperRef.current.offsetHeight - 330)
@@ -144,7 +154,7 @@ export default function CurrencySearchModal({
         if (wrapperRef.current) wrapperRef.current.style.animation = 'none'
       }}
       // @ts-ignore
-      onDragEnd={(e, info) => {
+      onDragEnd={(_, info) => {
         if (info.velocity.y > MODAL_SWIPE_TO_CLOSE_VELOCITY && onDismiss) onDismiss()
       }}
       ref={wrapperRef}
@@ -169,6 +179,10 @@ export default function CurrencySearchModal({
             setImportToken={setImportToken}
             height={height}
             tokensToShow={tokensToShow}
+            tokens={tokens}
+            showNative={showNative}
+            mode={mode}
+            onRampFlow={onRampFlow}
           />
         ) : modalView === CurrencyModalView.importToken && importToken ? (
           <ImportToken tokens={[importToken]} handleCurrencySelect={handleCurrencySelect} />
@@ -191,7 +205,7 @@ export default function CurrencySearchModal({
         ) : (
           ''
         )}
-        {modalView === CurrencyModalView.search && (
+        {modalView === CurrencyModalView.search && !hideManage && !onRampFlow && (
           <Footer>
             <Button
               scale="sm"

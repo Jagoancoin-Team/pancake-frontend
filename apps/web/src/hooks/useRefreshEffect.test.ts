@@ -1,10 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { waitFor } from '@testing-library/react'
 import { act, renderHook } from '@testing-library/react-hooks'
 import { FAST_INTERVAL, SLOW_INTERVAL } from 'config/constants'
 import { useState } from 'react'
+import useSWR from 'swr'
 import { createWagmiWrapper } from 'testUtils'
-import { describe, expect, test, vi } from 'vitest'
+import { vi, describe, test } from 'vitest'
 import { useFastRefreshEffect, useSlowRefreshEffect } from './useRefreshEffect'
 
 describe('useRefreshEffect', () => {
@@ -37,13 +36,9 @@ describe('useRefreshEffect', () => {
     const callback = vi.fn()
     const { result, rerender } = renderHook(
       () => {
-        const queryClient = useQueryClient()
-        const { data, isSuccess } = useQuery({
-          queryKey: [FAST_INTERVAL, 'blockNumber', 56],
-          enabled: false,
-        })
+        const { mutate, data } = useSWR([FAST_INTERVAL, 'blockNumber', 56])
         useFastRefreshEffect(callback, [callback])
-        return { refetch: queryClient, data, isSuccess }
+        return { mutate, data }
       },
       {
         wrapper: createWagmiWrapper(),
@@ -54,14 +49,10 @@ describe('useRefreshEffect', () => {
     expect(callback).toHaveBeenCalledTimes(1)
 
     act(() => {
-      result.current.refetch.setQueryData([FAST_INTERVAL, 'blockNumber', 56], 1)
+      result.current.mutate(1)
     })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    rerender()
     expect(callback).toHaveBeenCalledTimes(2)
-
     rerender()
     // no changes
     expect(callback).toHaveBeenCalledTimes(2)
@@ -70,15 +61,12 @@ describe('useRefreshEffect', () => {
   test('should get latest block number when block changes', async () => {
     const { result, rerender } = renderHook(
       () => {
-        const queryClient = useQueryClient()
         const [callbackResult, setCallbackResult] = useState<number>()
-        const { data, isSuccess } = useQuery({
-          queryKey: [SLOW_INTERVAL, 'blockNumber', 56],
-        })
+        const { mutate, data } = useSWR([SLOW_INTERVAL, 'blockNumber', 56])
         useSlowRefreshEffect((b) => {
           setCallbackResult(b)
         }, [])
-        return { refetch: queryClient, data, isSuccess, callbackResult }
+        return { mutate, data, callbackResult }
       },
       {
         wrapper: createWagmiWrapper(),
@@ -89,14 +77,10 @@ describe('useRefreshEffect', () => {
     expect(result.current.callbackResult).toBe(0)
 
     act(() => {
-      result.current.refetch.setQueryData([SLOW_INTERVAL, 'blockNumber', 56], 1)
+      result.current.mutate(1)
     })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    rerender()
     expect(result.current.callbackResult).toBe(1)
-
     rerender()
     // no changes
     expect(result.current.callbackResult).toBe(1)

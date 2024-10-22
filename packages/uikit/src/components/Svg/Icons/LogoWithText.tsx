@@ -5,6 +5,14 @@ import { vars } from "../../../css/vars.css";
 
 const Logo: React.FC<React.PropsWithChildren<SvgProps>> = (props) => {
   return (
+    <div {...props} style={{ alignItems: "center", ...props.style }}>
+      <img src="/images/dynasty.png" alt="IceCream" width="32px" style={{ verticalAlign: "middle" }} />
+      <span style={{ verticalAlign: "middle", fontSize: "1.2rem", fontWeight: "bold" }}>DynastySwap</span>
+    </div>
+  );
+
+  /*
+  return (
     <Svg viewBox="0 0 1281 199" {...props}>
       <path
         fill={vars.colors.contrast}
@@ -31,6 +39,7 @@ const Logo: React.FC<React.PropsWithChildren<SvgProps>> = (props) => {
       />
     </Svg>
   );
+     */
 };
 
 export default Logo;

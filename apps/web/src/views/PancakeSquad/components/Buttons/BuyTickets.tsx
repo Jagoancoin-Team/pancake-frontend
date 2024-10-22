@@ -1,16 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { ContextApi } from '@pancakeswap/localization'
 import { MaxUint256 } from '@pancakeswap/swap-sdk-core'
-import { bscTokens } from '@pancakeswap/tokens'
+import { ContextApi } from '@pancakeswap/localization'
 import { Button, useModal, useToast } from '@pancakeswap/uikit'
 import { ToastDescriptionWithTx } from 'components/Toast'
 import useApproveConfirmTransaction from 'hooks/useApproveConfirmTransaction'
 import { useCallWithGasPrice } from 'hooks/useCallWithGasPrice'
 import { useNftSaleContract } from 'hooks/useContract'
 import { useContext, useEffect, useState } from 'react'
+import { Address } from 'wagmi'
 import { DefaultTheme } from 'styled-components'
-import { Address, Hash } from 'viem'
 import { PancakeSquadContext } from 'views/PancakeSquad/context'
+import { bscTokens } from '@pancakeswap/tokens'
 import { SaleStatusEnum, UserStatusEnum } from '../../types'
 import ReadyText from '../Header/ReadyText'
 import BuyTicketsModal from '../Modals/BuyTickets'
@@ -20,16 +20,16 @@ import { getBuyButton, getBuyButtonText } from './utils'
 
 type BuyTicketsProps = {
   t: ContextApi['t']
-  account?: Address
+  account: Address
   saleStatus: SaleStatusEnum
   userStatus: UserStatusEnum
   theme: DefaultTheme
   canClaimForGen0: boolean
-  maxPerAddress?: number
-  maxPerTransaction?: number
-  numberTicketsOfUser?: number
-  numberTicketsForGen0?: number
-  numberTicketsUsedForGen0?: number
+  maxPerAddress: number
+  maxPerTransaction: number
+  numberTicketsOfUser: number
+  numberTicketsForGen0: number
+  numberTicketsUsedForGen0: number
   cakeBalance: bigint
   pricePerTicket: bigint
   startTimestamp: number
@@ -40,18 +40,18 @@ const BuyTicketsButtons: React.FC<React.PropsWithChildren<BuyTicketsProps>> = ({
   saleStatus,
   userStatus,
   theme,
-  canClaimForGen0 = 0,
-  maxPerAddress = 0,
-  maxPerTransaction = 0,
-  numberTicketsOfUser = 0,
-  numberTicketsForGen0 = 0,
-  numberTicketsUsedForGen0 = 0,
+  canClaimForGen0,
+  maxPerAddress,
+  maxPerTransaction,
+  numberTicketsOfUser,
+  numberTicketsForGen0,
+  numberTicketsUsedForGen0,
   cakeBalance,
   pricePerTicket,
   startTimestamp,
 }) => {
-  const [txHashEnablingResult, setTxHashEnablingResult] = useState<Hash | null>(null)
-  const [txHashBuyingResult, setTxHashBuyingResult] = useState<Hash | null>(null)
+  const [txHashEnablingResult, setTxHashEnablingResult] = useState(null)
+  const [txHashBuyingResult, setTxHashBuyingResult] = useState(null)
   const { callWithGasPrice } = useCallWithGasPrice()
   const nftSaleContract = useNftSaleContract()
   const { toastSuccess } = useToast()
@@ -95,7 +95,7 @@ const BuyTicketsButtons: React.FC<React.PropsWithChildren<BuyTicketsProps>> = ({
       title={t('Confirm')}
       isLoading={isConfirming}
       headerBackground={theme.colors.gradientCardHeader}
-      txHash={txHashBuyingResult ?? undefined}
+      txHash={txHashBuyingResult}
       loadingText={t('Please confirm your transaction in wallet.')}
       loadingButtonLabel={t('Confirming...')}
       successButtonLabel={t('Close')}
@@ -109,8 +109,8 @@ const BuyTicketsButtons: React.FC<React.PropsWithChildren<BuyTicketsProps>> = ({
       title={t('Enable')}
       isLoading={isApproving}
       headerBackground={theme.colors.gradientCardHeader}
-      txHash={txHashEnablingResult ?? undefined}
-      loadingText={t('Please enable CAKE spending in your wallet')}
+      txHash={txHashEnablingResult}
+      loadingText={t('Please enable ICE spending in your wallet')}
       loadingButtonLabel={t('Enabling...')}
       successButtonLabel={t('Close')}
       onConfirmClose={onConfirmClose}
@@ -134,31 +134,11 @@ const BuyTicketsButtons: React.FC<React.PropsWithChildren<BuyTicketsProps>> = ({
     />,
   )
 
-  useEffect(() => {
-    if (txHashEnablingResult) {
-      onPresentEnableModal()
-    }
-  }, [txHashEnablingResult])
-  useEffect(() => {
-    if (txHashBuyingResult) {
-      onPresentConfirmModal()
-    }
-  }, [txHashBuyingResult])
-  useEffect(() => {
-    if (hasApproveFailed) {
-      onDismissEnableModal()
-    }
-  }, [hasApproveFailed])
-  useEffect(() => {
-    if (hasConfirmFailed) {
-      onDismissBuyTicketsModal()
-    }
-  }, [hasConfirmFailed])
-  useEffect(() => {
-    if (isApproved && setIsUserEnabled) {
-      setIsUserEnabled(isApproved)
-    }
-  }, [isApproved, setIsUserEnabled])
+  useEffect(() => txHashEnablingResult && onPresentEnableModal(), [txHashEnablingResult])
+  useEffect(() => txHashBuyingResult && onPresentConfirmModal(), [txHashBuyingResult])
+  useEffect(() => hasApproveFailed && onDismissEnableModal(), [hasApproveFailed])
+  useEffect(() => hasConfirmFailed && onDismissBuyTicketsModal(), [hasConfirmFailed])
+  useEffect(() => isApproved && setIsUserEnabled && setIsUserEnabled(isApproved), [isApproved, setIsUserEnabled])
 
   const handleEnableClick = () => {
     onPresentEnableModal()
@@ -187,7 +167,7 @@ const BuyTicketsButtons: React.FC<React.PropsWithChildren<BuyTicketsProps>> = ({
       )}
       {buyButton === BuyButtonsEnum.BUY && (
         <Button width="100%" onClick={onPresentBuyTicketsModal} disabled={!canBuyTickets}>
-          {getBuyButtonText({ canBuyTickets: Boolean(canBuyTickets), numberTicketsOfUser, saleStatus, t })}
+          {getBuyButtonText({ canBuyTickets, numberTicketsOfUser, saleStatus, t })}
         </Button>
       )}
     </>

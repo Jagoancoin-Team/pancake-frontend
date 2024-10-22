@@ -1,4 +1,4 @@
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 
 import { ContractAddresses } from '../constants/contracts'
 import { isPoolsSupported } from './isPoolsSupported'

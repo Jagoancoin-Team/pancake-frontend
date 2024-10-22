@@ -1,10 +1,7 @@
-import { Box, Flex, Text, Button, Link } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { Box, Flex, Text, Button, Link, NextLinkFromReactRouter } from '@pancakeswap/uikit'
 import { useTheme } from '@pancakeswap/hooks'
 import { styled } from 'styled-components'
 import { useTranslation } from '@pancakeswap/localization'
-import { floatingStarsLeft, floatingStarsRight } from 'views/Lottery/components/Hero'
 import Image from 'next/image'
 import bunnyImage from '../../../../public/images/trading-reward/trading-reward-banner-bunny.png'
 
@@ -29,19 +26,16 @@ const Decorations = styled(Box)`
   & :nth-child(1) {
     top: 10%;
     left: 5%;
-    animation: ${floatingStarsRight} 2.5s ease-in-out infinite;
   }
 
   & :nth-child(2) {
     top: 50%;
     right: 0%;
-    animation: ${floatingStarsLeft} 3s ease-in-out infinite;
   }
 
   & :nth-child(3) {
     left: 10%;
     bottom: 15%;
-    animation: ${floatingStarsRight} 3.5s ease-in-out infinite;
   }
 
   & :nth-child(4) {
@@ -49,7 +43,6 @@ const Decorations = styled(Box)`
     top: 20%;
     width: 66px;
     height: 48px;
-    animation: ${floatingStarsLeft} 3.5s ease-in-out infinite;
   }
 
   & :nth-child(5) {
@@ -158,7 +151,7 @@ const TradingRewardBanner = () => {
             </Text>
           </Flex>
           <Text bold mb="32px" maxWidth="404px" lineHeight="26.4px" fontSize={['16px', '16px', '16px', '24px']}>
-            {t('Earn CAKE while trading your favorite tokens on PancakeSwap.')}
+            {t('Earn CAKE while trading your favorite tokens on IceCreamSwap.')}
           </Text>
           <Flex alignSelf={['center', 'center', 'center', 'auto']}>
             <NextLinkFromReactRouter to="/swap?showTradingReward=true">

@@ -1,15 +1,14 @@
 import { Currency } from '@pancakeswap/sdk'
-import { SmartRouter, V3Pool, V4Router } from '@pancakeswap/smart-router'
+import { SmartRouter, V3Pool } from '@pancakeswap/smart-router/evm'
 import { Tick } from '@pancakeswap/v3-sdk'
-import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import useSWRImmutable from 'swr/immutable'
+import { useQuery } from '@tanstack/react-query'
 
-import { POOLS_FAST_REVALIDATE, POOLS_SLOW_REVALIDATE } from 'config/pools'
-import { tracker } from 'utils/datadog'
 import { v3Clients } from 'utils/graphql'
-import { createViemPublicClientGetter, getViemClients } from 'utils/viem'
+import { getViemClients } from 'utils/viem'
+import { POOLS_FAST_REVALIDATE, POOLS_SLOW_REVALIDATE } from 'config/pools'
 
-import { useMulticallGasLimit } from './useMulticallGasLimit'
 import { getPoolTicks } from './v3/useAllV3TicksQuery'
 
 export interface V3PoolsHookParams {
@@ -20,13 +19,12 @@ export interface V3PoolsHookParams {
 }
 
 export interface V3PoolsResult {
-  refresh: () => Promise<unknown>
-  pools: V3Pool[] | undefined
+  refresh: () => void
+  pools: V3Pool[] | null
   loading: boolean
   syncing: boolean
   blockNumber?: number
-  error: Error | null
-  dataUpdatedAt?: number
+  error?: Error
 }
 
 export function useV3CandidatePools(
@@ -47,14 +45,14 @@ export function useV3CandidatePools(
   const {
     data,
     isLoading: ticksLoading,
-    isFetching: ticksValidating,
+    isValidating: ticksValidating,
   } = useV3PoolsWithTicks(candidatePoolsWithoutTicks, {
     key,
     blockNumber,
     enabled: options?.enabled,
   })
 
-  const candidatePools = data?.pools
+  const candidatePools = data?.pools ?? null
 
   return {
     refresh,
@@ -72,12 +70,7 @@ export function useV3CandidatePoolsWithoutTicks(
   options?: V3PoolsHookParams,
 ) {
   const key = useMemo(() => {
-    if (
-      !currencyA ||
-      !currencyB ||
-      currencyA.chainId !== currencyB.chainId ||
-      currencyA.wrapped.equals(currencyB.wrapped)
-    ) {
+    if (!currencyA || !currencyB || currencyA.wrapped.equals(currencyB.wrapped)) {
       return ''
     }
     const symbols = currencyA.wrapped.sortsBefore(currencyB.wrapped)
@@ -93,13 +86,19 @@ export function useV3CandidatePoolsWithoutTicks(
     return POOLS_FAST_REVALIDATE[currencyA.chainId] || 0
   }, [currencyA?.chainId])
 
-  const { data, refetch, isPending, isFetching, error } = useQuery({
+  const {
+    data,
+    refetch,
+    isLoading,
+    isFetching,
+    error: errorMsg,
+  } = useQuery({
     queryKey: ['v3_candidate_pools', key],
     queryFn: async () => {
       const pools = await SmartRouter.getV3CandidatePools({
         currencyA,
         currencyB,
-        subgraphProvider: ({ chainId }) => (chainId ? v3Clients[chainId] : undefined),
+        subgraphProvider: ({ chainId }) => v3Clients[chainId],
         onChainProvider: getViemClients,
         blockNumber: options?.blockNumber,
       })
@@ -116,86 +115,16 @@ export function useV3CandidatePoolsWithoutTicks(
     enabled: Boolean(currencyA && currencyB && key && options?.enabled),
   })
 
+  const error = useMemo(() => errorMsg && new Error(errorMsg as string), [errorMsg])
+
   return {
     refresh: refetch,
-    pools: data?.pools,
-    loading: isPending,
+    pools: data?.pools ?? null,
+    loading: isLoading,
     syncing: isFetching,
     blockNumber: data?.blockNumber,
     key: data?.key,
     error,
-  }
-}
-
-export function useV3PoolsWithTicksOnChain(
-  currencyA?: Currency,
-  currencyB?: Currency,
-  options?: V3PoolsHookParams,
-): V3PoolsResult {
-  const gasLimit = useMulticallGasLimit(currencyA?.chainId)
-  const key = useMemo(() => {
-    if (
-      !currencyA ||
-      !currencyB ||
-      currencyA.chainId !== currencyB.chainId ||
-      currencyA.wrapped.equals(currencyB.wrapped)
-    ) {
-      return ''
-    }
-    const symbols = currencyA.wrapped.sortsBefore(currencyB.wrapped)
-      ? [currencyA.symbol, currencyB.symbol]
-      : [currencyB.symbol, currencyA.symbol]
-    return [currencyA.chainId, ...symbols, currencyA.chainId].join('_')
-  }, [currencyA, currencyB])
-
-  const refreshInterval = useMemo(() => {
-    const chainId = currencyA?.chainId
-    if (!chainId) {
-      return 0
-    }
-    return POOLS_FAST_REVALIDATE[chainId] || 0
-  }, [currencyA])
-
-  const { refetch, error, data, isLoading, isFetching, dataUpdatedAt } = useQuery({
-    queryKey: ['v3_pools_with_ticks_on_chain', key],
-    queryFn: async ({ signal }) => {
-      const clientProvider = createViemPublicClientGetter({ transportSignal: signal })
-      try {
-        const startTime = performance.now()
-        const label = `[V3_POOLS_WITH_TICKS_ON_CHAIN] chain ${currencyA?.chainId} ${currencyA?.symbol} - ${currencyB?.symbol}. (multicall gas limit: ${gasLimit})`
-        const res = await V4Router.getV3CandidatePools({
-          currencyA,
-          currencyB,
-          clientProvider,
-          gasLimit,
-        })
-        const duration = Math.floor(performance.now() - startTime)
-        tracker.log(`[PERF] ${label} duration:${duration}ms`, {
-          chainId: currencyA?.chainId,
-          label: key,
-          duration,
-        })
-        return res
-      } catch (e) {
-        console.error(e)
-        throw e
-      }
-    },
-    enabled: Boolean(key && options?.enabled && gasLimit),
-    refetchInterval: refreshInterval,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: 3,
-  })
-
-  return {
-    refresh: refetch,
-    error,
-    pools: data,
-    loading: isLoading,
-    syncing: isFetching,
-    dataUpdatedAt,
   }
 }
 
@@ -211,15 +140,14 @@ export function useV3PoolsWithTicks(
     return POOLS_SLOW_REVALIDATE[chainId] || 0
   }, [pools])
 
-  const poolsWithTicks = useQuery({
-    queryKey: ['v3_pool_ticks', key],
-
-    queryFn: async () => {
+  const poolsWithTicks = useSWRImmutable(
+    key && pools && enabled ? ['v3_pool_ticks', key] : null,
+    async () => {
       if (!pools) {
         throw new Error('Invalid pools to get ticks')
       }
       const label = `[V3_POOL_TICKS] ${key} ${blockNumber?.toString()}`
-      SmartRouter.logger.metric(label)
+      SmartRouter.metric(label)
       const poolTicks = await Promise.all(
         pools.map(async (pool) => {
           const { token0 } = pool
@@ -231,7 +159,7 @@ export function useV3PoolsWithTicks(
           })
         }),
       )
-      SmartRouter.logger.metric(label, poolTicks)
+      SmartRouter.metric(label, poolTicks)
       return {
         pools: pools?.map((pool, i) => ({
           ...pool,
@@ -241,14 +169,12 @@ export function useV3PoolsWithTicks(
         blockNumber,
       }
     },
-
-    enabled: Boolean(key && pools && enabled),
-    refetchInterval: refreshInterval,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: 3,
-  })
+    {
+      refreshInterval,
+      errorRetryCount: 3,
+      revalidateOnFocus: false,
+    },
+  )
 
   return poolsWithTicks
 }

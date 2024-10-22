@@ -2,11 +2,7 @@ import { useEffect, useLayoutEffect, useState, useRef } from 'react'
 
 export const useIsomorphicEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-interface IIntersectionProps {
-  rootMargin?: string
-  threshold?: number | number[]
-}
-const useIntersectionObserver = ({ rootMargin = '0px', threshold = 1 }: IIntersectionProps = {}) => {
+const useIntersectionObserver = () => {
   const [observerRefElement, setObserverRefElement] = useState<HTMLElement | null>(null)
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null)
   const [isIntersecting, setIsIntersecting] = useState(false)
@@ -21,8 +17,8 @@ const useIntersectionObserver = ({ rootMargin = '0px', threshold = 1 }: IInterse
         }
 
         intersectionObserverRef.current = new window.IntersectionObserver(checkObserverIsIntersecting, {
-          rootMargin,
-          threshold,
+          rootMargin: '0px',
+          threshold: 1,
         })
         intersectionObserverRef.current.observe(observerRefElement)
       }
@@ -32,14 +28,13 @@ const useIntersectionObserver = ({ rootMargin = '0px', threshold = 1 }: IInterse
         setIsIntersecting(false)
       }
     } else {
-      // If client doesn't support IntersectionObserver, set Intersecting to be true
+      // If client doesnt support IntersectionObserver, set Intersecting to be true
       setIsIntersecting(true)
     }
 
     return () => {
       if (intersectionObserverRef.current) {
         intersectionObserverRef.current.disconnect()
-        intersectionObserverRef.current = null
       }
     }
   }, [observerRefElement])

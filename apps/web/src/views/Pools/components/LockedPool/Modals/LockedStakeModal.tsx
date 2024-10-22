@@ -1,15 +1,15 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Modal } from '@pancakeswap/uikit'
-import { getBalanceNumber, getDecimalAmount } from '@pancakeswap/utils/formatBalance'
-import BigNumber from 'bignumber.js'
+import { useState, useMemo, useEffect } from 'react'
+import { Modal, Box } from '@pancakeswap/uikit'
 import useTheme from 'hooks/useTheme'
-import { useEffect, useMemo, useState } from 'react'
 import { VaultKey } from 'state/types'
-import { useCheckVaultApprovalStatus } from '../../../hooks/useApprove'
+import { getBalanceNumber, getDecimalAmount } from '@pancakeswap/utils/formatBalance'
+import { useTranslation } from '@pancakeswap/localization'
+import BigNumber from 'bignumber.js'
+import { GenericModalProps } from '../types'
 import BalanceField from '../Common/BalanceField'
 import LockedBodyModal from '../Common/LockedModalBody'
-import { GenericModalProps } from '../types'
 import RoiCalculatorModalProvider from './RoiCalculatorModalProvider'
+import { useCheckVaultApprovalStatus } from '../../../hooks/useApprove'
 
 const LockedStakeModal: React.FC<React.PropsWithChildren<GenericModalProps>> = ({
   onDismiss,
@@ -33,7 +33,7 @@ const LockedStakeModal: React.FC<React.PropsWithChildren<GenericModalProps>> = (
   const usdValueStaked = useMemo(
     () =>
       getBalanceNumber(
-        getDecimalAmount(new BigNumber(lockedAmount), stakingToken.decimals).multipliedBy(stakingTokenPrice ?? 0),
+        getDecimalAmount(new BigNumber(lockedAmount), stakingToken.decimals).multipliedBy(stakingTokenPrice),
         stakingToken.decimals,
       ),
     [lockedAmount, stakingTokenPrice, stakingToken.decimals],
@@ -47,7 +47,7 @@ const LockedStakeModal: React.FC<React.PropsWithChildren<GenericModalProps>> = (
 
   return (
     <RoiCalculatorModalProvider lockedAmount={lockedAmount}>
-      <Modal title={t('Lock CAKE')} onDismiss={onDismiss} headerBackground={theme.colors.gradientCardHeader}>
+      <Modal title={t('Lock ICE')} onDismiss={onDismiss} headerBackground={theme.colors.gradientCardHeader}>
         <Box mb="16px">
           <BalanceField
             stakingAddress={stakingToken.address}

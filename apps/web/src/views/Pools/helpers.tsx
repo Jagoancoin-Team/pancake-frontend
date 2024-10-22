@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js'
-import { vaultPoolConfig } from 'config/constants/pools'
+import { vaultPoolConfig } from '../../config/constants/pools'
 import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import { getApy } from '@pancakeswap/utils/compoundApyHelpers'
 import { getBalanceNumber, getFullDisplayBalance, getDecimalAmount } from '@pancakeswap/utils/formatBalance'
 import memoize from 'lodash/memoize'
 import { Token } from '@pancakeswap/sdk'
-import { Pool } from '@pancakeswap/widgets-internal'
+import { Pool } from '@pancakeswap/uikit'
 
 // min deposit and withdraw amount
 export const MIN_LOCK_AMOUNT = new BigNumber(10000000000000)
@@ -51,7 +51,7 @@ export const getAprData = (pool: Pool.DeserializedPool<Token>, performanceFee: n
     ? vaultPoolConfig[vaultKey].autoCompoundFrequency
     : MANUAL_POOL_AUTO_COMPOUND_FREQUENCY
 
-  if (vaultKey && apr !== undefined) {
+  if (vaultKey) {
     const autoApr = getApy(apr, autoCompoundFrequency, 365, performanceFee) * 100
     return { apr: autoApr, autoCompoundFrequency }
   }
@@ -59,7 +59,7 @@ export const getAprData = (pool: Pool.DeserializedPool<Token>, performanceFee: n
 }
 
 export const getCakeVaultEarnings = (
-  account: string | undefined,
+  account: string,
   cakeAtLastUserAction: BigNumber,
   userShares: BigNumber,
   pricePerFullShare: BigNumber,
@@ -81,8 +81,8 @@ export const getPoolBlockInfo = memoize(
     const { startTimestamp, endTimestamp, isFinished } = pool
     const shouldShowBlockCountdown = Boolean(!isFinished && startTimestamp && endTimestamp)
     const now = Math.floor(Date.now() / 1000)
-    const timeUntilStart = Math.max((startTimestamp || 0) - now, 0)
-    const timeRemaining = Math.max((endTimestamp || 0) - now, 0)
+    const timeUntilStart = Math.max(startTimestamp - now, 0)
+    const timeRemaining = Math.max(endTimestamp - now, 0)
     const hasPoolStarted = timeUntilStart <= 0 && timeRemaining > 0
     const timeToDisplay = hasPoolStarted ? timeRemaining : timeUntilStart
     return { shouldShowBlockCountdown, timeUntilStart, timeRemaining, hasPoolStarted, timeToDisplay, currentBlock }

@@ -5,6 +5,7 @@ export const variants = {
   WARNING: "warning",
   DANGER: "danger",
   SUCCESS: "success",
+  INFO: "info",
   PRIMARY: "primary",
 } as const;
 
@@ -15,6 +16,4 @@ export interface MessageProps extends SpaceProps {
   icon?: React.ReactNode;
   action?: React.ReactNode;
   actionInline?: boolean;
-  style?: React.CSSProperties;
-  showIcon?: boolean;
 }

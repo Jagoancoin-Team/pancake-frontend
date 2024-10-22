@@ -1,22 +1,22 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, ERC20Token, Fraction, Percent, Price, Token } from '@pancakeswap/sdk'
-import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
 import { useAccount } from 'wagmi'
+import { useTranslation } from '@pancakeswap/localization'
+import { Currency, CurrencyAmount, Fraction, Percent, Price, Token } from '@pancakeswap/sdk'
+import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
 
-import { BIG_INT_ZERO } from 'config/constants/exchange'
 import { PairState } from 'hooks/usePairs'
 import useTotalSupply from 'hooks/useTotalSupply'
+import { BIG_INT_ZERO } from 'config/constants/exchange'
 import { useContext, useMemo } from 'react'
-import { CurrencyField as Field } from 'utils/types'
-import { useAddLiquidityV2FormState } from 'state/mint/reducer'
-import { useSingleCallResult } from 'state/multicall/hooks'
+import { Field } from 'state/mint/actions'
 import { useCurrencyBalances } from 'state/wallet/hooks'
-import { Address } from 'viem'
-import { useEstimatedAmount } from 'views/Swap/hooks/useEstimatedAmount'
+import { useSingleCallResult } from 'state/multicall/hooks'
 import { StableConfigContext, UseStableSwapInfoContract } from 'views/Swap/hooks/useStableConfig'
+import { useEstimatedAmount } from 'views/Swap/hooks/useEstimatedAmount'
+import { Address } from 'viem'
+import { useAddLiquidityV2FormState } from 'state/mint/reducer'
 
 export interface StablePair {
-  liquidityToken: ERC20Token | undefined
+  liquidityToken: Token | null
   tokenAmounts: any[]
   token0: Currency
   token1: Currency
@@ -31,11 +31,11 @@ export interface StablePair {
 
 interface UseStablePairResponse {
   pairState: PairState
-  pair?: StablePair
+  pair: StablePair
 }
 
 export function useStablePair(currencyA?: Currency, currencyB?: Currency): UseStablePairResponse {
-  const stableConfigContext = useContext(StableConfigContext)
+  const { stableSwapConfig, stableSwapContract } = useContext(StableConfigContext)
 
   const [token0, token1] =
     currencyA && currencyB && currencyA.wrapped.sortsBefore(currencyB.wrapped)
@@ -47,11 +47,11 @@ export function useStablePair(currencyA?: Currency, currencyB?: Currency): UseSt
   const { data: estimatedToken1Amount } = useEstimatedAmount({
     estimatedCurrency: token1,
     quotient: token0AmountQuotient?.toString(),
-    stableSwapContract: stableConfigContext?.stableSwapContract,
-    stableSwapConfig: stableConfigContext?.stableSwapConfig,
+    stableSwapContract,
+    stableSwapConfig,
   })
 
-  const pair = useMemo<StablePair | undefined>(() => {
+  const pair = useMemo(() => {
     if (!token0 || !token1 || !currencyB) {
       return undefined
     }
@@ -64,7 +64,7 @@ export function useStablePair(currencyA?: Currency, currencyB?: Currency): UseSt
       : ZERO_AMOUNT
 
     return {
-      liquidityToken: stableConfigContext?.stableSwapConfig?.liquidityToken,
+      liquidityToken: stableSwapConfig?.liquidityToken || null,
       tokenAmounts: [],
       token0,
       token1,
@@ -76,16 +76,9 @@ export function useStablePair(currencyA?: Currency, currencyB?: Currency): UseSt
       reserve0: ZERO_AMOUNT,
       getLiquidityValue: () => ZERO_AMOUNT,
     }
-  }, [
-    token0,
-    token1,
-    currencyB,
-    token0AmountQuotient,
-    estimatedToken1Amount,
-    stableConfigContext?.stableSwapConfig?.liquidityToken,
-  ])
+  }, [currencyB, token0AmountQuotient, estimatedToken1Amount, token0, token1, stableSwapConfig?.liquidityToken])
 
-  if (!stableConfigContext?.stableSwapConfig) {
+  if (!stableSwapConfig) {
     return { pairState: PairState.NOT_EXISTS, pair: undefined }
   }
 
@@ -100,9 +93,9 @@ function useMintedStableLP({
   currencyInputAmount,
   currencyOutputAmount,
 }: {
-  stableSwapInfoContract?: UseStableSwapInfoContract
+  stableSwapInfoContract: UseStableSwapInfoContract
   stableSwapConfig: any
-  stableSwapAddress?: Address
+  stableSwapAddress: string
   currencyInput: Currency | undefined
   currencyInputAmount: bigint | undefined
   currencyOutputAmount: bigint | undefined
@@ -130,7 +123,7 @@ function useMintedStableLP({
   const balanceResult = useSingleCallResult({
     contract: stableSwapInfoContract,
     functionName: 'balances',
-    args: useMemo(() => [stableSwapAddress as Address] as const, [stableSwapAddress]),
+    args: [stableSwapAddress as Address],
   })
 
   return useMemo(
@@ -218,7 +211,7 @@ export function useStableLPDerivedMintInfo(
     [dependentAmount, independentAmount, independentField],
   )
 
-  const stableConfigContext = useContext(StableConfigContext)
+  const { stableSwapConfig, stableSwapContract, stableSwapInfoContract } = useContext(StableConfigContext)
 
   const { [Field.CURRENCY_A]: currencyAAmount, [Field.CURRENCY_B]: currencyBAmount } = parsedAmounts
 
@@ -230,8 +223,8 @@ export function useStableLPDerivedMintInfo(
   const { data: estimatedOutputAmount } = useEstimatedAmount({
     estimatedCurrency: currencyAAmountQuotient ? currencyB : currencyA,
     quotient: targetAmount?.quotient?.toString(),
-    stableSwapConfig: stableConfigContext?.stableSwapConfig,
-    stableSwapContract: stableConfigContext?.stableSwapContract,
+    stableSwapConfig,
+    stableSwapContract,
   })
 
   const price = useMemo(() => {
@@ -258,9 +251,9 @@ export function useStableLPDerivedMintInfo(
     error: estimateLPError,
     loading,
   } = useMintedStableLP({
-    stableSwapAddress: stableConfigContext?.stableSwapConfig?.stableSwapAddress,
-    stableSwapInfoContract: stableConfigContext?.stableSwapInfoContract,
-    stableSwapConfig: stableConfigContext?.stableSwapConfig,
+    stableSwapAddress: stableSwapConfig?.stableSwapAddress,
+    stableSwapInfoContract,
+    stableSwapConfig,
     currencyInput: currencyAAmountQuotient ? currencyA : currencyB,
     currencyInputAmount: currencyAAmountQuotient || currencyBAmountQuotient,
     currencyOutputAmount: currencyAAmountQuotient ? currencyBAmountQuotient : currencyAAmountQuotient,

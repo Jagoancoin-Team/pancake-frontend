@@ -1,26 +1,25 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 import {
   Box,
   ButtonMenu,
   ButtonMenuItem,
   Flex,
+  NextLinkFromReactRouter,
   Text,
   UserMenu,
   UserMenuDivider,
   UserMenuItem,
 } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
 import { ChainLogo } from 'components/Logo/ChainLogo'
 import { ASSET_CDN } from 'config/constants/endpoints'
 import { useRouter } from 'next/router'
 import { useCallback, useMemo } from 'react'
-import { multiChainId, multiChainPaths, multiChainShortName } from 'state/info/constant'
+import { multiChainId, multiChainPaths } from 'state/info/constant'
 import { useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
 import { styled } from 'styled-components'
 import { chains } from 'utils/wagmi'
-import { arbitrum, bsc, mainnet, polygonZkEvm, zkSync, linea, base, opBNB } from 'wagmi/chains'
+import { arbitrum, bsc, mainnet, polygonZkEvm, zkSync, linea, base } from 'wagmi/chains'
 import { v3InfoPath } from '../../constants'
 import Search from '../Search'
 
@@ -66,7 +65,7 @@ const InfoNav: React.FC<{ isStableSwap: boolean }> = ({ isStableSwap }) => {
             </ButtonMenuItem>
           </ButtonMenu>
         </Box>
-        <NetworkSwitcher activeIndex={activeIndex} />
+          { /* <NetworkSwitcher activeIndex={activeIndex} /> */ }
       </Flex>
       <Box width={['100%', '100%', '250px']}>
         <Search />
@@ -75,13 +74,13 @@ const InfoNav: React.FC<{ isStableSwap: boolean }> = ({ isStableSwap }) => {
   )
 }
 
-const targetChains = [mainnet, bsc, polygonZkEvm, zkSync, arbitrum, linea, base, opBNB]
+const targetChains = [mainnet, bsc, polygonZkEvm, zkSync, arbitrum, linea, base]
 
 export const NetworkSwitcher: React.FC<{ activeIndex: number }> = ({ activeIndex }) => {
   const { t } = useTranslation()
   const chainName = useChainNameByQuery()
   const foundChain = chains.find((d) => d.id === multiChainId[chainName])
-  const symbol = multiChainShortName[foundChain?.id ?? -1] ?? foundChain?.nativeCurrency?.symbol
+  const symbol = foundChain?.nativeCurrency?.symbol
   const router = useRouter()
   const switchNetwork = useCallback(
     (chianId: number) => {
@@ -97,7 +96,7 @@ export const NetworkSwitcher: React.FC<{ activeIndex: number }> = ({ activeIndex
     <UserMenu
       alignItems="top"
       ml="8px"
-      avatarSrc={`${ASSET_CDN}/web/chains/${multiChainId[chainName]}.png`}
+      avatarSrc={`/images/chains/${multiChainId[chainName]}.png`}
       text={
         foundChain ? (
           <>

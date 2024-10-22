@@ -1,20 +1,17 @@
-import { BOOSTED_FARM_V3_GAS_LIMIT } from 'config'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
-import { useMasterchef, useCrossFarmingVault, useV2SSBCakeWrapperContract } from 'hooks/useContract'
+import { useMasterchef, useNonBscVault } from 'hooks/useContract'
 import { useCallback } from 'react'
 import { useFeeDataWithGasPrice } from 'state/user/hooks'
-import { bCakeStakeFarm, crossChainStakeFarm, stakeFarm } from 'utils/calls'
+import { nonBscStakeFarm, stakeFarm } from 'utils/calls'
 import { useOraclePrice } from 'views/Farms/hooks/useFetchOraclePrice'
-import { ChainId } from '@pancakeswap/chains'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
 
 const useStakeFarms = (pid: number, vaultPid?: number) => {
   const { account, chainId } = useAccountActiveChain()
   const { gasPrice } = useFeeDataWithGasPrice()
-  const { gasPrice: bnbGasPrice } = useFeeDataWithGasPrice(ChainId.BSC)
 
-  const oraclePrice = useOraclePrice(chainId ?? 0)
+  const oraclePrice = useOraclePrice(chainId)
   const masterChefContract = useMasterchef()
-  const crossFarmingVaultContract = useCrossFarmingVault()
+  const nonBscVaultContract = useNonBscVault()
 
   const handleStake = useCallback(
     async (amount: string) => {
@@ -23,36 +20,14 @@ const useStakeFarms = (pid: number, vaultPid?: number) => {
     [masterChefContract, pid, gasPrice],
   )
 
-  const handleStakeCrossChain = useCallback(
+  const handleStakeNonBsc = useCallback(
     async (amount: string) => {
-      return crossChainStakeFarm(
-        crossFarmingVaultContract,
-        vaultPid,
-        amount,
-        bnbGasPrice,
-        account,
-        oraclePrice,
-        chainId,
-      )
+      return nonBscStakeFarm(nonBscVaultContract, vaultPid, amount, gasPrice, account, oraclePrice, chainId)
     },
-    [crossFarmingVaultContract, vaultPid, bnbGasPrice, account, oraclePrice, chainId],
+    [nonBscVaultContract, vaultPid, gasPrice, account, oraclePrice, chainId],
   )
 
-  return { onStake: vaultPid ? handleStakeCrossChain : handleStake }
-}
-
-export const useBCakeStakeFarms = (bCakeWrapperAddress) => {
-  const { gasPrice } = useFeeDataWithGasPrice()
-
-  const V2SSBCakeContract = useV2SSBCakeWrapperContract(bCakeWrapperAddress)
-
-  const handleStake = useCallback(
-    async (amount: string) => {
-      return bCakeStakeFarm(V2SSBCakeContract, amount, gasPrice, BOOSTED_FARM_V3_GAS_LIMIT)
-    },
-    [V2SSBCakeContract, gasPrice],
-  )
-
+  // return { onStake: vaultPid ? handleStakeNonBsc : handleStake }
   return { onStake: handleStake }
 }
 

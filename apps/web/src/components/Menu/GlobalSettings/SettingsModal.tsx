@@ -1,73 +1,50 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
+import { ChainId } from '@pancakeswap/sdk'
 import {
   AtomBox,
-  AutoColumn,
-  AutoRow,
-  Button,
-  ButtonProps,
-  Checkbox,
   Flex,
   InjectedModalProps,
-  Message,
-  MessageText,
   Modal,
-  ModalV2,
-  NotificationDot,
-  PancakeToggle,
-  PreTitle,
+  ExpertModal,
   QuestionHelper,
-  RowFixed,
   Text,
   ThemeSwitcher,
   Toggle,
+  Button,
+  ModalV2,
+  PreTitle,
+  AutoColumn,
+  NotificationDot,
+  ButtonProps,
+  Checkbox,
+  AutoRow,
+  RowFixed,
 } from '@pancakeswap/uikit'
+import { useActiveChainId } from 'hooks/useActiveChainId'
+import useTheme from 'hooks/useTheme'
+import {ReactNode, useCallback, useEffect, useState} from 'react'
+import { useSwapActionHandlers } from 'state/swap/useSwapActionHandlers'
 import {
   useAudioPlay,
   useExpertMode,
-  useUserExpertModeAcknowledgement,
   useUserSingleHopOnly,
+  useUserExpertModeAcknowledgement,
 } from '@pancakeswap/utils/user'
-import { ExpertModal } from '@pancakeswap/widgets-internal'
-import { TOKEN_RISK } from 'components/AccessRisk'
-import AccessRiskTooltips from 'components/AccessRisk/AccessRiskTooltips'
-import { useActiveChainId } from 'hooks/useActiveChainId'
-import { useSpeedQuote } from 'hooks/useSpeedQuote'
-import useTheme from 'hooks/useTheme'
-import { useWebNotifications } from 'hooks/useWebNotifications'
-import { ReactNode, Suspense, lazy, useCallback, useState } from 'react'
-import { useSwapActionHandlers } from 'state/swap/useSwapActionHandlers'
 import { useSubgraphHealthIndicatorManager, useUserUsernameVisibility } from 'state/user/hooks'
-import { useUserShowTestnet } from 'state/user/hooks/useUserShowTestnet'
 import { useUserTokenRisk } from 'state/user/hooks/useUserTokenRisk'
 import {
   useOnlyOneAMMSourceEnabled,
-  useRoutingSettingChanged,
   useUserSplitRouteEnable,
   useUserStableSwapEnable,
   useUserV2SwapEnable,
   useUserV3SwapEnable,
+  useRoutingSettingChanged,
 } from 'state/user/smartRouter'
-import { usePCSX, usePCSXFeatureEnabled } from 'hooks/usePCSX'
+import { useMMLinkedPoolByDefault } from 'state/user/mmLinkedPool'
 import { styled } from 'styled-components'
-import GasSettings from './GasSettings'
 import TransactionSettings from './TransactionSettings'
 import { SettingsMode } from './types'
 
-const WebNotiToggle = lazy(() => import('./WebNotiToggle'))
-
-const BetaTag = styled.div`
-  border: 2px solid ${({ theme }) => theme.colors.success};
-  border-radius: 16px;
-  padding-left: 6px;
-  padding-right: 6px;
-  padding-top: 3px;
-  padding-bottom: 3px;
-  color: ${({ theme }) => theme.colors.success};
-  margin-left: 6px;
-  font-weight: bold;
-  font-size: 14px;
-`
 const ScrollableContainer = styled(Flex)`
   flex-direction: column;
   height: auto;
@@ -106,12 +83,8 @@ const SettingsModal: React.FC<React.PropsWithChildren<InjectedModalProps>> = ({ 
   const [showExpertModeAcknowledgement, setShowExpertModeAcknowledgement] = useUserExpertModeAcknowledgement()
   const [expertMode, setExpertMode] = useExpertMode()
   const [audioPlay, setAudioMode] = useAudioPlay()
-  const [speedQuote, setSpeedQuote] = useSpeedQuote()
   const [subgraphHealth, setSubgraphHealth] = useSubgraphHealthIndicatorManager()
   const [userUsernameVisibility, setUserUsernameVisibility] = useUserUsernameVisibility()
-  const [showTestnet, setShowTestnet] = useUserShowTestnet()
-  const { enabled } = useWebNotifications()
-
   const { onChangeRecipient } = useSwapActionHandlers()
   const { chainId } = useActiveChainId()
   const [tokenRisk, setTokenRisk] = useUserTokenRisk()
@@ -170,80 +143,7 @@ const SettingsModal: React.FC<React.PropsWithChildren<InjectedModalProps>> = ({ 
                   }}
                 />
               </Flex>
-              <Flex justifyContent="space-between" alignItems="center" mb="24px">
-                <Flex alignItems="center">
-                  <Text>{t('Show username')}</Text>
-                  <QuestionHelper text={t('Shows username of wallet instead of bunnies')} placement="top" ml="4px" />
-                </Flex>
-                <Toggle
-                  id="toggle-username-visibility"
-                  checked={userUsernameVisibility}
-                  scale="md"
-                  onChange={() => {
-                    setUserUsernameVisibility(!userUsernameVisibility)
-                  }}
-                />
-              </Flex>
-              <Flex justifyContent="space-between" alignItems="center" mb="24px">
-                <Flex alignItems="center">
-                  <Text>{t('Allow notifications')}</Text>
-                  <QuestionHelper
-                    text={t(
-                      'Enables the web notifications feature. If turned off you will be automatically unsubscribed and the notification bell will not be visible',
-                    )}
-                    placement="top"
-                    ml="4px"
-                  />
-                  <BetaTag>{t('BETA')}</BetaTag>
-                </Flex>
-                <Suspense fallback={null}>
-                  <WebNotiToggle enabled={enabled} />
-                </Suspense>
-              </Flex>
-              <Flex justifyContent="space-between" alignItems="center" mb="24px">
-                <Flex alignItems="center">
-                  <Text>{t('Show testnet')}</Text>
-                </Flex>
-                <Toggle
-                  id="toggle-show-testnet"
-                  checked={showTestnet}
-                  scale="md"
-                  onChange={() => {
-                    setShowTestnet((s) => !s)
-                  }}
-                />
-              </Flex>
-              {chainId === ChainId.BSC && (
-                <>
-                  <Flex justifyContent="space-between" alignItems="center" mb="24px">
-                    <Flex alignItems="center">
-                      <Text>{t('Token Risk Scanning')}</Text>
-                      <QuestionHelper
-                        text={
-                          <AccessRiskTooltips
-                            hasResult
-                            riskLevel={TOKEN_RISK.SOME_RISK}
-                            riskLevelDescription={t(
-                              'Automatic risk scanning for the selected token. This scanning result is for reference only, and should NOT be taken as investment advice.',
-                            )}
-                          />
-                        }
-                        placement="top"
-                        ml="4px"
-                      />
-                    </Flex>
-                    <Toggle
-                      id="toggle-token-risk"
-                      checked={tokenRisk}
-                      scale="md"
-                      onChange={() => {
-                        setTokenRisk(!tokenRisk)
-                      }}
-                    />
-                  </Flex>
-                  <GasSettings />
-                </>
-              )}
+              { /* <GasSettings /> */ }
             </Flex>
           </>
         )}
@@ -251,9 +151,11 @@ const SettingsModal: React.FC<React.PropsWithChildren<InjectedModalProps>> = ({ 
           <>
             <Flex pt="3px" flexDirection="column">
               <PreTitle>{t('Swaps & Liquidity')}</PreTitle>
+              { /*
               <Flex justifyContent="space-between" alignItems="center" mb="24px">
-                {chainId === ChainId.BSC && <GasSettings />}
+                <GasSettings />
               </Flex>
+              */ }
               <TransactionSettings />
             </Flex>
             <Flex justifyContent="space-between" alignItems="center" mb="24px">
@@ -272,38 +174,19 @@ const SettingsModal: React.FC<React.PropsWithChildren<InjectedModalProps>> = ({ 
                 onChange={handleExpertModeToggle}
               />
             </Flex>
+            { /*
             <Flex justifyContent="space-between" alignItems="center" mb="24px">
               <Flex alignItems="center">
                 <Text>{t('Flippy sounds')}</Text>
                 <QuestionHelper
-                  text={t('Fun sounds to make a truly immersive pancake-flipping trading experience')}
+                  text={t('Fun sounds to make a truly immersive DynastySwap trading experience')}
                   placement="top"
                   ml="4px"
                 />
               </Flex>
-              <PancakeToggle
-                id="toggle-audio-play"
-                checked={audioPlay}
-                onChange={() => setAudioMode((s) => !s)}
-                scale="md"
-              />
+              <PancakeToggle checked={audioPlay} onChange={() => setAudioMode((s) => !s)} scale="md" />
             </Flex>
-            <Flex justifyContent="space-between" alignItems="center" mb="24px">
-              <Flex alignItems="center">
-                <Text>{t('Fast routing (BETA)')}</Text>
-                <QuestionHelper
-                  text={t('Increase the speed of finding best swapping routes')}
-                  placement="top"
-                  ml="4px"
-                />
-              </Flex>
-              <PancakeToggle
-                id="toggle-speed-quote"
-                checked={speedQuote}
-                onChange={() => setSpeedQuote((s) => !s)}
-                scale="md"
-              />
-            </Flex>
+            */ }
             <RoutingSettingsButton />
           </>
         )}
@@ -326,7 +209,6 @@ export function RoutingSettingsButton({
   const [show, setShow] = useState(false)
   const { t } = useTranslation()
   const [isRoutingSettingChange] = useRoutingSettingChanged()
-  const handleDismiss = useCallback(() => setShow(false), [])
   return (
     <>
       <AtomBox textAlign="center">
@@ -336,7 +218,7 @@ export function RoutingSettingsButton({
           </Button>
         </NotificationDot>
       </AtomBox>
-      <ModalV2 isOpen={show} onDismiss={handleDismiss} closeOnOverlayClick>
+      <ModalV2 isOpen={show} onDismiss={() => setShow(false)} closeOnOverlayClick>
         <RoutingSettings />
       </ModalV2>
     </>
@@ -349,12 +231,16 @@ function RoutingSettings() {
   const [isStableSwapByDefault, setIsStableSwapByDefault] = useUserStableSwapEnable()
   const [v2Enable, setV2Enable] = useUserV2SwapEnable()
   const [v3Enable, setV3Enable] = useUserV3SwapEnable()
-  const [xEnable, setXEnable] = usePCSX()
-  const xFeatureEnabled = usePCSXFeatureEnabled()
   const [split, setSplit] = useUserSplitRouteEnable()
+  const [isMMLinkedPoolByDefault, setIsMMLinkedPoolByDefault] = useMMLinkedPoolByDefault()
   const [singleHopOnly, setSingleHopOnly] = useUserSingleHopOnly()
   const onlyOneAMMSourceEnabled = useOnlyOneAMMSourceEnabled()
   const [isRoutingSettingChange, reset] = useRoutingSettingChanged()
+
+  useEffect(() => {
+    setIsStableSwapByDefault(false)
+    setIsMMLinkedPoolByDefault(false)
+  }, [])
 
   return (
     <Modal
@@ -374,29 +260,11 @@ function RoutingSettings() {
         }}
         gap="16px"
       >
-        {xFeatureEnabled ? (
-          <Flex justifyContent="space-between" alignItems="flex-start" mb="24px">
-            <Flex flexDirection="column">
-              <Text>PancakeSwap X</Text>
-              <Text fontSize="12px" color="textSubtle" maxWidth={360} mt={10}>
-                When applicable, aggregates liquidity to provide better price, more token options, and gas free swaps.
-              </Text>
-            </Flex>
-            <PancakeToggle
-              id="stable-swap-toggle"
-              scale="md"
-              checked={xEnable}
-              onChange={() => {
-                setXEnable((s) => !s)
-              }}
-            />
-          </Flex>
-        ) : null}
         <AtomBox>
           <PreTitle mb="24px">{t('Liquidity source')}</PreTitle>
           <Flex justifyContent="space-between" alignItems="center" mb="24px">
             <Flex alignItems="center">
-              <Text>PancakeSwap V3</Text>
+              <Text>DynastySwap V3</Text>
               <QuestionHelper
                 text={
                   <Flex>
@@ -412,15 +280,15 @@ function RoutingSettings() {
               />
             </Flex>
             <Toggle
-              disabled={v3Enable && onlyOneAMMSourceEnabled}
+              // disabled={v3Enable && onlyOneAMMSourceEnabled}
               scale="md"
               checked={v3Enable}
-              onChange={() => setV3Enable((s) => !s)}
+              onChange={() => setV3Enable((s) => !s || onlyOneAMMSourceEnabled)}
             />
           </Flex>
           <Flex justifyContent="space-between" alignItems="center" mb="24px">
             <Flex alignItems="center">
-              <Text>PancakeSwap V2</Text>
+              <Text>DynastySwap V2</Text>
               <QuestionHelper
                 text={
                   <Flex flexDirection="column">
@@ -437,15 +305,16 @@ function RoutingSettings() {
               />
             </Flex>
             <Toggle
-              disabled={v2Enable && onlyOneAMMSourceEnabled}
+              // disabled={v2Enable && onlyOneAMMSourceEnabled}
               scale="md"
               checked={v2Enable}
-              onChange={() => setV2Enable((s) => !s)}
+              onChange={() => setV2Enable((s) => !s || onlyOneAMMSourceEnabled)}
             />
           </Flex>
+          {/*
           <Flex justifyContent="space-between" alignItems="center" mb="24px">
             <Flex alignItems="center">
-              <Text>PancakeSwap {t('StableSwap')}</Text>
+              <Text>DynastySwap {t('StableSwap')}</Text>
               <QuestionHelper
                 text={
                   <Flex flexDirection="column">
@@ -460,7 +329,7 @@ function RoutingSettings() {
                 ml="4px"
               />
             </Flex>
-            <Toggle
+            <PancakeToggle
               disabled={isStableSwapByDefault && onlyOneAMMSourceEnabled}
               id="stable-swap-toggle"
               scale="md"
@@ -470,13 +339,39 @@ function RoutingSettings() {
               }}
             />
           </Flex>
-          {onlyOneAMMSourceEnabled && (
+          <Flex justifyContent="space-between" alignItems="center" mb="24px">
+            <Flex alignItems="center">
+              <Text>{`DynastySwap ${t('MM Linked Pool')}`}</Text>
+              <QuestionHelper
+                text={
+                  <Flex flexDirection="column">
+                    <Text mr="5px">{t('Trade through the market makers if they provide better deal')}</Text>
+                    <Text mr="5px" mt="1em">
+                      {t(
+                        'If a trade is going through market makers, it will no longer route through any traditional AMM DEX pools.',
+                      )}
+                    </Text>
+                  </Flex>
+                }
+                placement="top"
+                ml="4px"
+              />
+            </Flex>
+            <Toggle
+              id="toggle-disable-mm-button"
+              checked={isMMLinkedPoolByDefault}
+              onChange={(e) => setIsMMLinkedPoolByDefault(e.target.checked)}
+              scale="md"
+            />
+          </Flex>
+          */}
+          {/*onlyOneAMMSourceEnabled && (
             <Message variant="warning">
               <MessageText>
                 {t('At least one AMM liquidity source has to be enabled to support normal trading.')}
               </MessageText>
             </Message>
-          )}
+          )*/}
         </AtomBox>
         <AtomBox>
           <PreTitle mb="24px">{t('Routing preference')}</PreTitle>

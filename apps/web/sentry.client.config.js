@@ -2,7 +2,7 @@
 // The config you add here will be used whenever a page is visited.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-import { init, breadcrumbsIntegration, globalHandlersIntegration, dedupeIntegration } from '@sentry/nextjs'
+import { init, GlobalHandlers, Breadcrumbs, Dedupe } from '@sentry/react'
 import { UserRejectedRequestError, UnknownRpcError } from 'viem'
 
 const SENTRY_DSN = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN
@@ -19,10 +19,10 @@ const isUserRejected = (err) => {
   }
 
   // fallback for raw rpc error code
-  if (err && typeof err === 'object') {
+  if (typeof err === 'object') {
     if (
       ('code' in err && (err.code === 4001 || err.code === 'ACTION_REJECTED')) ||
-      ('cause' in err && err.cause && 'code' in err.cause && err.cause.code === 4001)
+      ('cause' in err && 'code' in err.cause && err.cause.code === 4001)
     ) {
       return true
     }
@@ -39,14 +39,14 @@ const ENV = process.env.VERCEL_ENV || process.env.NODE_ENV
 init({
   dsn: SENTRY_DSN,
   integrations: [
-    breadcrumbsIntegration({
+    new Breadcrumbs({
       console: ENV === 'production',
     }),
-    globalHandlersIntegration({
+    new GlobalHandlers({
       onerror: false,
       onunhandledrejection: false,
     }),
-    dedupeIntegration(),
+    new Dedupe(),
   ],
   environment: ENV === 'production' ? 'production' : 'development',
   // Adjust this value in production, or use tracesSampler for greater control

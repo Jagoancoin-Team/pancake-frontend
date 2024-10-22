@@ -17,9 +17,12 @@ export interface SerializedWrappedToken extends SerializedToken {
 export class WrappedTokenInfo extends Token {
   public readonly logoURI: string | undefined
 
+  public readonly tags: string[] | undefined
+
   constructor(tokenInfo: TokenInfo) {
     super(tokenInfo.chainId, tokenInfo.address, tokenInfo.decimals, tokenInfo.symbol, tokenInfo.name)
     this.logoURI = tokenInfo.logoURI
+    this.tags = tokenInfo.tags
   }
 
   public get serialize(): SerializedWrappedToken {
@@ -42,7 +45,7 @@ export type TokenAddressMap<TChainId extends number> = Readonly<{
 }>
 
 export function deserializeToken(serializedToken: SerializedWrappedToken): Token {
-  if (serializedToken.logoURI) {
+  if (serializedToken?.logoURI) {
     return new WrappedTokenInfo({
       chainId: serializedToken.chainId,
       address: serializedToken.address,
@@ -53,11 +56,11 @@ export function deserializeToken(serializedToken: SerializedWrappedToken): Token
     })
   }
   return new Token(
-    serializedToken.chainId,
-    serializedToken.address,
-    serializedToken.decimals,
-    serializedToken.symbol,
-    serializedToken.name,
-    serializedToken.projectLink,
+    serializedToken?.chainId,
+    serializedToken?.address,
+    serializedToken?.decimals,
+    serializedToken?.symbol,
+    serializedToken?.name,
+    serializedToken?.projectLink,
   )
 }

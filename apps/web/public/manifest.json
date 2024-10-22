@@ -1,11 +1,11 @@
 {
-  "short_name": "PancakeSwap",
-  "name": "PancakeSwap",
-  "description": "Farm CAKE with Pancake LP Tokens",
-  "homepage_url": "https://pancakeswap.finance",
+  "short_name": "IcecreamSwap",
+  "name": "IcecreamSwap",
+  "description": "Multi chain DeFi ecosystem",
+  "homepage_url": "https://icecreamswap.com",
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#1FC7D4",
+  "theme_color": "#F8567F",
   "background_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
@@ -19,6 +19,5 @@
       "type": "image/png",
       "sizes": "256x256"
     }
-  ],
-  "iconPath": "/images/cake.svg"
+  ]
 }

@@ -1,18 +1,18 @@
-import { useTranslation } from '@pancakeswap/localization'
+import React from 'react'
+import { styled } from 'styled-components'
 import {
   BlockIcon,
   CheckmarkCircleIcon,
-  CrownIcon,
   Flex,
-  Skeleton,
-  TeamPlayerIcon,
+  CrownIcon,
   Text,
+  TeamPlayerIcon,
   TrophyGoldIcon,
+  Skeleton,
 } from '@pancakeswap/uikit'
-import React from 'react'
-import { styled } from 'styled-components'
-import { BoldTd, StyledPrizeTable, Td } from '../../../components/StyledPrizeTable'
-import { getEasterRewardGroupAchievements, useCompetitionCakeRewards } from '../../../helpers'
+import { useTranslation } from '@pancakeswap/localization'
+import { useCompetitionCakeRewards, getEasterRewardGroupAchievements } from '../../../helpers'
+import { BoldTd, Td, StyledPrizeTable } from '../../../components/StyledPrizeTable'
 
 const StyledThead = styled.thead`
   border-bottom: 2px solid ${({ theme }) => theme.colors.cardBorder};
@@ -51,8 +51,8 @@ const EasterUserPrizeGrid: React.FC<React.PropsWithChildren<{ userTradingInforma
           </BoldTd>
           <Td>
             <Flex alignItems="center" flexWrap="wrap" justifyContent="center" width="100%">
-              {champion && champion > 0 && <CrownIcon mr={[0, '4px']} />}
-              {teamPlayer && teamPlayer > 0 && <TeamPlayerIcon mr={[0, '4px']} />}
+              {champion > 0 && <CrownIcon mr={[0, '4px']} />}
+              {teamPlayer > 0 && <TeamPlayerIcon mr={[0, '4px']} />}
               <TrophyGoldIcon mr={[0, '4px']} />
               <Text fontSize="12px" color="textSubtle" textTransform="lowercase">
                 + {userPointReward} {t('Points')}

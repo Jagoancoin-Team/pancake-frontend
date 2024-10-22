@@ -1,7 +1,7 @@
-import { Trans, useTranslation } from '@pancakeswap/localization'
-import { ERC20Token, Token } from '@pancakeswap/sdk'
+import { useTranslation, Trans } from '@pancakeswap/localization'
+import { ChainId, ERC20Token, Token } from '@pancakeswap/sdk'
+import isUndefinedOrNull from '@pancakeswap/utils/isUndefinedOrNull'
 import {
-  AutoRenewIcon,
   Button,
   Dots,
   Flex,
@@ -10,18 +10,17 @@ import {
   RefreshIcon,
   Tag,
   Text,
-  promotedGradient,
   useTooltip,
+  promotedGradient,
+  AutoRenewIcon,
 } from '@pancakeswap/uikit'
-import isUndefinedOrNull from '@pancakeswap/utils/isUndefinedOrNull'
-import { useQuery } from '@tanstack/react-query'
-import AccessRiskTooltips from 'components/AccessRisk/AccessRiskTooltips'
-import { ACCESS_TOKEN_SUPPORT_CHAIN_IDS } from 'components/AccessRisk/config/supportedChains'
-import { fetchRiskToken } from 'components/AccessRisk/utils/fetchTokenRisk'
 import { useEffect, useMemo, useState } from 'react'
-import { useAllLists } from 'state/lists/hooks'
 import { useUserTokenRisk } from 'state/user/hooks/useUserTokenRisk'
+import { useAllLists } from 'state/lists/hooks'
 import { styled } from 'styled-components'
+import useSWRImmutable from 'swr/immutable'
+import { fetchRiskToken } from 'components/AccessRisk/utils/fetchTokenRisk'
+import AccessRiskTooltips from 'components/AccessRisk/AccessRiskTooltips'
 
 const AnimatedButton = styled(Button)`
   animation: ${promotedGradient} 1.5s ease infinite;
@@ -81,7 +80,6 @@ function RetryRisk({ onClick }: { onClick: () => void }) {
           displayTooltip()
           onClick()
         }}
-        data-dd-action-name="Risk scan retry button"
         disabled={retry}
         variant="text"
         size="sm"
@@ -96,18 +94,12 @@ function RetryRisk({ onClick }: { onClick: () => void }) {
 }
 
 export function useTokenRisk(token?: Token) {
-  return useQuery({
-    queryKey: ['risk', token?.chainId, token?.address],
-
-    queryFn: () => {
-      return token && fetchRiskToken(token.address, token.chainId)
+  return useSWRImmutable(
+    token && token.address && token.chainId === ChainId.BSC && ['risk', token.chainId, token.address],
+    () => {
+      return fetchRiskToken(token?.address, token?.chainId)
     },
-
-    enabled: Boolean(token && token.address && ACCESS_TOKEN_SUPPORT_CHAIN_IDS.includes(token.chainId)),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-  })
+  )
 }
 
 const AccessRisk: React.FC<AccessRiskProps> = ({ token }) => {
@@ -119,15 +111,15 @@ const AccessRisk: React.FC<AccessRiskProps> = ({ token }) => {
 const AccessRiskComponent: React.FC<AccessRiskProps> = ({ token }) => {
   const { t } = useTranslation()
 
-  const { data, refetch } = useTokenRisk(token)
+  const { data, mutate } = useTokenRisk(token)
 
   useEffect(() => {
     if (data?.pollingInterval) {
-      const refresh = setTimeout(() => refetch(), data?.pollingInterval)
+      const refresh = setTimeout(() => mutate(), data?.pollingInterval)
       return () => clearTimeout(refresh)
     }
     return undefined
-  }, [data?.pollingInterval, refetch])
+  }, [data?.pollingInterval, mutate])
 
   const lists = useAllLists()
   const tokenInLists = useMemo(() => {
@@ -137,7 +129,7 @@ const AccessRiskComponent: React.FC<AccessRiskProps> = ({ token }) => {
       .filter(Boolean)
     if (!tokenLists.length) return null
     return tokenLists.some((tokenInfoList) => {
-      return tokenInfoList?.some((tokenInfo) => tokenInfo.address === token.address)
+      return tokenInfoList.some((tokenInfo) => tokenInfo.address === token.address)
     })
   }, [lists, token?.address])
 
@@ -151,12 +143,15 @@ const AccessRiskComponent: React.FC<AccessRiskProps> = ({ token }) => {
     { placement: 'bottom' },
   )
 
-  const isDataLoading = useMemo(() => !data || (data?.riskLevel === TOKEN_RISK.UNKNOWN && !data?.hasResult), [data])
+  const isDataLoading = useMemo(
+    () => (!data && !data?.isError) || (data?.riskLevel === TOKEN_RISK.UNKNOWN && !data?.hasResult),
+    [data],
+  )
 
   const riskLevel = useMemo(() => {
     if (!isUndefinedOrNull(data?.riskLevel)) {
-      if (tokenInLists || data?.riskLevel) {
-        return data?.riskLevel
+      if (tokenInLists || data.riskLevel) {
+        return data.riskLevel
       }
       return TOKEN_RISK.UNKNOWN
     }
@@ -164,23 +159,20 @@ const AccessRiskComponent: React.FC<AccessRiskProps> = ({ token }) => {
   }, [data, tokenInLists])
 
   const tagColor = useMemo(() => {
-    if (!data?.riskLevel) {
-      return 'textDisabled'
-    }
-    if (data.riskLevel > TOKEN_RISK.MEDIUM) {
+    if (data?.riskLevel > TOKEN_RISK.MEDIUM) {
       return 'failure'
     }
-    if (data.riskLevel >= TOKEN_RISK.LOW && data.riskLevel <= TOKEN_RISK.MEDIUM) {
+    if (data?.riskLevel >= TOKEN_RISK.LOW && data?.riskLevel <= TOKEN_RISK.MEDIUM) {
       return 'warning'
     }
-    if (data.riskLevel >= TOKEN_RISK.VERY_LOW && data.riskLevel <= TOKEN_RISK.SOME_RISK) {
+    if (data?.riskLevel >= TOKEN_RISK.VERY_LOW && data?.riskLevel <= TOKEN_RISK.SOME_RISK) {
       return 'primary'
     }
     return 'textDisabled'
   }, [data?.riskLevel])
 
   if (!isDataLoading) {
-    const hasRiskValue = riskLevel && TOKEN_RISK_T[riskLevel]
+    const hasRiskValue = TOKEN_RISK_T[riskLevel]
     if (!hasRiskValue) return null
     return (
       <Flex justifyContent="flex-end">
@@ -218,7 +210,7 @@ const AccessRiskComponent: React.FC<AccessRiskProps> = ({ token }) => {
           </Tag>
         </div>
         <RetryRisk
-          onClick={() => refetch()}
+          onClick={() => mutate()}
           // key for resetting retry state
           key={token.chainId + token.address}
         />

@@ -4,12 +4,13 @@ import { useRouter } from 'next/router'
 import { useCallback, useMemo } from 'react'
 import { useFarmV2PublicAPI } from 'state/farms/hooks'
 import { useFarmsV3Public } from 'state/farmsV3/hooks'
-import { CHAIN_IDS } from 'utils/wagmi'
-import AddLiquidityV2FormProvider from 'views/AddLiquidity/AddLiquidityV2FormProvider'
 import { AddLiquidityV3Layout, UniversalAddLiquidity } from 'views/AddLiquidityV3'
 import LiquidityFormProvider from 'views/AddLiquidityV3/formViews/V3FormView/form/LiquidityFormProvider'
 import { useCurrencyParams } from 'views/AddLiquidityV3/hooks/useCurrencyParams'
 import { SELECTOR_TYPE } from 'views/AddLiquidityV3/types'
+import { V3SubgraphHealthIndicator } from 'components/SubgraphHealthIndicator'
+import AddLiquidityV2FormProvider from 'views/AddLiquidity/AddLiquidityV2FormProvider'
+import {SUPPORT_SWAP} from "../../config/constants/supportChains";
 
 const AddLiquidityPage = () => {
   const router = useRouter()
@@ -57,7 +58,7 @@ const AddLiquidityPage = () => {
       {
         pathname: router.pathname,
         query: {
-          currency: [currencyIdA!, currencyIdB!],
+          currency: [currencyIdA, currencyIdB],
         },
       },
       undefined,
@@ -76,15 +77,16 @@ const AddLiquidityPage = () => {
             currencyIdA={currencyIdA}
             currencyIdB={currencyIdB}
             preferredSelectType={!feeAmount ? preferFarmType?.type : undefined}
+            isV2={!feeAmount ? preferFarmType?.type === SELECTOR_TYPE.V2 : undefined}
             preferredFeeAmount={!feeAmount ? preferFarmType?.feeAmount : undefined}
           />
+          <V3SubgraphHealthIndicator />
         </AddLiquidityV3Layout>
       </LiquidityFormProvider>
     </AddLiquidityV2FormProvider>
   )
 }
 
-AddLiquidityPage.chains = CHAIN_IDS
-AddLiquidityPage.screen = true
+AddLiquidityPage.chains = SUPPORT_SWAP
 
 export default AddLiquidityPage

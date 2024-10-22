@@ -1,18 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Percent } from '@pancakeswap/sdk'
-import {
-  PancakeSwapUniversalRouter,
-  Permit2Signature,
-  getUniversalRouterAddress,
-} from '@pancakeswap/universal-router-sdk'
+import { Percent, TradeType } from '@pancakeswap/sdk'
+import { SMART_ROUTER_ADDRESSES, SmartRouterTrade, SwapRouter } from '@pancakeswap/smart-router/evm'
 import { FeeOptions } from '@pancakeswap/v3-sdk'
 import { useMemo } from 'react'
+import { isAddress } from 'utils'
 
 import { useGetENSAddressByName } from 'hooks/useGetENSAddressByName'
 
-import { ClassicOrder } from '@pancakeswap/price-api-sdk'
 import useAccountActiveChain from 'hooks/useAccountActiveChain'
-import { safeGetAddress } from 'utils'
 import { Address, Hex } from 'viem'
 
 interface SwapCall {
@@ -26,25 +21,24 @@ interface SwapCall {
  * @param trade trade to execute
  * @param allowedSlippage user allowed slippage
  * @param recipientAddressOrName the ENS name or address of the recipient of the swap output
- * @param deadline the deadline for executing the trade
- * @param feeOptions the fee options to be applied to the trade.
+ * @param signatureData the signature data of the permit of the input token amount, if available
  */
 export function useSwapCallArguments(
-  trade: ClassicOrder['trade'] | undefined | null,
+  trade: SmartRouterTrade<TradeType> | undefined | null,
   allowedSlippage: Percent,
-  recipientAddressOrName: string | null | undefined,
-  permitSignature: Permit2Signature | undefined,
+  recipientAddress: string | null | undefined,
+  // signatureData: SignatureData | null | undefined,
   deadline: bigint | undefined,
   feeOptions: FeeOptions | undefined,
 ): SwapCall[] {
   const { account, chainId } = useAccountActiveChain()
-  const recipientENSAddress = useGetENSAddressByName(recipientAddressOrName ?? undefined)
+  const recipientENSAddress = useGetENSAddressByName(recipientAddress)
   const recipient = (
-    recipientAddressOrName === null || recipientAddressOrName === undefined
+    recipientAddress === null
       ? account
-      : safeGetAddress(recipientAddressOrName)
-      ? recipientAddressOrName
-      : safeGetAddress(recipientENSAddress)
+      : isAddress(recipientAddress)
+      ? recipientAddress
+      : isAddress(recipientENSAddress)
       ? recipientENSAddress
       : null
   ) as Address | null
@@ -52,21 +46,71 @@ export function useSwapCallArguments(
   return useMemo(() => {
     if (!trade || !recipient || !account || !chainId) return []
 
-    const methodParameters = PancakeSwapUniversalRouter.swapERC20CallParameters(trade, {
+    const swapRouterAddress = chainId ? SMART_ROUTER_ADDRESSES[chainId] : undefined
+    if (!swapRouterAddress) return []
+
+    const { value, calldata } = SwapRouter.swapCallParameters(trade, {
       fee: feeOptions,
       recipient,
-      inputTokenPermit: permitSignature,
       slippageTolerance: allowedSlippage,
+      // ...(signatureData
+      //   ? {
+      //       inputTokenPermit:
+      //         'allowed' in signatureData
+      //           ? {
+      //               expiry: signatureData.deadline,
+      //               nonce: signatureData.nonce,
+      //               s: signatureData.s,
+      //               r: signatureData.r,
+      //               v: signatureData.v as any,
+      //             }
+      //           : {
+      //               deadline: signatureData.deadline,
+      //               amount: signatureData.amount,
+      //               s: signatureData.s,
+      //               r: signatureData.r,
+      //               v: signatureData.v as any,
+      //             },
+      //     }
+      //   : {}),
+
       deadlineOrPreviousBlockhash: deadline?.toString(),
     })
-    const swapRouterAddress = getUniversalRouterAddress(chainId)
-    if (!swapRouterAddress) return []
+
+    // if (argentWalletContract && trade.inputAmount.currency.isToken) {
+    //   return [
+    //     {
+    //       address: argentWalletContract.address,
+    //       calldata: argentWalletContract.interface.encodeFunctionData('wc_multiCall', [
+    //         [
+    //           approveAmountCalldata(trade.maximumAmountIn(allowedSlippage), swapRouterAddress),
+    //           {
+    //             to: swapRouterAddress,
+    //             value,
+    //             data: calldata,
+    //           },
+    //         ],
+    //       ]),
+    //       value: '0x0',
+    //     },
+    //   ]
+    // }
     return [
       {
         address: swapRouterAddress,
-        calldata: methodParameters.calldata as `0x${string}`,
-        value: methodParameters.value as `0x${string}`,
+        calldata,
+        value,
       },
     ]
-  }, [account, allowedSlippage, chainId, deadline, feeOptions, recipient, permitSignature, trade])
+  }, [
+    account,
+    allowedSlippage,
+    // argentWalletContract,
+    chainId,
+    deadline,
+    feeOptions,
+    recipient,
+    // signatureData,
+    trade,
+  ])
 }

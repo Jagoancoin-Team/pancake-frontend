@@ -3,11 +3,7 @@ import { mergeConfig } from "vite";
 module.exports = {
   framework: {
     name: "@storybook/react-vite",
-    options: {
-      builder: {
-        viteConfigPath: ".storybook/vite.config.ts",
-      },
-    },
+    options: {},
   },
   stories: ["../src/**/*.stories.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
   addons: [
@@ -19,6 +15,7 @@ module.exports = {
     },
     "@storybook/addon-links",
     "@storybook/addon-a11y",
+    "themeprovider-storybook/register",
   ],
   async viteFinal(config) {
     const finalConfig = mergeConfig(config, {

@@ -3,23 +3,24 @@ import BigNumber from 'bignumber.js'
 import { Text, Flex, Td, ProfileAvatar } from '@pancakeswap/uikit'
 import { RankListDetail } from 'views/TradingReward/hooks/useRankList'
 import { formatNumber } from '@pancakeswap/utils/formatBalance'
-import { useProfileForAddress } from 'state/profile/hooks'
 import { useDomainNameForAddress } from 'hooks/useDomain'
 import truncateHash from '@pancakeswap/utils/truncateHash'
-import { useCakePrice } from 'hooks/useCakePrice'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 
 interface DesktopResultProps {
   rank: RankListDetail
 }
 
 const DesktopResult: React.FC<React.PropsWithChildren<DesktopResultProps>> = ({ rank }) => {
-  const cakePrice = useCakePrice()
-  const { profile, isLoading: isProfileLoading } = useProfileForAddress(rank.origin)
+  const cakePriceBusd = usePriceCakeUSD()
+  const profile = undefined
+  const isProfileLoading = false
+  // const { profile, isLoading: isProfileLoading } = useProfileForAddress(rank.origin)
   const { domainName, avatar } = useDomainNameForAddress(rank.origin, !profile && !isProfileLoading)
 
   const cakeAmount = useMemo(
-    () => new BigNumber(rank?.estimateRewardUSD).div(cakePrice).toNumber(),
-    [cakePrice, rank?.estimateRewardUSD],
+    () => new BigNumber(rank?.estimateRewardUSD).div(cakePriceBusd).toNumber(),
+    [cakePriceBusd, rank?.estimateRewardUSD],
   )
 
   return (

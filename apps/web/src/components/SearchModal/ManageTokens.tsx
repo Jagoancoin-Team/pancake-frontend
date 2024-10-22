@@ -17,7 +17,7 @@ import { useToken } from 'hooks/Tokens'
 import { useRemoveUserAddedToken } from 'state/user/hooks'
 import useUserAddedTokens from 'state/user/hooks/useUserAddedTokens'
 import { CurrencyLogo } from 'components/Logo'
-import { getBlockExploreLink, safeGetAddress } from 'utils'
+import { getBlockExploreLink, isAddress } from 'utils'
 import { useTranslation } from '@pancakeswap/localization'
 import { useActiveChainId } from 'hooks/useActiveChainId'
 import ImportRow from './ImportRow'
@@ -56,7 +56,7 @@ export default function ManageTokens({
   const inputRef = useRef<HTMLInputElement>()
   const handleInput = useCallback((event) => {
     const input = event.target.value
-    const checksummedInput = safeGetAddress(input)
+    const checksummedInput = isAddress(input)
     setSearchQuery(checksummedInput || input)
   }, [])
 
@@ -105,7 +105,7 @@ export default function ManageTokens({
     )
   }, [userAddedTokens, chainId, removeToken])
 
-  const isAddressValid = searchQuery === '' || safeGetAddress(searchQuery)
+  const isAddressValid = searchQuery === '' || isAddress(searchQuery)
 
   return (
     <Wrapper>

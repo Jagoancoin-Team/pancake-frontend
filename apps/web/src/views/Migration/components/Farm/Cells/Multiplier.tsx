@@ -1,8 +1,7 @@
 import React from 'react'
 import { styled } from 'styled-components'
 import { useTranslation } from '@pancakeswap/localization'
-import { Flex, Text, HelpIcon, useTooltip, Link } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
+import { Flex, Text, HelpIcon, useTooltip, Pool, Link } from '@pancakeswap/uikit'
 
 const StyledCell = styled(Pool.BaseCell)`
   display: none;
@@ -39,15 +38,15 @@ const Multiplier: React.FC<React.PropsWithChildren<MultiplierProps>> = ({ multip
     <>
       <Text>
         {t(
-          'The Multiplier represents the proportion of CAKE rewards each farm receives, as a proportion of the CAKE produced each block.',
+          'The Multiplier represents the proportion of ICE rewards each farm receives, as a proportion of the ICE produced each block.',
         )}
       </Text>
       <Text my="24px">
-        {t('For example, if a 1x farm received 1 CAKE per block, a 40x farm would receive 40 CAKE per block.')}
+        {t('For example, if a 1x farm received 1 ICE per block, a 40x farm would receive 40 ICE per block.')}
       </Text>
       <Text>
         {t(
-          'We have recently rebased multipliers by a factor of 10, this is only a visual change and does not affect the amount of CAKE each farm receives.',
+          'We have recently rebased multipliers by a factor of 10, this is only a visual change and does not affect the amount of ICE each farm receives.',
         )}
       </Text>
       <Link

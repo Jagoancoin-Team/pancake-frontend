@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import useSWRImmutable from 'swr/immutable'
 import BigNumber from 'bignumber.js'
-import { useCakePrice } from 'hooks/useCakePrice'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import { MetricDetail } from 'views/AffiliatesProgram/hooks/useAuthAffiliate'
 
 export interface ListType {
@@ -16,16 +16,15 @@ interface Leaderboard {
 }
 
 const useLeaderboard = (): Leaderboard => {
-  const cakePrice = useCakePrice()
+  const cakePriceBusd = usePriceCakeUSD()
 
-  const { data, isPending } = useQuery({
-    queryKey: ['affiliates-program', 'affiliate-program-leaderboard', cakePrice],
-
-    queryFn: async () => {
+  const { data, isLoading } = useSWRImmutable(
+    cakePriceBusd.gt(0) && ['/affiliate-program-leaderboard', cakePriceBusd],
+    async () => {
       const response = await fetch(`/api/affiliates-program/leader-board`)
       const result = await response.json()
       const list: ListType[] = result.affiliates.map((affiliate) => {
-        const cakeBalance = new BigNumber(affiliate.metric.totalEarnFeeUSD).div(cakePrice)
+        const cakeBalance = new BigNumber(affiliate.metric.totalEarnFeeUSD).div(cakePriceBusd)
         return {
           ...affiliate,
           cakeBalance: cakeBalance.isNaN() ? '0' : cakeBalance.toString(),
@@ -33,14 +32,10 @@ const useLeaderboard = (): Leaderboard => {
       })
       return list
     },
-
-    enabled: cakePrice.gt(0),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  })
+  )
 
   return {
-    isFetching: isPending,
+    isFetching: isLoading,
     list: data ?? [],
   }
 }

@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
-import { BaseLayout, CardsLayout } from "../../components/Layouts";
+import React from "react";
 import { renderWithProvider } from "../../testHelpers";
+import { BaseLayout, CardsLayout } from "../../components/Layouts";
 
 it("renders base layout correctly", () => {
   const { asFragment } = renderWithProvider(<BaseLayout>basic layout</BaseLayout>);

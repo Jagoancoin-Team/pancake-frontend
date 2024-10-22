@@ -1,37 +1,36 @@
-import { PositionDetails } from '@pancakeswap/farms'
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, Price, Token } from '@pancakeswap/sdk'
 import { Position } from '@pancakeswap/v3-sdk'
-import { Bound } from 'config/constants/types'
 import { useToken } from 'hooks/Tokens'
-import useIsTickAtLimit from 'hooks/v3/useIsTickAtLimit'
-import { usePool } from 'hooks/v3/usePools'
-import { formatTickPrice } from 'hooks/v3/utils/formatTickPrice'
+import { useMemo, useState, SetStateAction, Dispatch } from 'react'
 import getPriceOrderingFromPositionForUI from 'hooks/v3/utils/getPriceOrderingFromPositionForUI'
-import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from 'react'
 import { unwrappedToken } from 'utils/wrappedCurrency'
+import { usePool } from 'hooks/v3/usePools'
+import { PositionDetails } from '@pancakeswap/farms'
+import useIsTickAtLimit from 'hooks/v3/useIsTickAtLimit'
+import { Currency, Price, Token } from '@pancakeswap/sdk'
+import { formatTickPrice } from 'hooks/v3/utils/formatTickPrice'
+import { Bound } from 'config/constants/types'
+import { useTranslation } from '@pancakeswap/localization'
 
-export interface PositionListItemDisplayProps {
+interface PositionListItemDisplayProps {
   positionSummaryLink: string
-  currencyBase?: Currency
-  currencyQuote?: Currency
+  currencyBase: Currency
+  currencyQuote: Currency
   removed: boolean
   outOfRange: boolean
-  priceUpper?: Price<Token, Token>
+  priceUpper: Price<Token, Token>
   tickAtLimit: {
-    LOWER?: boolean
-    UPPER?: boolean
+    LOWER: boolean
+    UPPER: boolean
   }
-  priceLower?: Price<Token, Token>
+  priceLower: Price<Token, Token>
   feeAmount: number
   subtitle: string
   setInverted: Dispatch<SetStateAction<boolean>>
-  position: Position | undefined
 }
 
 interface PositionListItemProps {
   positionDetails: PositionDetails
-  children: (displayProps: PositionListItemDisplayProps) => ReactNode
+  children: (displayProps: PositionListItemDisplayProps) => JSX.Element
 }
 
 export default function PositionListItem({ positionDetails, children }: PositionListItemProps) {
@@ -96,7 +95,6 @@ export default function PositionListItem({ positionDetails, children }: Position
   }
 
   return children({
-    position,
     positionSummaryLink,
     currencyBase,
     currencyQuote,

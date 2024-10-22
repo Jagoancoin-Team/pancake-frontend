@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
-import NotificationDot from "../../components/NotificationDot/NotificationDot";
+import React from "react";
 import { renderWithProvider } from "../../testHelpers";
+import NotificationDot from "../../components/NotificationDot/NotificationDot";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(

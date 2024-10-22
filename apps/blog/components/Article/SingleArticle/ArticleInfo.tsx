@@ -1,10 +1,10 @@
-import { ArticleDataType } from '@pancakeswap/blog'
-import { Box, Flex, ReactMarkdown, Text } from '@pancakeswap/uikit'
-import { useQuery } from '@tanstack/react-query'
-import SocialIcon from 'components/Article/SingleArticle/SocialIcon'
-import { useRouter } from 'next/router'
-import Balancer from 'react-wrap-balancer'
 import { styled } from 'styled-components'
+import { Box, Text, Flex, ReactMarkdown } from '@pancakeswap/uikit'
+import useSWR from 'swr'
+import Balancer from 'react-wrap-balancer'
+import { ArticleDataType } from 'utils/transformArticle'
+import { useRouter } from 'next/router'
+import SocialIcon from 'components/Article/SingleArticle/SocialIcon'
 
 const StyledBackgroundImage = styled(Box)<{ imgUrl: string }>`
   height: 100%;
@@ -34,10 +34,7 @@ const StyledTagGroup = styled(Flex)`
 
 const ArticleInfo = () => {
   const router = useRouter()
-  const { data: article } = useQuery<ArticleDataType>({
-    queryKey: ['/article'],
-    enabled: false,
-  })
+  const { data: article } = useSWR<ArticleDataType>('/article')
 
   const handleClickTag = (category: string) => {
     router.push(`/?category=${category}#all`)

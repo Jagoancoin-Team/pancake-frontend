@@ -1,11 +1,11 @@
 {
   "env": {
     "es6": true,
-    "browser": true
+    "browser": true,
+    "jest": true
   },
-  "extends": ["plugin:@next/next/recommended", "../../packages/eslint-config/lib/next-page-router.js"],
+  "extends": ["plugin:@next/next/recommended"],
   "rules": {
-    "no-empty-function": 0,
     "no-restricted-syntax": 0,
     "import/no-unresolved": 0,
     "no-console": ["warn", { "allow": ["info", "warn", "error", "debug", "time", "timeLog", "timeEnd"] }],

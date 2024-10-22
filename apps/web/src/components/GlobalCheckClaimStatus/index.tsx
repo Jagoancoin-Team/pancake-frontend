@@ -1,7 +1,11 @@
-import { ChainId } from '@pancakeswap/chains'
+import { useEffect, useState } from 'react'
+import { ModalV2 } from '@pancakeswap/uikit'
+import { useAccount } from 'wagmi'
+import { useRouter } from 'next/router'
 import useAccountActiveChain from 'hooks/useAccountActiveChain'
-import AnniversaryAchievementModal from './AnniversaryAchievementModal'
-import V3AirdropModal from './V3AirdropModal'
+import { useShowOnceAirdropModal } from 'hooks/useShowOnceAirdropModal'
+import V3AirdropModal, { WhitelistType } from './V3AirdropModal'
+import useAirdropModalStatus from './hooks/useAirdropModalStatus'
 
 interface GlobalCheckClaimStatusProps {
   excludeLocations: string[]
@@ -11,8 +15,8 @@ interface GlobalCheckClaimStatusProps {
 const enable = true
 
 const GlobalCheckClaimStatus: React.FC<React.PropsWithChildren<GlobalCheckClaimStatusProps>> = (props) => {
-  const { account, chainId } = useAccountActiveChain()
-  if (!enable || chainId !== ChainId.BSC || !account) {
+  const { account } = useAccountActiveChain()
+  if (!enable || !account) {
     return null
   }
   return <GlobalCheckClaim key={account} {...props} />
@@ -26,11 +30,34 @@ const GlobalCheckClaimStatus: React.FC<React.PropsWithChildren<GlobalCheckClaimS
  */
 
 const GlobalCheckClaim: React.FC<React.PropsWithChildren<GlobalCheckClaimStatusProps>> = ({ excludeLocations }) => {
+  const { address: account } = useAccount()
+  const { pathname } = useRouter()
+  const [show, setShow] = useState(false)
+  const { shouldShowModal, v3WhitelistAddress } = useAirdropModalStatus()
+  const [showOnceAirdropModal, setShowOnceAirdropModal] = useShowOnceAirdropModal()
+
+  useEffect(() => {
+    if (shouldShowModal && !excludeLocations.some((location) => pathname.includes(location)) && showOnceAirdropModal) {
+      setShow(true)
+    } else {
+      setShow(false)
+    }
+  }, [account, excludeLocations, pathname, setShow, shouldShowModal, showOnceAirdropModal, v3WhitelistAddress])
+
+  const handleCloseModal = () => {
+    if (showOnceAirdropModal) {
+      setShowOnceAirdropModal(!showOnceAirdropModal)
+    }
+    setShow(false)
+  }
+
   return (
-    <>
-      <AnniversaryAchievementModal excludeLocations={excludeLocations} />
-      <V3AirdropModal />
-    </>
+    <ModalV2 isOpen={show} onDismiss={() => handleCloseModal()} closeOnOverlayClick>
+      <V3AirdropModal
+        data={account ? (v3WhitelistAddress?.[account.toLowerCase()] as WhitelistType) : (null as WhitelistType)}
+        onDismiss={handleCloseModal}
+      />
+    </ModalV2>
   )
 }
 

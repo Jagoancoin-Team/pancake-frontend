@@ -1,18 +1,17 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Flex, Skeleton, Text } from '@pancakeswap/uikit'
-import BigNumber from 'bignumber.js'
 import { useMemo } from 'react'
-import { useProfile } from 'state/profile/hooks'
 import { styled } from 'styled-components'
-import { useVeCakeUserCreditWithTime } from 'views/CakeStaking/hooks/useVeCakeUserCreditWithTime'
-import { useCakeLockStatus } from 'views/CakeStaking/hooks/useVeCakeUserInfo'
-import { floatingStarsLeft, floatingStarsRight } from 'views/Lottery/components/Hero'
+import { Box, Flex, Text, Skeleton } from '@pancakeswap/uikit'
+import { useAccount } from 'wagmi'
+import { useTranslation } from '@pancakeswap/localization'
+import BigNumber from 'bignumber.js'
+import { DeserializedLockedCakeVault } from 'state/types'
+import { getVaultPosition, VaultPosition } from 'utils/cakePool'
+import { useCakeVault, useFetchIfo as useCakeVaultPool } from 'state/pools/hooks'
+import { Incentives, Qualification, RewardInfo } from 'views/TradingReward/hooks/useAllTradingRewardPair'
+import { UserCampaignInfoDetail } from 'views/TradingReward/hooks/useAllUserCampaignInfo'
 import NoConnected from 'views/TradingReward/components/YourTradingReward/NoConnected'
 import NoProfile from 'views/TradingReward/components/YourTradingReward/NoProfile'
 import RewardPeriod from 'views/TradingReward/components/YourTradingReward/RewardPeriod'
-import { Incentives, Qualification, RewardInfo } from 'views/TradingReward/hooks/useAllTradingRewardPair'
-import { UserCampaignInfoDetail } from 'views/TradingReward/hooks/useAllUserCampaignInfo'
-import { useAccount } from 'wagmi'
 
 const BACKGROUND_COLOR = 'radial-gradient(55.22% 134.13% at 57.59% 0%, #F5DF8E 0%, #FCC631 33.21%, #FF9D00 79.02%)'
 
@@ -94,27 +93,22 @@ const Decorations = styled(Box)<{ showBackgroundColor: boolean }>`
   & :nth-child(1) {
     top: 8%;
     left: 0%;
-    animation: ${floatingStarsRight} 3.5s ease-in-out infinite;
   }
   & :nth-child(2) {
     bottom: 20%;
     right: 0;
-    animation: ${floatingStarsRight} 2.5s ease-in-out infinite;
   }
   & :nth-child(3) {
     bottom: 0%;
     right: 5%;
-    animation: ${floatingStarsLeft} 4.5s ease-in-out infinite;
   }
   & :nth-child(4) {
     top: -12%;
     left: 20%;
-    animation: ${floatingStarsLeft} 3s ease-in-out infinite;
   }
   & :nth-child(5) {
     top: 2%;
     right: 0;
-    animation: ${floatingStarsLeft} 3.5s ease-in-out infinite;
   }
 
   & :nth-child(4), & :nth-child(5) {
@@ -147,9 +141,9 @@ const BaseContainer = styled(Flex)<{ showBackgroundColor: boolean }>`
 
 interface YourTradingRewardProps {
   isFetching: boolean
-  incentives: Incentives | undefined
+  incentives: Incentives
   campaignIds: Array<string>
-  currentUserCampaignInfo: UserCampaignInfoDetail | undefined
+  currentUserCampaignInfo: UserCampaignInfoDetail
   totalAvailableClaimData: UserCampaignInfoDetail[]
   qualification: Qualification
   rewardInfo: { [key in string]: RewardInfo }
@@ -168,20 +162,29 @@ const YourTradingReward: React.FC<React.PropsWithChildren<YourTradingRewardProps
 }) => {
   const { t } = useTranslation()
   const { address: account } = useAccount()
-  const { profile } = useProfile()
-  const { cakeLockExpired } = useCakeLockStatus()
-  const { userCreditWithTime } = useVeCakeUserCreditWithTime(incentives?.campaignClaimTime ?? 0)
-  const { thresholdLockAmount } = qualification
+  const profile = undefined
+  // const { profile } = useProfile()
 
-  const isValidLockAmount = useMemo(
-    () => new BigNumber(userCreditWithTime).gt(0) && new BigNumber(userCreditWithTime).gte(thresholdLockAmount),
-    [userCreditWithTime, thresholdLockAmount],
+  const { thresholdLockTime } = qualification
+
+  useCakeVaultPool()
+
+  const { userData } = useCakeVault() as DeserializedLockedCakeVault
+  const vaultPosition = getVaultPosition(userData)
+
+  const isLockPosition = useMemo(
+    () => Boolean(userData?.locked) && vaultPosition === VaultPosition.Locked,
+    [userData, vaultPosition],
   )
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const isValidLockDuration = useMemo(() => {
+    const minLockTime = new BigNumber(incentives?.campaignClaimTime ?? 0).plus(thresholdLockTime)
+    return new BigNumber(userData.lockEndTime).gte(minLockTime)
+  }, [incentives, thresholdLockTime, userData])
+
   const isQualified = useMemo(
-    () => Boolean(account && profile?.isActive && isValidLockAmount && !cakeLockExpired),
-    [account, profile?.isActive, isValidLockAmount, cakeLockExpired],
+    () => account && profile?.isActive && isLockPosition && isValidLockDuration,
+    [account, profile, isLockPosition, isValidLockDuration],
   )
 
   return (
@@ -215,13 +218,18 @@ const YourTradingReward: React.FC<React.PropsWithChildren<YourTradingRewardProps
       {!isFetching && account && profile?.isActive && (
         <Container showBackgroundColor>
           <RewardPeriod
+            userData={userData}
             campaignIds={campaignIds}
             incentives={incentives}
             rewardInfo={rewardInfo}
             currentUserCampaignInfo={currentUserCampaignInfo}
             totalAvailableClaimData={totalAvailableClaimData}
+            campaignStart={incentives?.campaignStart}
+            campaignClaimTime={incentives?.campaignClaimTime}
             isQualified={isQualified}
-            thresholdLockAmount={thresholdLockAmount}
+            isLockPosition={isLockPosition}
+            isValidLockDuration={isValidLockDuration}
+            thresholdLockTime={thresholdLockTime}
             qualification={qualification}
             campaignIdsIncentive={campaignIdsIncentive}
           />

@@ -30,7 +30,7 @@ const ConvertToLock: React.FC<React.PropsWithChildren<ConvertToLockProps>> = ({
     <Message
       variant="warning"
       action={
-        <Flex mt={!isTableView ? '8px' : undefined} flexGrow={1} ml={isTableView ? '80px' : undefined}>
+        <Flex mt={!isTableView && '8px'} flexGrow={1} ml={isTableView && '80px'}>
           <ExtendButton
             modalTitle={t('Convert to Lock')}
             lockEndTime="0"

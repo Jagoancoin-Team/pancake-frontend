@@ -1,12 +1,12 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, Fraction, Percent, Token } from '@pancakeswap/sdk'
-import { AutoColumn, Box, Flex, Svg, SvgProps, Text, TooltipText, useTooltip } from '@pancakeswap/uikit'
-import { GreyCard } from 'components/Card'
-import { AutoRow, RowBetween } from 'components/Layout/Row'
-import { CurrencyLogo, DoubleCurrencyLogo } from 'components/Logo'
 import React from 'react'
+import { Currency, Fraction, Percent, CurrencyAmount, Token } from '@pancakeswap/sdk'
+import { Text, useTooltip, TooltipText, Box, Flex, Svg, SvgProps, AutoColumn } from '@pancakeswap/uikit'
+import { useTranslation } from '@pancakeswap/localization'
+import { styled, useTheme } from 'styled-components'
+import { AutoRow, RowBetween } from 'components/Layout/Row'
 import { Field } from 'state/burn/actions'
-import { styled } from 'styled-components'
+import { DoubleCurrencyLogo, CurrencyLogo } from 'components/Logo'
+import { GreyCard } from 'components/Card'
 import { getLPSymbol } from 'utils/getLpSymbol'
 
 const Dot = styled(Box)<{ scale?: 'sm' | 'md' }>`
@@ -15,7 +15,7 @@ const Dot = styled(Box)<{ scale?: 'sm' | 'md' }>`
   border-radius: 50%;
 `
 
-const CircleSvg = ({ percent = 1, stroke = '#1FC7D4', ...props }: SvgProps & { percent?: number; stroke?: string }) => (
+const CircleSvg = ({ percent = 1, ...props }: SvgProps & { percent?: number }) => (
   <Svg width="60px" height="60px" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
     <g filter="url(#filter0_i_1147_113741)">
       <circle r="10" cx="10" cy="10" fill="#7645D9" />
@@ -24,7 +24,7 @@ const CircleSvg = ({ percent = 1, stroke = '#1FC7D4', ...props }: SvgProps & { p
         cx="10"
         cy="10"
         fill="transparent"
-        stroke={stroke}
+        stroke="#1FC7D4"
         strokeWidth="10"
         strokeDasharray={`calc(${percent * 100}px * 31.4 / 100) 31.4`}
         transform="rotate(-90) translate(-20)"
@@ -123,8 +123,8 @@ export const PairDistribution = ({
 interface AddLiquidityModalHeaderProps {
   currencies: { [field in Field]?: Currency }
   poolTokenPercentage?: Percent
-  liquidityMinted?: CurrencyAmount<Token>
-  price?: Fraction | null
+  liquidityMinted: CurrencyAmount<Token>
+  price: Fraction
   allowedSlippage: number
   children: React.ReactNode
   noLiquidity?: boolean

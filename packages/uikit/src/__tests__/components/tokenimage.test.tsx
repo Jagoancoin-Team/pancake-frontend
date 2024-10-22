@@ -1,12 +1,12 @@
-import { expect, it } from "vitest";
-import TokenImage from "../../components/Image/TokenImage";
+import React from "react";
 import { renderWithProvider, setupMockIntersectionObserver } from "../../testHelpers";
+import TokenImage from "../../components/Image/TokenImage";
 
 it("renders correctly", () => {
   setupMockIntersectionObserver();
   const { asFragment } = renderWithProvider(
     <TokenImage
-      src="https://pancakeswap.finance/images/tokens/0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82.svg"
+      src="https://icecreamswap.com/images/tokens/0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82.svg"
       height={48}
       width={48}
     />

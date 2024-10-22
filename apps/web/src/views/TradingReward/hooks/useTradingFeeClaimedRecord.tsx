@@ -1,7 +1,7 @@
+import useSWR from 'swr'
 import { useAccount } from 'wagmi'
 import { RewardType } from 'views/TradingReward/hooks/useAllTradingRewardPair'
 import { TRADING_REWARD_API } from 'config/constants/endpoints'
-import { useQuery } from '@tanstack/react-query'
 
 const initialState = {
   claimedRebate: false,
@@ -11,10 +11,9 @@ const initialState = {
 const useTradingFeeClaimedRecord = ({ type, campaignId }: { type: RewardType; campaignId: string }) => {
   const { address: account } = useAccount()
 
-  const { data } = useQuery({
-    queryKey: ['tradingReward', 'trading-fee-claimed-record', account],
-
-    queryFn: async () => {
+  const { data } = useSWR(
+    account && type && ['/trading-fee-claimed-record', account],
+    async () => {
       try {
         // campaignId & type will not affect API value
         const response = await fetch(
@@ -27,12 +26,14 @@ const useTradingFeeClaimedRecord = ({ type, campaignId }: { type: RewardType; ca
         return initialState
       }
     },
-
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    initialData: initialState,
-    enabled: Boolean(account && type),
-  })
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
+      fallbackData: initialState,
+    },
+  )
 
   return data
 }

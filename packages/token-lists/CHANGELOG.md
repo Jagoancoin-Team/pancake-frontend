@@ -1,38 +1,5 @@
 # @pancakeswap/token-lists
 
-## 0.0.13
-
-### Patch Changes
-
-- f3e8a77: fix: Filter out tokens in list that are not matching the criteria
-
-## 0.0.12
-
-### Patch Changes
-
-- Updated dependencies [f551e5e]
-  - @pancakeswap/swap-sdk-core@1.2.0
-
-## 0.0.11
-
-### Patch Changes
-
-- Updated dependencies [610a24a]
-  - @pancakeswap/swap-sdk-core@1.1.0
-
-## 0.0.10
-
-### Patch Changes
-
-- Updated dependencies [c269d43]
-  - @pancakeswap/swap-sdk-core@1.0.1
-
-## 0.0.9
-
-### Patch Changes
-
-- d994c3335: chore: Bump up jotai
-
 ## 0.0.8
 
 ### Patch Changes

@@ -1,9 +1,8 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Flex, LinkExternal, Text, useTooltip } from '@pancakeswap/uikit'
-import { ConfirmModalState } from '@pancakeswap/widgets-internal'
 import { useMemo } from 'react'
+import { useTranslation } from '@pancakeswap/localization'
 import { styled } from 'styled-components'
-import { PendingConfirmModalState } from '../types'
+import { Flex, Text, Box, LinkExternal, useTooltip } from '@pancakeswap/uikit'
+import { ConfirmModalState, PendingConfirmModalState } from '../types'
 
 const StyledLinkExternal = styled(LinkExternal)`
   &:hover {
@@ -31,25 +30,6 @@ interface ApproveStepFlowProps {
   pendingModalSteps: PendingConfirmModalState[]
 }
 
-const ApprovalSteps = ({ pendingModalSteps, confirmModalState }: ApproveStepFlowProps) => {
-  const stepWidth = useMemo(() => `${100 / pendingModalSteps.length}%`, [pendingModalSteps])
-  return (
-    <>
-      {pendingModalSteps.map((pendingStep: PendingConfirmModalState) => {
-        return (
-          <Step
-            key={pendingStep}
-            active={
-              Object.values(ConfirmModalState)[confirmModalState] === Object.values(ConfirmModalState)[pendingStep]
-            }
-            width={stepWidth}
-          />
-        )
-      })}
-    </>
-  )
-}
-
 export const ApproveStepFlow: React.FC<React.PropsWithChildren<ApproveStepFlowProps>> = ({
   confirmModalState,
   pendingModalSteps,
@@ -64,6 +44,7 @@ export const ApproveStepFlow: React.FC<React.PropsWithChildren<ApproveStepFlowPr
     { placement: 'top' },
   )
 
+  const stepWidth = useMemo(() => `${100 / pendingModalSteps.length}%`, [pendingModalSteps])
   const hideStepIndicators = useMemo(() => pendingModalSteps.length === 1, [pendingModalSteps])
 
   return (
@@ -74,7 +55,12 @@ export const ApproveStepFlow: React.FC<React.PropsWithChildren<ApproveStepFlowPr
       {!hideStepIndicators && (
         <>
           <StepsContainer>
-            <ApprovalSteps pendingModalSteps={pendingModalSteps} confirmModalState={confirmModalState} />
+            {pendingModalSteps.length !== 3 && (
+              <Step active={confirmModalState === ConfirmModalState.RESETTING_APPROVAL} width={stepWidth} />
+            )}
+            <Step active={confirmModalState === ConfirmModalState.APPROVING_TOKEN} width={stepWidth} />
+            <Step active={confirmModalState === ConfirmModalState.APPROVE_PENDING} width={stepWidth} />
+            <Step active={confirmModalState === ConfirmModalState.PENDING_CONFIRMATION} width={stepWidth} />
           </StepsContainer>
           {confirmModalState === ConfirmModalState.RESETTING_APPROVAL && (
             <StyledLinkExternal
@@ -85,7 +71,7 @@ export const ApproveStepFlow: React.FC<React.PropsWithChildren<ApproveStepFlowPr
               <Text color="primary">{t('Why resetting approval')}</Text>
             </StyledLinkExternal>
           )}
-          {confirmModalState === ConfirmModalState.APPROVING_TOKEN && (
+          {/*confirmModalState === ConfirmModalState.APPROVING_TOKEN && (
             <StyledLinkExternal
               external
               margin="16px auto auto auto"
@@ -98,7 +84,7 @@ export const ApproveStepFlow: React.FC<React.PropsWithChildren<ApproveStepFlowPr
               {tooltipVisible && tooltip}
               <Text color="primary">{t('this?')}</Text>
             </StyledLinkExternal>
-          )}
+          )*/}
         </>
       )}
     </Box>

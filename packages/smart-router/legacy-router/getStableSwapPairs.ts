@@ -1,28 +1,25 @@
-import { ChainId } from '@pancakeswap/chains'
-import { CurrencyAmount } from '@pancakeswap/sdk'
-import { getStableSwapPools, STABLE_SUPPORTED_CHAIN_IDS } from '@pancakeswap/stable-swap-sdk'
+import { ChainId, CurrencyAmount } from '@pancakeswap/sdk'
 import { deserializeToken } from '@pancakeswap/token-lists'
 import fromPairs_ from 'lodash/fromPairs.js'
-
-import { createStableSwapPair } from './stableSwap'
 import { StableSwapPair } from './types'
+import { createStableSwapPair } from './stableSwap'
+import { getStableSwapPools } from '../evm/constants/stableSwap'
+import { STABLE_SUPPORTED_CHAIN_IDS } from '../evm/constants/stableSwap/pools'
 
 export function getStableSwapPairs(chainId: ChainId): StableSwapPair[] {
   const pools = getStableSwapPools(chainId)
   return pools.map(
     ({
-      token: serializedToken,
-      quoteToken: serializedQuoteToken,
+      token,
+      quoteToken,
       stableSwapAddress,
       lpAddress,
       infoStableSwapAddress,
       stableLpFee,
-      stableTotalFee,
       stableLpFeeRateOfTotalFee,
     }) => {
-      const token = deserializeToken(serializedToken)
-      const quoteToken = deserializeToken(serializedQuoteToken)
-      const [token0, token1] = token.sortsBefore(quoteToken) ? [token, quoteToken] : [quoteToken, token]
+      const token0 = deserializeToken(token)
+      const token1 = deserializeToken(quoteToken)
       return createStableSwapPair(
         {
           token0,
@@ -34,7 +31,6 @@ export function getStableSwapPairs(chainId: ChainId): StableSwapPair[] {
         lpAddress,
         infoStableSwapAddress,
         stableLpFee,
-        stableTotalFee,
         stableLpFeeRateOfTotalFee,
       )
     },

@@ -1,9 +1,9 @@
-import { AutoColumn, Skeleton, Text, promotedGradient } from '@pancakeswap/uikit'
+import { AutoColumn, promotedGradient, Text, Skeleton } from '@pancakeswap/uikit'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
 import { LightTertiaryCard } from 'components/Card'
 import { PoolState } from 'hooks/v3/types'
 import { useFeeTierDistribution } from 'hooks/v3/useFeeTierDistribution'
-import { css, styled } from 'styled-components'
+import { styled, css } from 'styled-components'
 
 import { FeeTierPercentageBadge } from './FeeTierPercentageBadge'
 import { FEE_AMOUNT_DETAIL } from './shared'

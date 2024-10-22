@@ -1,12 +1,3 @@
-const TradingRewardPage = () => <></>
+import TradingReward from '../../views/TradingReward'
 
-export const getServerSideProps = () => {
-  return {
-    redirect: {
-      destination: '/trading-reward/cake-stakers',
-      permanent: true,
-    },
-  }
-}
-
-export default TradingRewardPage
+export default TradingReward

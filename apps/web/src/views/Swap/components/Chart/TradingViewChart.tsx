@@ -1,10 +1,10 @@
-import { useDebounce } from '@pancakeswap/hooks'
-import { useTranslation } from '@pancakeswap/localization'
 import { Box, BunnyPlaceholderIcon, Flex, Text } from '@pancakeswap/uikit'
-import { BarChartLoader } from 'components/ChartLoaders'
 import TradingView, { useTradingViewEvent } from 'components/TradingView'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from '@pancakeswap/localization'
+import { useDebounce } from '@pancakeswap/hooks'
+import { useCallback, useEffect, useMemo, useState, memo } from 'react'
 import { styled } from 'styled-components'
+import { BarChartLoader } from 'components/ChartLoaders'
 
 interface TradingViewChartProps {
   outputSymbol: string
@@ -33,7 +33,7 @@ const LoadingWrapper = styled.div<{ $isDark: boolean }>`
 const bnbToWBNBSymbol = (sym: string) => (sym === 'BNB' ? 'WBNB' : sym)
 
 const ID = 'TV_SWAP_CHART'
-const SYMBOL_PREFIX = 'PANCAKESWAP:'
+const SYMBOL_PREFIX = 'PANICESWAP:'
 
 const TradingViewChart = ({ outputSymbol, inputSymbol, isDark, onTwChartSymbol }: TradingViewChartProps) => {
   const [isLoading, setIsLoading] = useState(true)
@@ -73,9 +73,9 @@ const TradingViewChart = ({ outputSymbol, inputSymbol, isDark, onTwChartSymbol }
 
   useEffect(() => {
     if (!(isLoading || debouncedLoading) && !hasNoData && symbol) {
-      onTwChartSymbol?.(symbol)
+      onTwChartSymbol(symbol)
     } else {
-      onTwChartSymbol?.('')
+      onTwChartSymbol('')
     }
   }, [debouncedLoading, hasNoData, isLoading, onTwChartSymbol, symbol])
 

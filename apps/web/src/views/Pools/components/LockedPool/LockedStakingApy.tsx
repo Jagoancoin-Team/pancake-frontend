@@ -1,13 +1,22 @@
-import { Pool } from '@pancakeswap/widgets-internal'
-import { memo } from 'react'
-
-import { Token } from '@pancakeswap/sdk'
+import { useMemo, memo } from 'react'
+import { getVaultPosition, VaultPosition } from 'utils/cakePool'
+import { Flex, Text, TooltipText, useTooltip, BalanceWithLoading, Pool } from '@pancakeswap/uikit'
 import { LightGreyCard } from 'components/Card'
-import { useIsUserDelegated } from 'views/CakeStaking/hooks/useIsUserDelegated'
+import { useTranslation } from '@pancakeswap/localization'
+import { useVaultApy } from 'hooks/useVaultApy'
+import Divider from 'components/Divider'
+import { Token } from '@pancakeswap/sdk'
+import isUndefinedOrNull from '@pancakeswap/utils/isUndefinedOrNull'
+import { getBalanceNumber, getFullDisplayBalance } from '@pancakeswap/utils/formatBalance'
+import BurningCountDown from './Common/BurningCountDown'
+import YieldBoostRow from './Common/YieldBoostRow'
 import LockDurationRow from './Common/LockDurationRow'
-import LockedStaking from './LockedStaking'
+import IfoCakeRow from './Common/IfoCakeRow'
 import useUserDataInVaultPresenter from './hooks/useUserDataInVaultPresenter'
 import { LockedStakingApyPropsType } from './types'
+import LockedAprTooltipContent from './Common/LockedAprTooltipContent'
+import AutoEarningsBreakdown from '../AutoEarningsBreakdown'
+import LockedStaking from './LockedStaking'
 
 interface LockedStakingApyProps extends LockedStakingApyPropsType {
   showICake?: boolean
@@ -15,35 +24,58 @@ interface LockedStakingApyProps extends LockedStakingApyPropsType {
   account?: string
 }
 
-const LockedStakingApy: React.FC<React.PropsWithChildren<LockedStakingApyProps>> = ({ userData, pool }) => {
-  const isUserDelegated = useIsUserDelegated()
-  // const position = useMemo(
-  //   () =>
-  //     getVaultPosition({
-  //       userShares: userData?.userShares,
-  //       locked: userData?.locked,
-  //       lockEndTime: userData?.lockEndTime,
-  //     }),
-  //   [userData],
-  // )
+const LockedStakingApy: React.FC<React.PropsWithChildren<LockedStakingApyProps>> = ({
+  userData,
+  showICake,
+  pool,
+  account,
+}) => {
+  const { t } = useTranslation()
+  const position = useMemo(
+    () =>
+      getVaultPosition({
+        userShares: userData?.userShares,
+        locked: userData?.locked,
+        lockEndTime: userData?.lockEndTime,
+      }),
+    [userData],
+  )
 
-  const { weekDuration } = useUserDataInVaultPresenter({
-    lockStartTime: userData?.lockStartTime ?? '',
-    lockEndTime: userData?.lockEndTime ?? '',
+  const { weekDuration, secondDuration } = useUserDataInVaultPresenter({
+    lockStartTime: userData?.lockStartTime,
+    lockEndTime: userData?.lockEndTime,
     burnStartTime: userData?.burnStartTime,
   })
 
-  // const { lockedApy } = useVaultApy({ duration: secondDuration })
+  const { lockedApy } = useVaultApy({ duration: secondDuration })
 
   // earningTokenBalance includes overdue fee if any
-  // const earningTokenBalance = useMemo(() => {
-  //   return getBalanceNumber(userData?.balance?.cakeAsBigNumber.minus(userData?.cakeAtLastUserAction))
-  // }, [userData?.balance?.cakeAsBigNumber, userData?.cakeAtLastUserAction])
+  const earningTokenBalance = useMemo(() => {
+    return getBalanceNumber(userData?.balance?.cakeAsBigNumber.minus(userData?.cakeAtLastUserAction))
+  }, [userData?.balance?.cakeAsBigNumber, userData?.cakeAtLastUserAction])
+
+  const boostedYieldAmount = useMemo(() => {
+    return getFullDisplayBalance(userData?.cakeAtLastUserAction, 18, 5)
+  }, [userData?.cakeAtLastUserAction])
+
+  const tooltipContent = <LockedAprTooltipContent boostedYieldAmount={boostedYieldAmount} />
+  const { targetRef, tooltip, tooltipVisible } = useTooltip(tooltipContent, { placement: 'bottom-start' })
+
+  const originalLockedAmount = getBalanceNumber(userData?.lockedAmount)
+
+  const {
+    targetRef: tagTargetRefOfRecentProfit,
+    tooltip: tagTooltipOfRecentProfit,
+    tooltipVisible: tagTooltipVisibleOfRecentProfit,
+  } = useTooltip(<AutoEarningsBreakdown pool={pool} account={account} />, {
+    placement: 'bottom',
+  })
 
   return (
     <LightGreyCard>
       <LockedStaking pool={pool} userData={userData} />
-      {/* {![VaultPosition.LockedEnd, VaultPosition.AfterBurning].includes(position) && (
+      <Divider />
+      {![VaultPosition.LockedEnd, VaultPosition.AfterBurning].includes(position) && (
         <Flex alignItems="center" justifyContent="space-between">
           {tooltipVisible && tooltip}
           <TooltipText>
@@ -53,9 +85,9 @@ const LockedStakingApy: React.FC<React.PropsWithChildren<LockedStakingApyProps>>
           </TooltipText>
           <BalanceWithLoading color="text" bold fontSize="16px" value={parseFloat(lockedApy)} decimals={2} unit="%" />
         </Flex>
-      )} */}
-      {!isUserDelegated && <LockDurationRow weekDuration={weekDuration} />}
-      {/* {![VaultPosition.LockedEnd, VaultPosition.AfterBurning].includes(position) && (
+      )}
+      <LockDurationRow weekDuration={weekDuration} />
+      {![VaultPosition.LockedEnd, VaultPosition.AfterBurning].includes(position) && (
         <YieldBoostRow secondDuration={secondDuration} />
       )}
       <Flex alignItems="center" justifyContent="space-between">
@@ -95,7 +127,7 @@ const LockedStakingApy: React.FC<React.PropsWithChildren<LockedStakingApyProps>>
         </Text>
         <BalanceWithLoading color="text" bold fontSize="16px" value={originalLockedAmount} decimals={2} />
       </Flex>
-      {showICake && <IfoCakeRow />} */}
+      {showICake && <IfoCakeRow />}
     </LightGreyCard>
   )
 }

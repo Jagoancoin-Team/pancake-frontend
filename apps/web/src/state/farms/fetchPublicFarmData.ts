@@ -1,9 +1,9 @@
-import { ChainId } from '@pancakeswap/chains'
-import { SerializedFarm } from '@pancakeswap/farms'
+import { ChainId } from '@pancakeswap/sdk'
+import { erc20ABI } from 'wagmi'
 import chunk from 'lodash/chunk'
 import { getMasterChefV2Address } from 'utils/addressHelpers'
 import { publicClient } from 'utils/wagmi'
-import { erc20Abi } from 'viem'
+import { SerializedFarm } from '@pancakeswap/farms'
 import { SerializedFarmConfig } from '../../config/constants/types'
 
 const fetchFarmCalls = (farm: SerializedFarm, chainId: number) => {
@@ -11,47 +11,47 @@ const fetchFarmCalls = (farm: SerializedFarm, chainId: number) => {
   return [
     // Balance of token in the LP contract
     {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: token.address,
       functionName: 'balanceOf',
       args: [lpAddress],
     },
     // Balance of quote token on LP contract
     {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: quoteToken.address,
       functionName: 'balanceOf',
       args: [lpAddress],
     },
     // Balance of LP tokens in the master chef contract
     {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: lpAddress,
       functionName: 'balanceOf',
       args: [getMasterChefV2Address(chainId)],
     },
     // Total supply of LP tokens
     {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: lpAddress,
       functionName: 'totalSupply',
     },
     // Token decimals
     {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: token.address,
       functionName: 'decimals',
     },
     // Quote token decimals
     {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: quoteToken.address,
       functionName: 'decimals',
     },
   ] as const
 }
 
-export const fetchPublicFarmsData = async (farms: SerializedFarmConfig[], chainId = ChainId.BSC) => {
+export const fetchPublicFarmsData = async (farms: SerializedFarmConfig[], chainId) => {
   const farmCalls = farms.flatMap((farm) => fetchFarmCalls(farm, chainId))
   const client = publicClient({ chainId })
   const farmMultiCallResult = await client.multicall({

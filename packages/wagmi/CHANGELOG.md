@@ -1,42 +1,5 @@
 # @pancakeswap/wagmi
 
-## 3.0.3
-
-### Patch Changes
-
-- a93e89a: fix: Injected provider check when window is null
-
-## 3.0.2
-
-### Patch Changes
-
-- edc3f30: Upgrade viem and wagmi
-
-## 3.0.1
-
-### Patch Changes
-
-- 72c834c: Upgrade viem and wagmi v2
-
-## 3.0.0
-
-### Major Changes
-
-- acc454d: Remove binance extension wallet connector @pancakeswap/wagmi
-  release new pkg @pancakeswap/universal-router-sdk & @pancakeswap/permit2-sdk
-
-## 2.0.3
-
-### Patch Changes
-
-- 2ec03f1b2: chore: Bump up gauges
-
-## 2.0.2
-
-### Patch Changes
-
-- 2d7e1b3e2: Upgraded viem
-
 ## 2.0.1
 
 ### Patch Changes

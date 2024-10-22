@@ -1,6 +1,6 @@
-import { expect, it, vi } from "vitest";
-import BalanceInput from "../../components/BalanceInput/BalanceInput";
+import { vi } from "vitest";
 import { renderWithProvider } from "../../testHelpers";
+import BalanceInput from "../../components/BalanceInput/BalanceInput";
 
 const handleChange = vi.fn();
 
@@ -10,7 +10,15 @@ it("renders correctly", () => {
   );
   expect(asFragment()).toMatchInlineSnapshot(`
     <DocumentFragment>
-      .c2 {
+      .c6 {
+      color: var(--colors-textSubtle);
+      font-weight: 400;
+      line-height: 1.5;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .c2 {
       width: 100%;
     }
 
@@ -21,22 +29,10 @@ it("renders correctly", () => {
 
     .c3 {
       display: flex;
-    }
-
-    .c4 {
-      display: flex;
       align-items: center;
     }
 
-    .c7 {
-      color: var(--colors-textSubtle);
-      font-weight: 400;
-      line-height: 1.5;
-      font-size: 12px;
-      text-align: right;
-    }
-
-    .c5 {
+    .c4 {
       background-color: var(--colors-input);
       border-radius: 16px;
       box-shadow: var(--shadows-inset);
@@ -50,18 +46,18 @@ it("renders correctly", () => {
       border: 1px solid var(--colors-inputSecondary);
     }
 
-    .c5::placeholder {
+    .c4::placeholder {
       color: var(--colors-textSubtle);
     }
 
-    .c5:disabled {
+    .c4:disabled {
       background-color: var(--colors-backgroundDisabled);
       box-shadow: none;
       color: var(--colors-textDisabled);
       cursor: not-allowed;
     }
 
-    .c5:focus:not(:disabled) {
+    .c4:focus:not(:disabled) {
       box-shadow: var(--shadows-focus);
     }
 
@@ -73,7 +69,7 @@ it("renders correctly", () => {
       padding: 8px 16px;
     }
 
-    .c6 {
+    .c5 {
       background: transparent;
       border-radius: 0;
       box-shadow: none;
@@ -83,11 +79,11 @@ it("renders correctly", () => {
       border: none;
     }
 
-    .c6 ::placeholder {
+    .c5 ::placeholder {
       color: var(--colors-textSubtle);
     }
 
-    .c6:focus:not(:disabled) {
+    .c5:focus:not(:disabled) {
       box-shadow: none;
     }
 
@@ -98,28 +94,25 @@ it("renders correctly", () => {
           class="c1"
         >
           <div
-            class="c2 c3"
+            class="c2"
           >
             <div
-              class="c2"
+              class="c3"
             >
-              <div
-                class="c4"
-              >
-                <input
-                  class="c5 c6"
-                  inputmode="decimal"
-                  min="0"
-                  pattern="^[0-9]*[.,]?[0-9]{0,18}$"
-                  placeholder="0.0"
-                  value="14"
-                />
-              </div>
-              <div
-                class="c7"
-              >
-                15 USD
-              </div>
+              <input
+                class="c4 c5"
+                inputmode="decimal"
+                min="0"
+                pattern="^[0-9]*[.,]?[0-9]{0,18}$"
+                placeholder="0.0"
+                scale="md"
+                value="14"
+              />
+            </div>
+            <div
+              class="c6"
+            >
+              15 USD
             </div>
           </div>
         </div>
@@ -130,11 +123,26 @@ it("renders correctly", () => {
 
 it("renders correctly with unit prop", () => {
   const { asFragment } = renderWithProvider(
-    <BalanceInput value="14" currencyValue="15 USD" unit="CAKE" onUserInput={handleChange} />
+    <BalanceInput value="14" currencyValue="15 USD" unit="ICE" onUserInput={handleChange} />
   );
   expect(asFragment()).toMatchInlineSnapshot(`
     <DocumentFragment>
-      .c2 {
+      .c6 {
+      color: var(--colors-text);
+      font-weight: 400;
+      line-height: 1.5;
+      font-size: 16px;
+    }
+
+    .c8 {
+      color: var(--colors-textSubtle);
+      font-weight: 400;
+      line-height: 1.5;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .c2 {
       width: 100%;
     }
 
@@ -145,29 +153,10 @@ it("renders correctly with unit prop", () => {
 
     .c3 {
       display: flex;
-    }
-
-    .c4 {
-      display: flex;
       align-items: center;
     }
 
-    .c7 {
-      color: var(--colors-text);
-      font-weight: 400;
-      line-height: 1.5;
-      font-size: 16px;
-    }
-
-    .c9 {
-      color: var(--colors-textSubtle);
-      font-weight: 400;
-      line-height: 1.5;
-      font-size: 12px;
-      text-align: right;
-    }
-
-    .c5 {
+    .c4 {
       background-color: var(--colors-input);
       border-radius: 16px;
       box-shadow: var(--shadows-inset);
@@ -181,22 +170,22 @@ it("renders correctly with unit prop", () => {
       border: 1px solid var(--colors-inputSecondary);
     }
 
-    .c5::placeholder {
+    .c4::placeholder {
       color: var(--colors-textSubtle);
     }
 
-    .c5:disabled {
+    .c4:disabled {
       background-color: var(--colors-backgroundDisabled);
       box-shadow: none;
       color: var(--colors-textDisabled);
       cursor: not-allowed;
     }
 
-    .c5:focus:not(:disabled) {
+    .c4:focus:not(:disabled) {
       box-shadow: var(--shadows-focus);
     }
 
-    .c8 {
+    .c7 {
       margin-left: 4px;
       text-align: right;
       color: var(--colors-textSubtle);
@@ -211,7 +200,7 @@ it("renders correctly with unit prop", () => {
       padding: 8px 16px;
     }
 
-    .c6 {
+    .c5 {
       background: transparent;
       border-radius: 0;
       box-shadow: none;
@@ -221,11 +210,11 @@ it("renders correctly with unit prop", () => {
       border: none;
     }
 
-    .c6 ::placeholder {
+    .c5 ::placeholder {
       color: var(--colors-textSubtle);
     }
 
-    .c6:focus:not(:disabled) {
+    .c5:focus:not(:disabled) {
       box-shadow: none;
     }
 
@@ -236,33 +225,30 @@ it("renders correctly with unit prop", () => {
           class="c1"
         >
           <div
-            class="c2 c3"
+            class="c2"
           >
             <div
-              class="c2"
+              class="c3"
             >
+              <input
+                class="c4 c5"
+                inputmode="decimal"
+                min="0"
+                pattern="^[0-9]*[.,]?[0-9]{0,18}$"
+                placeholder="0.0"
+                scale="md"
+                value="14"
+              />
               <div
-                class="c4"
+                class="c6 c7"
               >
-                <input
-                  class="c5 c6"
-                  inputmode="decimal"
-                  min="0"
-                  pattern="^[0-9]*[.,]?[0-9]{0,18}$"
-                  placeholder="0.0"
-                  value="14"
-                />
-                <div
-                  class="c7 c8"
-                >
-                  CAKE
-                </div>
+                ICE
               </div>
-              <div
-                class="c9"
-              >
-                15 USD
-              </div>
+            </div>
+            <div
+              class="c8"
+            >
+              15 USD
             </div>
           </div>
         </div>
@@ -276,50 +262,28 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
     <BalanceInput
       value="14"
       currencyValue="15 USD"
-      unit="CAKE"
+      unit="ICE"
       switchEditingUnits={vi.fn()}
       onUserInput={handleChange}
     />
   );
   expect(asFragment()).toMatchInlineSnapshot(`
     <DocumentFragment>
-      .c2 {
-      width: 100%;
-    }
-
-    .c10 {
-      padding-left: 12px;
-    }
-
-    .c1 {
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .c3 {
-      display: flex;
-    }
-
-    .c4 {
-      display: flex;
-      align-items: center;
-    }
-
-    .c14 {
+      .c13 {
       align-self: center;
       fill: var(--colors-textSubtle);
       color: var(--colors-textSubtle);
       flex-shrink: 0;
     }
 
-    .c7 {
+    .c6 {
       color: var(--colors-text);
       font-weight: 400;
       line-height: 1.5;
       font-size: 16px;
     }
 
-    .c9 {
+    .c8 {
       color: var(--colors-textSubtle);
       font-weight: 400;
       line-height: 1.5;
@@ -327,36 +291,7 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
       text-align: right;
     }
 
-    .c5 {
-      background-color: var(--colors-input);
-      border-radius: 16px;
-      box-shadow: var(--shadows-inset);
-      color: var(--colors-text);
-      display: block;
-      font-size: 16px;
-      height: 40px;
-      outline: 0;
-      padding: 0 16px;
-      width: 100%;
-      border: 1px solid var(--colors-inputSecondary);
-    }
-
-    .c5::placeholder {
-      color: var(--colors-textSubtle);
-    }
-
-    .c5:disabled {
-      background-color: var(--colors-backgroundDisabled);
-      box-shadow: none;
-      color: var(--colors-textDisabled);
-      cursor: not-allowed;
-    }
-
-    .c5:focus:not(:disabled) {
-      box-shadow: var(--shadows-focus);
-    }
-
-    .c11 {
+    .c10 {
       position: relative;
       align-items: center;
       border: 0;
@@ -380,19 +315,19 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
       box-shadow: none;
     }
 
-    .c11:focus-visible {
+    .c10:focus-visible {
       outline: none;
       box-shadow: var(--shadows-focus);
     }
 
-    .c11:active:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled) {
+    .c10:active:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled) {
       opacity: 0.85;
       transform: translateY(1px);
       box-shadow: none;
     }
 
-    .c11:disabled,
-    .c11.pancake-button--disabled {
+    .c10:disabled,
+    .c10.pancake-button--disabled {
       background-color: var(--colors-backgroundDisabled);
       border-color: var(--colors-backgroundDisabled);
       box-shadow: none;
@@ -400,16 +335,63 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
       cursor: not-allowed;
     }
 
-    .c12 {
+    .c11 {
       padding: 2px;
       width: 32px;
     }
 
-    .c13 {
+    .c2 {
+      width: 100%;
+    }
+
+    .c9 {
+      padding-left: 12px;
+    }
+
+    .c1 {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .c3 {
+      display: flex;
+      align-items: center;
+    }
+
+    .c4 {
+      background-color: var(--colors-input);
+      border-radius: 16px;
+      box-shadow: var(--shadows-inset);
+      color: var(--colors-text);
+      display: block;
+      font-size: 16px;
+      height: 40px;
+      outline: 0;
+      padding: 0 16px;
+      width: 100%;
+      border: 1px solid var(--colors-inputSecondary);
+    }
+
+    .c4::placeholder {
+      color: var(--colors-textSubtle);
+    }
+
+    .c4:disabled {
+      background-color: var(--colors-backgroundDisabled);
+      box-shadow: none;
+      color: var(--colors-textDisabled);
+      cursor: not-allowed;
+    }
+
+    .c4:focus:not(:disabled) {
+      box-shadow: var(--shadows-focus);
+    }
+
+    .c12 {
       width: 16px;
     }
 
-    .c8 {
+    .c7 {
       margin-left: 4px;
       text-align: right;
       color: var(--colors-textSubtle);
@@ -424,7 +406,7 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
       padding: 8px 16px;
     }
 
-    .c6 {
+    .c5 {
       background: transparent;
       border-radius: 0;
       box-shadow: none;
@@ -434,22 +416,22 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
       border: none;
     }
 
-    .c6 ::placeholder {
+    .c5 ::placeholder {
       color: var(--colors-textSubtle);
     }
 
-    .c6:focus:not(:disabled) {
+    .c5:focus:not(:disabled) {
       box-shadow: none;
     }
 
     @supports (-webkit-text-size-adjust: none) and (not (-ms-accelerator: true)) and (not (-moz-appearance: none)) {
-      .c14 {
+      .c13 {
         filter: none!important;
       }
     }
 
     @media (hover: hover) {
-      .c11:hover:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled):not(:active) {
+      .c10:hover:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled):not(:active) {
         opacity: 0.65;
       }
     }
@@ -461,45 +443,42 @@ it("renders correctly with unit prop and switchEditingUnits", () => {
           class="c1"
         >
           <div
-            class="c2 c3"
+            class="c2"
           >
             <div
-              class="c2"
+              class="c3"
             >
+              <input
+                class="c4 c5"
+                inputmode="decimal"
+                min="0"
+                pattern="^[0-9]*[.,]?[0-9]{0,18}$"
+                placeholder="0.0"
+                scale="md"
+                value="14"
+              />
               <div
-                class="c4"
+                class="c6 c7"
               >
-                <input
-                  class="c5 c6"
-                  inputmode="decimal"
-                  min="0"
-                  pattern="^[0-9]*[.,]?[0-9]{0,18}$"
-                  placeholder="0.0"
-                  value="14"
-                />
-                <div
-                  class="c7 c8"
-                >
-                  CAKE
-                </div>
+                ICE
               </div>
-              <div
-                class="c9"
-              >
-                15 USD
-              </div>
+            </div>
+            <div
+              class="c8"
+            >
+              15 USD
             </div>
           </div>
           <div
-            class="c10 c4"
+            class="c9 c3"
           >
             <button
-              class="c11 c12 c13"
+              class="c10 c11 c12"
               scale="sm"
               variant="text"
             >
               <svg
-                class="c14"
+                class="c13"
                 color="textSubtle"
                 viewBox="0 0 24 25"
                 width="20px"

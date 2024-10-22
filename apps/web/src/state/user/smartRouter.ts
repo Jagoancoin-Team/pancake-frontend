@@ -1,16 +1,11 @@
-import { userSingleHopAtom } from '@pancakeswap/utils/user'
 import { atom, useAtom, useAtomValue } from 'jotai'
+import { userSingleHopAtom } from '@pancakeswap/utils/user'
 import atomWithStorageWithErrorCatch from 'utils/atomWithStorageWithErrorCatch'
 
 const userUseStableSwapAtom = atomWithStorageWithErrorCatch<boolean>('pcs:useStableSwap', true)
 const userUseV2SwapAtom = atomWithStorageWithErrorCatch<boolean>('pcs:useV2Swap', true)
 const userUseV3SwapAtom = atomWithStorageWithErrorCatch<boolean>('pcs:useV3Swap', true)
 const userUserSplitRouteAtom = atomWithStorageWithErrorCatch<boolean>('pcs:useSplitRouting', true)
-const userUseXAtom = atomWithStorageWithErrorCatch<boolean | undefined>('pcs:useX', undefined)
-
-export function useUserXEnable() {
-  return useAtom(userUseXAtom)
-}
 
 export function useUserStableSwapEnable() {
   return useAtom(userUseStableSwapAtom)
@@ -39,7 +34,7 @@ export function useOnlyOneAMMSourceEnabled() {
 const derivedRoutingSettingChangedAtom = atom(
   (get) => {
     return [
-      get(userUseStableSwapAtom),
+      !get(userUseStableSwapAtom),
       get(userUseV2SwapAtom),
       get(userUseV3SwapAtom),
       get(userUserSplitRouteAtom),
@@ -47,7 +42,7 @@ const derivedRoutingSettingChangedAtom = atom(
     ].some((x) => x === false)
   },
   (_, set) => {
-    set(userUseStableSwapAtom, true)
+    set(userUseStableSwapAtom, false)
     set(userUseV2SwapAtom, true)
     set(userUseV3SwapAtom, true)
     set(userUserSplitRouteAtom, true)

@@ -1,175 +1,337 @@
 import { Trans, useTranslation } from '@pancakeswap/localization'
 import {
   AutoColumn,
+  Box,
   CircleLoader,
   Flex,
   Heading,
-  ModalBody,
-  ModalHeader,
+  InjectedModalProps,
   ModalTitle,
   ModalWrapper,
   Text,
   useModal,
-  type InjectedModalProps,
 } from '@pancakeswap/uikit'
+import { LoadingDot } from '@pancakeswap/uikit/widgets/Liquidity'
 
-import type { Currency } from '@pancakeswap/swap-sdk-core'
 import { CommitButton } from 'components/CommitButton'
-import ConnectWalletButton from 'components/ConnectWalletButton'
-import { memo, useCallback, useMemo, type MutableRefObject } from 'react'
-import { useTheme } from 'styled-components'
-import { v4 } from 'uuid'
+import { MERCURYO_WIDGET_ID, MERCURYO_WIDGET_URL, ONRAMP_API_BASE_URL } from 'config/constants/endpoints'
+import { useActiveChainId } from 'hooks/useActiveChainId'
+import Script from 'next/script'
+import { Dispatch, ReactNode, SetStateAction, memo, useCallback, useEffect, useState } from 'react'
+import { styled, useTheme } from 'styled-components'
 import OnRampProviderLogo from 'views/BuyCrypto/components/OnRampProviderLogo/OnRampProviderLogo'
-import { useIsBtc } from 'views/BuyCrypto/hooks/useIsBtc'
-import { useOnRampSignature } from 'views/BuyCrypto/hooks/useOnRampSignature'
-import { IFrameWrapper, StyledBackArrowContainer } from 'views/BuyCrypto/styles'
-import type { OnRampProviderQuote, OnRampUnit } from 'views/BuyCrypto/types'
+import {
+  ONRAMP_PROVIDERS,
+  SUPPORTED_MERCURYO_FIAT_CURRENCIES,
+  chainIdToNetwork,
+  moonpayCurrencyChainIdentifier,
+  supportedTokenMap,
+} from 'views/BuyCrypto/constants'
+import { CryptoFormView } from 'views/BuyCrypto/types'
 import { ErrorText } from 'views/Swap/components/styleds'
 import { useAccount } from 'wagmi'
-import { logGTMFiatOnRampModalEvent } from 'utils/customGTMEventTracking'
-import { ProviderIFrame } from './ProviderIframe'
+import { nanoid } from '@reduxjs/toolkit'
+
+export const StyledIframe = styled.iframe<{ isDark: boolean }>`
+  height: 90%;
+  width: 100%;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  position: absolute;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+`
+
+const IFrameWrapper = styled(Flex)`
+  height: 90%;
+  width: 100%;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  background: ${({ theme }) => (theme.isDark ? '#27262C' : 'white')};
+  position: absolute;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  padding-bottom: 18px;
+`
+const StyledBackArrowContainer = styled(Box)`
+  position: absolute;
+  right: 10%;
+  &:hover {
+    cursor: pointer;
+  }
+`
+
+export const ModalHeader = styled.div<{ background?: string }>`
+  align-items: center;
+  background: transparent;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.cardBorder};
+  display: flex;
+  padding: 12px 24px;
+  position: relative;
+
+  ${({ theme }) => theme.mediaQueries.md} {
+    background: ${({ background }) => background || 'transparent'};
+  }
+`
 
 interface FiatOnRampProps {
-  selectedQuote: OnRampProviderQuote | undefined
-  cryptoCurrency: Currency | undefined
-  externalTxIdRef: MutableRefObject<string | undefined>
-  resetBuyCryptoState: () => void
+  provider: string
+  inputCurrency: string
+  outputCurrency: string
+  amount: string
+  setModalView: Dispatch<SetStateAction<CryptoFormView>>
+}
+
+interface FetchResponse {
+  urlWithSignature: string
+}
+
+const LoadingBuffer = () => {
+  return (
+    <IFrameWrapper justifyContent="center" alignItems="center" style={{ zIndex: 100 }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <LoadingDot />
+        <CircleLoader />
+      </div>
+    </IFrameWrapper>
+  )
+}
+
+const fetchMoonPaySignedUrl = async (
+  inputCurrency: string,
+  outputCurrency: string,
+  amount: string,
+  isDark: boolean,
+  account: string,
+  chainId: number,
+) => {
+  try {
+    const baseCurrency = `${inputCurrency.toLowerCase()}${moonpayCurrencyChainIdentifier[chainId]}`
+
+    const res = await fetch(`${ONRAMP_API_BASE_URL}/generate-moonpay-sig`, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'MOONPAY',
+        defaultCurrencyCode: baseCurrency,
+        baseCurrencyCode: outputCurrency.toLowerCase(),
+        baseCurrencyAmount: amount,
+        redirectUrl: 'https://pancakeswap.finance',
+        theme: isDark ? 'dark' : 'light',
+        showOnlyCurrencies: supportedTokenMap[chainId].moonPayTokens,
+        walletAddress: account,
+      }),
+    })
+    const result: FetchResponse = await res.json()
+
+    return result.urlWithSignature
+  } catch (error) {
+    console.error('Error fetching signature:', error)
+    return '' // Return an empty string in case of an error
+  }
 }
 
 export const FiatOnRampModalButton = ({
-  selectedQuote,
-  cryptoCurrency,
-  externalTxIdRef,
+  provider,
+  inputCurrency,
+  outputCurrency,
+  amount,
   disabled,
-  loading,
-  btcAddress,
-  resetBuyCryptoState,
-  errorText,
-  onRampUnit,
-}: FiatOnRampProps & {
-  disabled: boolean
-  loading: boolean
-  btcAddress: string
-  errorText: string | undefined
-  onRampUnit: OnRampUnit
-}) => {
-  const { address: account } = useAccount()
+  setModalView,
+}: FiatOnRampProps & { disabled: boolean }) => {
   const { t } = useTranslation()
-  const isBtc = useIsBtc()
-
-  const {
-    data: sigData,
-    isLoading,
-    isError,
-    refetch,
-  } = useOnRampSignature({
-    chainId: cryptoCurrency?.chainId,
-    quote: selectedQuote,
-    externalTransactionId: externalTxIdRef.current,
-    btcAddress,
-    onRampUnit,
-  })
-
   const [onPresentConfirmModal] = useModal(
     <FiatOnRampModal
-      selectedQuote={selectedQuote}
-      iframeUrl={sigData?.signature}
-      loading={isLoading}
-      error={isError}
-      resetBuyCryptoState={resetBuyCryptoState}
+      provider={provider}
+      inputCurrency={inputCurrency}
+      outputCurrency={outputCurrency}
+      amount={amount}
+      setModalView={setModalView}
     />,
   )
-  const toggleFiatOnRampModal = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
 
-      logGTMFiatOnRampModalEvent(selectedQuote?.provider)
-
-      onPresentConfirmModal()
-      // eslint-disable-next-line no-param-reassign
-      externalTxIdRef.current = v4()
-      refetch()
-    },
-    [selectedQuote?.provider, onPresentConfirmModal, externalTxIdRef, refetch],
-  )
-
-  const buttonText = useMemo(() => {
-    const provider = selectedQuote?.provider
-
-    if (errorText) return errorText
-    if (isBtc && btcAddress === '') return t('Verify your address to continue')
-    if (isBtc && disabled) return t('Invalid BTC address')
-    if (loading || isLoading) return t('Fetching Quotes')
-
-    return t('Buy with %provider%', { provider })
-  }, [loading, isLoading, selectedQuote, t, isBtc, disabled, btcAddress, errorText])
-
-  if (!isBtc && !account)
-    return (
-      <AutoColumn width="100%">
-        <ConnectWalletButton height="50px" />
-      </AutoColumn>
-    )
-
-  return (
-    <AutoColumn width="100%">
-      <CommitButton
-        onClick={toggleFiatOnRampModal}
-        disabled={Boolean(disabled || isError || errorText)}
-        isLoading={isLoading || loading}
-        height="56px"
-      >
+  let buttonText: ReactNode | string = t(`Buy with %provider%`, { provider })
+  if (disabled) {
+    buttonText = (
+      <>
         <Flex alignItems="center">
           <Text px="4px" fontWeight="bold" color="white">
-            {buttonText}
+            {t('Fetching Quotes')}
           </Text>
-          {isLoading || (loading && !errorText && <CircleLoader stroke="white" />)}
+          <CircleLoader stroke="white" />
         </Flex>
+      </>
+    )
+  }
+  return (
+    <AutoColumn gap="md">
+      <CommitButton onClick={onPresentConfirmModal} disabled={disabled} isLoading={disabled} mb="10px" mt="16px">
+        {buttonText}
       </CommitButton>
     </AutoColumn>
   )
 }
 
-export const FiatOnRampModal = memo<
-  InjectedModalProps &
-    Omit<FiatOnRampProps, 'cryptoCurrency' | 'externalTxIdRef'> & {
-      iframeUrl: string | undefined
-      loading: boolean
-      error: boolean
-    }
->(function ConfirmSwapModalComp({ onDismiss, selectedQuote, iframeUrl, error, loading, resetBuyCryptoState }) {
-  const { t } = useTranslation()
-  const theme = useTheme()
+export const FiatOnRampModal = memo<InjectedModalProps & FiatOnRampProps>(function ConfirmSwapModalComp({
+  onDismiss,
+  inputCurrency,
+  outputCurrency,
+  amount,
+  provider,
+  setModalView,
+}) {
+  const [scriptLoaded, setScriptOnLoad] = useState<boolean>(Boolean(window?.mercuryoWidget))
 
-  const handleDismiss = useCallback(() => {
-    resetBuyCryptoState?.()
+  const [error, setError] = useState<boolean | string | null>(false)
+  const [signedIframeUrl, setSignedIframeUrl] = useState<string | null>(null)
+  const [sig, setSig] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const { t } = useTranslation()
+  const { chainId } = useActiveChainId()
+
+  const theme = useTheme()
+  const account = useAccount()
+
+  const handleDismiss = useCallback(async () => {
     onDismiss?.()
-  }, [onDismiss, resetBuyCryptoState])
+    setModalView(CryptoFormView.Input)
+  }, [onDismiss, setModalView])
+
+  const fetchSignedIframeUrl = useCallback(async () => {
+    if (!account.address) {
+      setError(t('Please connect an account before making a purchase.'))
+      return
+    }
+    setLoading(true)
+    setError(null)
+
+    try {
+      const result = await fetchMoonPaySignedUrl(
+        inputCurrency,
+        outputCurrency,
+        amount,
+        theme.isDark,
+        account.address,
+        chainId,
+      )
+
+      setSignedIframeUrl(result)
+    } catch (e) {
+      setError(e.toString())
+    } finally {
+      setTimeout(() => setLoading(false), 2000)
+    }
+  }, [account.address, theme.isDark, inputCurrency, outputCurrency, amount, t, chainId])
+
+  useEffect(() => {
+    const fetchSig = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(`${ONRAMP_API_BASE_URL}/generate-mercuryo-sig?walletAddress=${account.address}`, {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+        const signature = await res.json()
+        setSig(signature.signature)
+      } catch (e) {
+        setError(e.toString())
+      } finally {
+        setTimeout(() => setLoading(false), 2000)
+      }
+    }
+    fetchSig()
+  }, [account.address])
+
+  useEffect(() => {
+    if (provider === ONRAMP_PROVIDERS.Mercuryo) {
+      if (sig && window?.mercuryoWidget) {
+        const transactonId = nanoid()
+        // @ts-ignore
+        const MC_WIDGET = window?.mercuryoWidget
+        MC_WIDGET.run({
+          widgetId: MERCURYO_WIDGET_ID,
+          fiatCurrency: outputCurrency.toUpperCase(),
+          currency: inputCurrency.toUpperCase(),
+          fiatAmount: amount,
+          fixAmount: true,
+          fixFiatAmount: true,
+          fixFiatCurrency: true,
+          fixCurrency: true,
+          currencies: supportedTokenMap[chainId].mercuryoTokens,
+          fiatCurrencies: SUPPORTED_MERCURYO_FIAT_CURRENCIES,
+          address: account.address,
+          signature: sig,
+          network: chainIdToNetwork[chainId],
+          merchantTransactionId: `${account.address}_${transactonId}`,
+          host: document.getElementById('mercuryo-widget'),
+          theme: theme.isDark ? 'PCS_dark' : 'PCS_light',
+        })
+      }
+    } else fetchSignedIframeUrl()
+  }, [
+    fetchSignedIframeUrl,
+    provider,
+    sig,
+    account.address,
+    amount,
+    inputCurrency,
+    outputCurrency,
+    theme,
+    scriptLoaded,
+    chainId,
+  ])
 
   return (
-    <ModalWrapper>
-      <ModalHeader background={theme.colors.gradientCardHeader}>
-        <ModalTitle pt="6px" justifyContent="center">
-          <StyledBackArrowContainer onClick={handleDismiss}>
-            <Text color="primary">{t('Close')}</Text>
-          </StyledBackArrowContainer>
-          <Heading width="100%" textAlign="center" pr="20px">
-            <OnRampProviderLogo provider={selectedQuote?.provider} />
-          </Heading>
-        </ModalTitle>
-      </ModalHeader>
-      <ModalBody position="relative" style={{ alignItems: 'center', overflowY: 'hidden' }}>
-        {error || !selectedQuote || !iframeUrl ? (
-          <IFrameWrapper justifyContent="center" alignItems="center">
+    <>
+      <ModalWrapper minHeight="700px" minWidth="360px">
+        <ModalHeader background={theme.colors.gradientCardHeader}>
+          <ModalTitle pt="6px" justifyContent="center">
+            <StyledBackArrowContainer onClick={handleDismiss}>
+              <Text color="primary">{t('Close')}</Text>
+            </StyledBackArrowContainer>
+            <Heading width="100%" textAlign="center" pr="20px">
+              <OnRampProviderLogo provider={provider} />
+            </Heading>
+          </ModalTitle>
+        </ModalHeader>
+        {error ? (
+          <Flex justifyContent="center" alignItems="center" alignContent="center">
             <ErrorText>
               <Trans>something went wrong!</Trans>
             </ErrorText>
-          </IFrameWrapper>
+          </Flex>
+        ) : provider === ONRAMP_PROVIDERS.Mercuryo ? (
+          <>
+            {loading && <LoadingBuffer />}
+            <IFrameWrapper id="mercuryo-widget" />;
+          </>
         ) : (
-          <ProviderIFrame provider={selectedQuote?.provider} loading={loading} signedIframeUrl={iframeUrl} />
+          <>
+            {loading && <LoadingBuffer />}
+            <StyledIframe
+              id="moonpayIframe"
+              src={signedIframeUrl ?? ''}
+              title="fiat-onramp-iframe"
+              isDark={theme.isDark}
+            />
+          </>
         )}
-      </ModalBody>
-    </ModalWrapper>
+      </ModalWrapper>
+      <Script
+        src={MERCURYO_WIDGET_URL}
+        onLoad={() => {
+          setScriptOnLoad(true)
+        }}
+      />
+    </>
   )
 })
 

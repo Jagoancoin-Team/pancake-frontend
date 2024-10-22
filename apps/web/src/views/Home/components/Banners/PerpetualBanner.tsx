@@ -56,8 +56,8 @@ const PerpetualBanner = () => {
   const perpetualUrl = useMemo(() => getPerpetualUrl({ chainId, languageCode: code, isDark }), [chainId, code, isDark])
   const headerRef = useRef<HTMLDivElement>(null)
   const [onUSCitizenModalPresent] = useModal(
-    <USCitizenConfirmModal title={t('PancakeSwap Perpetuals')} id={IdType.PERPETUALS} />,
-    true,
+    <USCitizenConfirmModal title={t('IceCreamSwap Perpetuals')} id={IdType.PERPETUALS} />,
+    false,
     false,
     'usCitizenConfirmModal',
   )
@@ -75,15 +75,11 @@ const PerpetualBanner = () => {
   }, [isMobile, code])
 
   return (
-    <S.Wrapper
-      style={{
-        background: `linear-gradient(140deg, #7645d9 0%, #452a7a 100%)`,
-      }}
-    >
+    <S.Wrapper>
       <S.Inner>
         <S.LeftWrapper>
           <S.StyledSubheading ref={headerRef}>{t('Perpetual Futures')}</S.StyledSubheading>
-          <Header width={['160px', '160px', 'auto']}>{t('Up to 1001× Leverage')}</Header>
+          <Header width={['160px', '160px', 'auto']}>{t('Up to 100× Leverage')}</Header>
           <Link
             href={perpetualUrl}
             external

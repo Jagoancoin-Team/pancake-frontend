@@ -4,7 +4,7 @@ import { Text, Card, CardBody, Flex, CardProps, TooltipText, useTooltip, Link, A
 import { styled } from 'styled-components'
 import { useTranslation } from '@pancakeswap/localization'
 import useTotalSupply from 'hooks/useTotalSupply'
-import { useStablecoinPriceAmount } from 'hooks/useStablecoinPrice'
+import { useStablecoinPriceAmount } from 'hooks/useBUSDPrice'
 import { useAccount } from 'wagmi'
 import { BIG_INT_ZERO } from 'config/constants/exchange'
 import { useGetRemovedTokenAmounts } from 'views/RemoveLiquidity/RemoveStableLiquidity/hooks/useStableDerivedBurnInfo'
@@ -50,11 +50,11 @@ export const useTokensDeposited = ({ pair, totalPoolTokens, userPoolBalance }) =
 export const useTotalUSDValue = ({ currency0, currency1, token0Deposited, token1Deposited }) => {
   const token0USDValue = useStablecoinPriceAmount(
     currency0,
-    token0Deposited ? parseFloat(token0Deposited.toSignificant(6)) : undefined,
+    token0Deposited ? parseFloat(token0Deposited.toSignificant(6)) : null,
   )
   const token1USDValue = useStablecoinPriceAmount(
     currency1,
-    token1Deposited ? parseFloat(token1Deposited.toSignificant(6)) : undefined,
+    token1Deposited ? parseFloat(token1Deposited.toSignificant(6)) : null,
   )
 
   return token0USDValue && token1USDValue ? token0USDValue + token1USDValue : null
@@ -134,9 +134,9 @@ function MinimalPositionCardView({
   const isStableLP = useContext(StableConfigContext)
 
   const { t } = useTranslation()
-  const poolData = useLPApr('v2', pair)
+  const poolData = useLPApr(pair)
   const { targetRef, tooltip, tooltipVisible } = useTooltip(
-    t(`Based on last 24 hours' performance. Does not account for impermanent loss`),
+    t(`Based on last 7 days' performance. Does not account for impermanent loss`),
     {
       placement: 'bottom',
     },
@@ -181,7 +181,7 @@ function MinimalPositionCardView({
                       {t('LP reward APR')}:
                     </TooltipText>
                     {tooltipVisible && tooltip}
-                    <Text>{formatAmount(poolData.lpApr)}%</Text>
+                    <Text>{formatAmount(poolData.lpApr7d)}%</Text>
                   </FixedHeightRow>
                 )}
                 <FixedHeightRow>
@@ -226,7 +226,7 @@ function MinimalPositionCardView({
         <LightCard>
           <Text fontSize="14px" style={{ textAlign: 'center' }}>
             <span role="img" aria-label="pancake-icon">
-              🥞
+              🍦
             </span>{' '}
             {isStableLP ? (
               <>
@@ -244,7 +244,7 @@ function MinimalPositionCardView({
               </>
             ) : (
               t(
-                "By adding liquidity you'll earn 0.17% of all trades on this pair proportional to your share in the trading pair. Fees are added to the pair, accrue in real time and can be claimed by withdrawing your liquidity.",
+                "By adding liquidity you'll earn 0.25% of all trades on this pair proportional to your share in the trading pair. Fees are added to the pair, accrue in real time and can be claimed by withdrawing your liquidity.",
               )
             )}
           </Text>

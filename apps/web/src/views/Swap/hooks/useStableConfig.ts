@@ -1,14 +1,18 @@
-import { Currency, CurrencyAmount, ERC20Token } from '@pancakeswap/sdk'
 import { LegacyStableSwapPair } from '@pancakeswap/smart-router/legacy-router'
-import { createContext, useContext, useMemo } from 'react'
+import { Currency, CurrencyAmount, ERC20Token } from '@pancakeswap/sdk'
+import { createContext, useMemo } from 'react'
+import useSWRImmutable from 'swr/immutable'
+import { getStableConfig } from '@pancakeswap/farms'
+import { deserializeToken } from '@pancakeswap/token-lists'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 
-import { infoStableSwapABI } from 'config/abi/infoStableSwap'
+import { useTokenBalancesWithLoadingIndicator } from 'state/wallet/hooks'
 import { stableLPABI } from 'config/abi/stableLP'
-import { stableSwapABI } from 'config/abi/stableSwapAbi'
 import { useContract } from 'hooks/useContract'
 import { useStableSwapPairs } from 'state/swap/useStableSwapPairs'
-import { useTokenBalancesWithLoadingIndicator } from 'state/wallet/hooks'
-import { Address } from 'viem'
+import { stableSwapABI } from 'config/abi/stableSwapAbi'
+import { infoStableSwapABI } from 'config/abi/infoStableSwap'
+import { Address } from 'wagmi'
 
 interface StableSwapConfigType extends LegacyStableSwapPair {
   liquidityToken: ERC20Token
@@ -24,13 +28,7 @@ export interface LPStablePair extends StableSwapConfig {
   getLiquidityValue: () => CurrencyAmount<Currency>
 }
 
-function useFindStablePair({
-  tokenA,
-  tokenB,
-}: {
-  tokenA: Currency | undefined | null
-  tokenB: Currency | undefined | null
-}) {
+function useFindStablePair({ tokenA, tokenB }: { tokenA: Currency | undefined; tokenB: Currency | undefined }) {
   const stablePairs = useStableSwapPairs()
 
   return useMemo(
@@ -49,9 +47,11 @@ function useFindStablePair({
 
 export function useLPTokensWithBalanceByAccount(account) {
   const lpTokens = useStableSwapPairs()
-  const tokens = useMemo(() => lpTokens.map(({ liquidityToken }) => liquidityToken), [lpTokens])
 
-  const [stableBalances] = useTokenBalancesWithLoadingIndicator(account ?? undefined, tokens)
+  const [stableBalances] = useTokenBalancesWithLoadingIndicator(
+    account ?? undefined,
+    lpTokens.map(({ liquidityToken }) => liquidityToken),
+  )
 
   const lpTokensWithBalance = useMemo(
     () => lpTokens.filter(({ liquidityToken }) => stableBalances[liquidityToken.address]?.greaterThan('0')),
@@ -85,24 +85,10 @@ export const StableConfigContext = createContext<{
   stableSwapInfoContract: UseStableSwapInfoContract
   stableSwapContract: ReturnType<typeof useStableSwapContract>
   stableSwapLPContract: ReturnType<typeof useStableSwapLPContract>
-  stableSwapConfig?: StableSwapConfig
+  stableSwapConfig: StableSwapConfig
 } | null>(null)
 
-export const useStableConfigContext = () => {
-  const context = useContext(StableConfigContext)
-  if (!context) {
-    throw new Error('useStableConfigContext must be used within a StableConfigProvider')
-  }
-  return context
-}
-
-export default function useStableConfig({
-  tokenA,
-  tokenB,
-}: {
-  tokenA: Currency | undefined | null
-  tokenB: Currency | undefined | null
-}) {
+export default function useStableConfig({ tokenA, tokenB }: { tokenA: Currency; tokenB: Currency }) {
   const stablePair = useFindStablePair({ tokenA, tokenB })
   const stableSwapContract = useStableSwapContract(stablePair?.stableSwapAddress)
   const stableSwapInfoContract = useStableSwapInfoContract(stablePair?.infoStableSwapAddress)

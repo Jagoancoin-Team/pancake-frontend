@@ -16,9 +16,7 @@ interface ModalInputProps {
   decimals?: number
 }
 
-const StyledTokenInput = styled('div').withConfig({
-  shouldForwardProp: (props) => !['isWaring', 'isSuccess', 'scale'].includes(props),
-})<InputProps>`
+const StyledTokenInput = styled.div<InputProps>`
   display: flex;
   flex-direction: column;
   background-color: ${({ theme }) => theme.colors.input};
@@ -31,10 +29,14 @@ const StyledTokenInput = styled('div').withConfig({
 
 const StyledInput = styled(Input)`
   box-shadow: none;
-  width: 50%;
+  width: 60px;
   margin: 0 8px;
   padding: 0 8px;
   border: none;
+
+  ${({ theme }) => theme.mediaQueries.xs} {
+    width: 80px;
+  }
 
   ${({ theme }) => theme.mediaQueries.sm} {
     width: auto;

@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
-import Heading from "../../components/Heading/Heading";
+import React from "react";
 import { renderWithProvider } from "../../testHelpers";
+import Heading from "../../components/Heading/Heading";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(<Heading>Title</Heading>);

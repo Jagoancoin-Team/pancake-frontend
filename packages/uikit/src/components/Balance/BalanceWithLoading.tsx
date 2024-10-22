@@ -14,7 +14,6 @@ interface BalanceProps extends TextProps {
   unit?: string;
   isDisabled?: boolean;
   prefix?: string;
-  strikeThrough?: boolean;
   onClick?: (event: React.MouseEvent<HTMLElement>) => void;
 }
 

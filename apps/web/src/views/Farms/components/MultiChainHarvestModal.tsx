@@ -1,36 +1,35 @@
-import { ChainId } from '@pancakeswap/chains'
+import { useCallback, useMemo } from 'react'
+import Cookie from 'js-cookie'
+import { ChainId, Token } from '@pancakeswap/sdk'
+import { BigNumber } from 'bignumber.js'
+import useActiveWeb3React from 'hooks/useActiveWeb3React'
 import { useTranslation } from '@pancakeswap/localization'
-import { Token } from '@pancakeswap/sdk'
+import { useSwitchNetwork } from 'hooks/useSwitchNetwork'
+import useCatchTxError from 'hooks/useCatchTxError'
+import { styled } from 'styled-components'
+import { TokenPairImage } from 'components/TokenImage'
 import {
-  ArrowForwardIcon,
-  AutoRenewIcon,
-  Balance,
-  Box,
-  Button,
-  Flex,
-  FlexGap,
+  Modal,
   InjectedModalProps,
+  Flex,
+  Box,
+  Text,
+  Button,
   Message,
   MessageText,
-  Modal,
-  Text,
+  ArrowForwardIcon,
+  AutoRenewIcon,
   useToast,
+  FlexGap,
+  Balance,
 } from '@pancakeswap/uikit'
-import { getBalanceAmount } from '@pancakeswap/utils/formatBalance'
-import { BigNumber } from 'bignumber.js'
-import { LightGreyCard } from 'components/Card'
 import { ChainLogo } from 'components/Logo/ChainLogo'
+import { getBalanceAmount } from '@pancakeswap/utils/formatBalance'
+import { LightGreyCard } from 'components/Card'
 import { ToastDescriptionWithTx } from 'components/Toast'
-import { TokenPairImage } from 'components/TokenImage'
-import useActiveWeb3React from 'hooks/useActiveWeb3React'
-import useCatchTxError from 'hooks/useCatchTxError'
-import { useSwitchNetwork } from 'hooks/useSwitchNetwork'
-import Cookie from 'js-cookie'
-import { useCallback, useMemo } from 'react'
-import { farmFetcher } from 'state/farms'
-import { styled } from 'styled-components'
 import { useFarmCProxyAddress } from 'views/Farms/hooks/useFarmCProxyAddress'
-import useCrossChainHarvestFarm from 'views/Farms/hooks/useCrossChainHarvestFarm'
+import useNonBscHarvestFarm from 'views/Farms/hooks/useNonBscHarvestFarm'
+import { farmFetcher } from 'state/farms'
 
 const TokenWrapper = styled.div`
   padding-right: 8px;
@@ -64,15 +63,14 @@ const MultiChainHarvestModal: React.FC<MultiChainHarvestModalProp> = ({
   const { account, chainId, isWrongNetwork } = useActiveWeb3React()
   const { switchNetworkAsync } = useSwitchNetwork()
   const { cProxyAddress } = useFarmCProxyAddress(account, chainId)
-  const { onReward } = useCrossChainHarvestFarm(pid, cProxyAddress)
+  const { onReward } = useNonBscHarvestFarm(pid, cProxyAddress)
   const { fetchWithCatchTxError, loading: isPending } = useCatchTxError()
 
   const earnings = getBalanceAmount(earningsBigNumber)
   const displayBalance = earnings.toFixed(5, BigNumber.ROUND_DOWN)
 
-  const isTestnet = chainId && farmFetcher.isTestnet(chainId)
-  const network = isTestnet ? ChainId.BSC_TESTNET : ChainId.BSC
-  const isBscNetwork = useMemo(() => chainId === network, [chainId, network])
+  const network = chainId
+  const isBscNetwork = false  // = useMemo(() => chainId === network, [chainId, network])
 
   const handleCancel = useCallback(() => {
     onDismiss?.()
@@ -94,7 +92,7 @@ const MultiChainHarvestModal: React.FC<MultiChainHarvestModalProp> = ({
       toastSuccess(
         `${t('Harvested')}!`,
         <ToastDescriptionWithTx txHash={receipt.transactionHash}>
-          {t('Your %symbol% earnings have been sent to your wallet!', { symbol: 'CAKE' })}
+          {t('Your %symbol% earnings have been sent to your wallet!', { symbol: 'ICE' })}
         </ToastDescriptionWithTx>,
       )
       handleCancel()
@@ -122,7 +120,9 @@ const MultiChainHarvestModal: React.FC<MultiChainHarvestModalProp> = ({
             {lpSymbol}
           </Text>
         </Flex>
-        {!isBscNetwork && (
+        {
+          /*
+        !isBscNetwork && (
           <Message mb="16px" variant="warning" icon={false} p="8px 12px">
             <MessageText>
               <FlexGap gap="12px">
@@ -134,11 +134,12 @@ const MultiChainHarvestModal: React.FC<MultiChainHarvestModalProp> = ({
               </FlexGap>
             </MessageText>
           </Message>
-        )}
+        ) */
+        }
         <LightGreyCard padding="16px">
           <Box mb="8px">
             <Text fontSize="12px" color="secondary" bold as="span">
-              {t('CAKE')}
+              {t('ICE')}
             </Text>
             <Text fontSize="12px" color="textSubtle" ml="4px" bold as="span">
               {t('Earned')}

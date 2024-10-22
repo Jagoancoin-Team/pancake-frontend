@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { request, gql } from 'graphql-request'
 import { GRAPH_HEALTH } from 'config/constants/endpoints'
 import { publicClient } from 'utils/wagmi'
-import { ChainId } from '@pancakeswap/chains'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import { useSlowRefreshEffect } from './useRefreshEffect'
+import { useActiveChainId } from "hooks/useActiveChainId";
 
 export enum SubgraphStatus {
   OK,
@@ -25,8 +24,7 @@ export type SubgraphHealthState = {
 const NOT_OK_BLOCK_DIFFERENCE = 200 // ~15 minutes delay
 const WARNING_BLOCK_DIFFERENCE = 50 // ~2.5 minute delay
 
-const useSubgraphHealth = ({ chainId: propChainId, subgraph }: { chainId: ChainId; subgraph?: string }) => {
-  const { chainId } = useActiveChainId()
+const useSubgraphHealth = (subgraphName?: string) => {
   const [sgHealth, setSgHealth] = useState<SubgraphHealthState>({
     status: SubgraphStatus.UNKNOWN,
     currentBlock: 0,
@@ -34,78 +32,22 @@ const useSubgraphHealth = ({ chainId: propChainId, subgraph }: { chainId: ChainI
     latestBlock: 0,
     blockDifference: 0,
   })
-  const [deploymentId, setDeploymentId] = useState<string | undefined>()
 
-  useEffect(() => {
-    let unmounted = false
-    const unmount = () => {
-      unmounted = true
-    }
-    if (!subgraph) {
-      return unmount
-    }
-
-    const fetchDeploymentId = async () => {
-      const {
-        _meta: { deployment },
-      } = await request(
-        subgraph,
-        gql`
-          query MyQuery {
-            _meta {
-              deployment
-            }
-          }
-        `,
-      )
-
-      if (unmounted) {
-        return
-      }
-      setDeploymentId(deployment)
-    }
-
-    fetchDeploymentId()
-    return unmount
-  }, [subgraph])
+  const { chainId } = useActiveChainId()
 
   useSlowRefreshEffect(
     (currentBlockNumber) => {
-      if (!deploymentId) {
-        return
-      }
       const getSubgraphHealth = async () => {
         try {
-          const [{ indexingStatuses }, currentBlock] = await Promise.all([
+          const [{ indexingStatusForCurrentVersion }, currentBlock] = await Promise.all([
             request(
               GRAPH_HEALTH,
               gql`
             query getSubgraphHealth {
-              indexingStatuses(
-                subgraphs: ["${deploymentId}"]
-              ) {
-                subgraph
-                synced
+              indexingStatusForCurrentVersion(subgraphName: "${subgraphName}") {
                 health
-                entityCount
-                fatalError {
-                  handler
-                  message
-                  deterministic
-                  block {
-                    hash
-                    number
-                  }
-                }
-                nonFatalErrors{
-                  message
-                  block{number}
-                }
                 chains {
                   chainHeadBlock {
-                    number
-                  }
-                  earliestBlock {
                     number
                   }
                   latestBlock {
@@ -116,14 +58,10 @@ const useSubgraphHealth = ({ chainId: propChainId, subgraph }: { chainId: ChainI
             }
           `,
             ),
-            currentBlockNumber && propChainId === chainId
+            currentBlockNumber
               ? Promise.resolve(currentBlockNumber)
-              : publicClient({ chainId: propChainId })
-                  ?.getBlockNumber()
-                  .then((blockNumber) => Number(blockNumber)),
+              : Number(publicClient({ chainId: chainId }).getBlockNumber()),
           ])
-
-          const [indexingStatusForCurrentVersion] = indexingStatuses
 
           const isHealthy = indexingStatusForCurrentVersion?.health === 'healthy'
           const chainHeadBlock = parseInt(indexingStatusForCurrentVersion?.chains[0]?.chainHeadBlock.number)
@@ -147,7 +85,7 @@ const useSubgraphHealth = ({ chainId: propChainId, subgraph }: { chainId: ChainI
             setSgHealth({ status: SubgraphStatus.OK, currentBlock, chainHeadBlock, latestBlock, blockDifference })
           }
         } catch (error) {
-          console.error(`Failed to perform health check for ${subgraph}(deployment: ${deploymentId}) subgraph`, error)
+          console.error(`Failed to perform health check for ${subgraphName} subgraph`, error)
           setSgHealth({
             status: SubgraphStatus.DOWN,
             currentBlock: -1,
@@ -157,11 +95,11 @@ const useSubgraphHealth = ({ chainId: propChainId, subgraph }: { chainId: ChainI
           })
         }
       }
-      if (deploymentId) {
+      if (subgraphName) {
         getSubgraphHealth()
       }
     },
-    [subgraph, deploymentId, propChainId, chainId],
+    [subgraphName, chainId],
   )
 
   return sgHealth

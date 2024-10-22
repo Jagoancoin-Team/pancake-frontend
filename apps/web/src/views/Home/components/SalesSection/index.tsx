@@ -1,8 +1,6 @@
-import { Button, Flex, Link, OpenNewIcon, Text } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter as RouterLink } from '@pancakeswap/widgets-internal'
-
-import ColoredWordHeading from '../ColoredWordHeading'
+import { Flex, Text, Button, Link, NextLinkFromReactRouter as RouterLink, OpenNewIcon } from '@pancakeswap/uikit'
 import CompositeImage, { CompositeImageProps } from '../CompositeImage'
+import ColoredWordHeading from '../ColoredWordHeading'
 
 interface SalesSectionButton {
   to: string
@@ -26,15 +24,15 @@ const SalesSection: React.FC<React.PropsWithChildren<SalesSectionProps>> = (prop
     <Flex flexDirection="column">
       <Flex
         flexDirection={['column-reverse', null, null, reverse ? 'row-reverse' : 'row']}
-        alignItems={['flex-end', null, null, 'center']}
+        alignItems="center"
         justifyContent="center"
       >
         <Flex
           flexDirection="column"
           flex="1"
-          ml={[null, null, null, reverse ? '64px' : null]}
-          mr={[null, null, null, !reverse ? '64px' : null]}
-          alignSelf={['flex-start', null, null, 'center']}
+          ml={[null, null, null, reverse && '64px']}
+          mr={[null, null, null, !reverse && '64px']}
+          alignSelf="center"
         >
           <ColoredWordHeading text={headingText} />
           <Text color="textSubtle" mb="24px">
@@ -67,8 +65,9 @@ const SalesSection: React.FC<React.PropsWithChildren<SalesSectionProps>> = (prop
           </Flex>
         </Flex>
         <Flex
-          height={['192px', null, null, '100%']}
-          width={['192px', null, null, '100%']}
+          maxHeight={['192px', null, null, '400px']}
+          height={['192px', null, null, '400px']}
+          width={['192px', null, null, '400px']}
           flex={[null, null, null, '1']}
           mb={['24px', null, null, '0']}
         >

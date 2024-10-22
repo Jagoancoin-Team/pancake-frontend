@@ -7,16 +7,18 @@ import { useUserLockedCakeStatus } from 'views/Farms/hooks/useUserLockedCakeStat
 import useAvgLockDuration from 'views/Pools/components/LockedPool/hooks/useAvgLockDuration'
 import { secondsToDays } from 'views/Pools/components/utils/formatSecondsToWeeks'
 import useFarmBoosterConstants from './useFarmBoosterConstants'
+import {useActiveChainId} from "../../../../../hooks/useActiveChainId";
 
 export const useGetBoostedMultiplier = (userBalanceInFarm: BigNumber, lpTokenStakedAmount: BigNumber) => {
-  useCakeVaultPublicData()
+  const { chainId } = useActiveChainId()
+  useCakeVaultPublicData(chainId)
   useCakeVaultUserData()
   const { avgLockDurationsInSeconds } = useAvgLockDuration()
   const { isLoading, lockedAmount, totalLockedAmount, lockedStart, lockedEnd } = useUserLockedCakeStatus()
   const { constants, isLoading: isFarmConstantsLoading } = useFarmBoosterConstants()
   const bCakeMultiplier = useMemo(() => {
     const result =
-      !isLoading && !isFarmConstantsLoading && lockedAmount && totalLockedAmount
+      !isLoading && !isFarmConstantsLoading
         ? getBCakeMultiplier(
             userBalanceInFarm, // userBalanceInFarm,
             lockedAmount, // userLockAmount
@@ -24,8 +26,8 @@ export const useGetBoostedMultiplier = (userBalanceInFarm: BigNumber, lpTokenSta
             totalLockedAmount, // totalLockAmount
             lpTokenStakedAmount, // lpBalanceOfFarm
             avgLockDurationsInSeconds ? secondsToDays(avgLockDurationsInSeconds) : 280, // AverageLockDuration
-            constants?.cA ?? 1,
-            constants?.cB ?? 1,
+            constants.cA,
+            constants.cB,
           )
         : null
     return !result || result.toString() === 'NaN' ? '1.000' : result.toFixed(3)
@@ -50,14 +52,15 @@ export const useGetCalculatorMultiplier = (
   lockedAmount: BigNumber,
   userLockDuration: number,
 ) => {
-  useCakeVaultPublicData()
+  const { chainId } = useActiveChainId()
+  useCakeVaultPublicData(chainId)
   useCakeVaultUserData()
   const { avgLockDurationsInSeconds } = useAvgLockDuration()
   const { isLoading, totalLockedAmount } = useUserLockedCakeStatus()
   const { constants, isLoading: isFarmConstantsLoading } = useFarmBoosterConstants()
   const bCakeMultiplier = useMemo(() => {
     const result =
-      !isLoading && !isFarmConstantsLoading && lockedAmount && totalLockedAmount
+      !isLoading && !isFarmConstantsLoading
         ? getBCakeMultiplier(
             userBalanceInFarm, // userBalanceInFarm,
             lockedAmount, // userLockAmount
@@ -65,8 +68,8 @@ export const useGetCalculatorMultiplier = (
             totalLockedAmount, // totalLockAmount
             lpTokenStakedAmount, // lpBalanceOfFarm
             avgLockDurationsInSeconds ? secondsToDays(avgLockDurationsInSeconds) : 280, // AverageLockDuration,
-            constants?.cA ?? 1,
-            constants?.cB ?? 1,
+            constants.cA,
+            constants.cB,
           )
         : null
     return !result || result.toString() === 'NaN' ? '1.000' : result.toFixed(3)

@@ -1,10 +1,10 @@
-import { ChainId } from '@pancakeswap/chains'
+import useSWR from 'swr'
+import { ChainId } from '@pancakeswap/sdk'
 import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { useVCakeContract } from 'hooks/useContract'
-import { useQuery } from '@tanstack/react-query'
 
 interface UseVCake {
-  isInitialization?: boolean
+  isInitialization: null | boolean
   refresh: () => void
 }
 
@@ -12,25 +12,22 @@ const useVCake = (): UseVCake => {
   const { account, chainId } = useAccountActiveChain()
   const vCakeContract = useVCakeContract({ chainId })
 
-  const { data, refetch } = useQuery({
-    queryKey: ['/v-cake-initialization', account, chainId],
-
-    queryFn: async () => {
-      if (!account) return undefined
+  const { data, mutate } = useSWR(
+    account && chainId === ChainId.BSC && ['/v-cake-initialization', account, chainId],
+    async () => {
       try {
-        return await vCakeContract.read.initialization([account])
+        const initialization = await vCakeContract.read.initialization([account])
+        return initialization
       } catch (error) {
         console.error('[ERROR] Fetching vCake initialization', error)
-        return undefined
+        return null
       }
     },
-
-    enabled: Boolean(account && chainId === ChainId.BSC),
-  })
+  )
 
   return {
     isInitialization: data,
-    refresh: refetch,
+    refresh: mutate,
   }
 }
 

@@ -1,15 +1,15 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Message, MessageText } from '@pancakeswap/uikit'
-import { useAccount } from 'wagmi'
+import { ChainId } from '@pancakeswap/sdk'
+import { useNetwork } from 'wagmi'
+import { Message, MessageText, Box } from '@pancakeswap/uikit'
 
 const ZkSyncWarning = () => {
   const { t } = useTranslation()
-  const { chain } = useAccount()
+  const { chain } = useNetwork()
 
   return (
     <>
-      {chain?.id === ChainId.ZKSYNC || chain?.id === ChainId.ZKSYNC_TESTNET ? (
+      {false ? (
         <Box maxWidth={['100%', '100%', '100%', '307px']}>
           <Message variant="warning" m="24px 0 0 0">
             <MessageText>

@@ -1,12 +1,12 @@
 import { Flex, ModalV2 } from '@pancakeswap/uikit'
-import { formatBigInt } from '@pancakeswap/utils/formatBalance'
 import { FarmWidget } from '@pancakeswap/widgets-internal'
+import { formatBigInt } from '@pancakeswap/utils/formatBalance'
 import { BigNumber } from 'bignumber.js'
 import { TokenPairImage } from 'components/TokenImage'
-import { useCakePrice } from 'hooks/useCakePrice'
-import { useCallback, useMemo, useState } from 'react'
-import { type V3Farm } from 'state/farms/types'
+import { useMemo, useState } from 'react'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import FarmV3CardList from 'views/Farms/components/FarmCard/V3/FarmV3CardList'
+import { V3Farm } from 'views/Farms/FarmsV3'
 import { useFarmsV3BatchHarvest } from 'views/Farms/hooks/v3/useFarmV3Actions'
 
 const { AvailableFarming, TotalStakedBalance, ViewAllFarmModal } = FarmWidget.FarmV3Card
@@ -22,7 +22,7 @@ const FarmInfo: React.FunctionComponent<React.PropsWithChildren<FarmInfoProps>> 
   isReady,
   onAddLiquidity,
 }) => {
-  const cakePrice = useCakePrice()
+  const cakePrice = usePriceCakeUSD()
   const [show, setShow] = useState(false)
 
   const inactive = farm.multiplier === '0X'
@@ -58,8 +58,6 @@ const FarmInfo: React.FunctionComponent<React.PropsWithChildren<FarmInfoProps>> 
     [cakePrice, totalEarnings],
   )
 
-  const handleDismiss = useCallback(() => setShow(false), [])
-
   return (
     <Flex flexDirection="column">
       {onlyOnePosition ? (
@@ -93,7 +91,7 @@ const FarmInfo: React.FunctionComponent<React.PropsWithChildren<FarmInfoProps>> 
           )}
         </>
       )}
-      <ModalV2 isOpen={show} onDismiss={handleDismiss} closeOnOverlayClick>
+      <ModalV2 isOpen={show} onDismiss={() => setShow(false)} closeOnOverlayClick>
         <ViewAllFarmModal
           title={lpSymbol}
           isReady={isReady}

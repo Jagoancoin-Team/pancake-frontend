@@ -1,6 +1,6 @@
-import { ArticleDataType } from '@pancakeswap/blog'
-import { useQuery } from '@tanstack/react-query'
+import useSWR from 'swr'
 import { getArticle } from 'hooks/getArticle'
+import { ArticleDataType } from 'utils/transformArticle'
 
 interface SearchBarArticle {
   isFetching: boolean
@@ -8,30 +8,25 @@ interface SearchBarArticle {
 }
 
 const useSearchBarArticle = (searchKey: string): SearchBarArticle => {
-  const { data: articlesData, isPending } = useQuery({
-    queryKey: [`/searchBarArticles`, searchKey],
-
-    queryFn: async () => {
-      const result = await getArticle({
-        url: '/articles',
-        urlParamsObject: {
-          ...(searchKey && { _q: searchKey }),
-          locale: 'all',
-          populate: 'categories,image',
-          sort: 'createAt:desc',
-          pagination: {
-            limit: 10,
-          },
+  const { data: articlesData, isLoading } = useSWR(searchKey && [`/searchBarArticles`, searchKey], async () => {
+    const result = await getArticle({
+      url: '/articles',
+      urlParamsObject: {
+        ...(searchKey && { _q: searchKey }),
+        locale: 'all',
+        populate: 'categories,image',
+        sort: 'createAt:desc',
+        pagination: {
+          limit: 10,
         },
-      })
-      return result.data
-    },
+      },
+    })
 
-    enabled: Boolean(searchKey),
+    return result.data
   })
 
   return {
-    isFetching: isPending,
+    isFetching: isLoading,
     articlesData: articlesData ?? [],
   }
 }

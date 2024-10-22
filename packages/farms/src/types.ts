@@ -1,8 +1,8 @@
 import { SerializedToken, Token } from '@pancakeswap/swap-sdk-core'
-import { SerializedWrappedToken } from '@pancakeswap/token-lists'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
+import { SerializedWrappedToken } from '@pancakeswap/token-lists'
 import BigNumber from 'bignumber.js'
-import { Address, Prettify } from 'viem'
+import { Address } from 'viem'
 
 export type FarmsDynamicDataResult = {
   tokenAmountTotal: string
@@ -53,12 +53,11 @@ export interface FarmConfigBaseProps {
   auctionHostingStartSeconds?: number
   auctionHostingEndDate?: string
   dual?: {
-    token: SerializedWrappedToken
-    aptIncentiveInfo: number
+    rewardPerBlock: number
+    earnLabel: string
+    endBlock: number
   }
   boosted?: boolean
-  allocPoint?: number
-  bCakeWrapperAddress?: Address
 }
 
 export interface SerializedStableFarmConfig extends FarmConfigBaseProps {
@@ -67,7 +66,6 @@ export interface SerializedStableFarmConfig extends FarmConfigBaseProps {
   stableSwapAddress: Address
   infoStableSwapAddress: Address
   stableLpFee?: number
-  stableLpFeeRateOfTotalFee?: number
 }
 
 export interface SerializedClassicFarmConfig extends FarmConfigBaseProps {
@@ -116,7 +114,6 @@ export type SerializedFarmConfig = SerializedStableFarmConfig | SerializedClassi
 
 export interface SerializedFarmPublicData extends SerializedClassicFarmConfig {
   lpTokenPrice?: string
-  lpRewardsApr?: number
   tokenPriceBusd?: string
   quoteTokenPriceBusd?: string
   tokenAmountTotal?: string
@@ -131,7 +128,6 @@ export interface SerializedFarmPublicData extends SerializedClassicFarmConfig {
   stableLpFee?: number
   stableLpFeeRateOfTotalFee?: number
   lpTokenStakedAmount?: string
-  bCakeWrapperAddress?: Address
 }
 
 export interface AprMap {
@@ -147,7 +143,6 @@ export interface SerializedFarmUserData {
   tokenBalance: string
   stakedBalance: string
   earnings: string
-  earningsDualTokenBalance?: string
   proxy?: {
     allowance: string
     tokenBalance: string
@@ -156,25 +151,8 @@ export interface SerializedFarmUserData {
   }
 }
 
-export interface SerializedBCakeUserData {
-  allowance: string
-  tokenBalance: string
-  stakedBalance: string
-  earnings: string
-  earningsDualTokenBalance?: string
-  boosterMultiplier?: number
-  boostedAmounts?: string
-  boosterContractAddress?: Address
-  rewardPerSecond?: number
-  startTimestamp?: number
-  endTimestamp?: number
-  totalLiquidityX?: number
-}
-
 export interface SerializedFarm extends SerializedFarmPublicData {
   userData?: SerializedFarmUserData
-  bCakeUserData?: SerializedBCakeUserData
-  bCakePublicData?: SerializedBCakeUserData
 }
 
 export interface SerializedFarmsV3State {
@@ -190,7 +168,6 @@ export interface SerializedFarmsState {
   chainId?: number
   loadArchivedFarmsData: boolean
   userDataLoaded: boolean
-  bCakeUserDataLoaded: boolean
   loadingKeys: Record<string, boolean>
   poolLength?: number
   regularCakePerBlock?: number
@@ -207,28 +184,12 @@ export interface DeserializedFarmUserData {
   tokenBalance: BigNumber
   stakedBalance: BigNumber
   earnings: BigNumber
-  earningsDualTokenBalance?: BigNumber
   proxy?: {
     allowance: BigNumber
     tokenBalance: BigNumber
     stakedBalance: BigNumber
     earnings: BigNumber
   }
-}
-export interface DeserializedBCakeWrapperUserData {
-  allowance: BigNumber
-  tokenBalance: BigNumber
-  stakedBalance: BigNumber
-  earnings: BigNumber
-  earningsDualTokenBalance?: BigNumber
-  boosterMultiplier?: number
-  boostedAmounts?: BigNumber
-  boosterContractAddress?: Address
-  rewardPerSecond?: number
-  startTimestamp?: number
-  endTimestamp?: number
-  isRewardInRange?: boolean
-  totalLiquidityX?: number
 }
 
 export interface DeserializedFarm extends DeserializedFarmConfig {
@@ -242,20 +203,12 @@ export interface DeserializedFarm extends DeserializedFarmConfig {
   tokenPriceVsQuote?: BigNumber
   poolWeight?: BigNumber
   userData?: DeserializedFarmUserData
-  bCakeUserData?: DeserializedBCakeWrapperUserData
-  bCakePublicData?: DeserializedBCakeWrapperUserData
   boosted?: boolean
-  bCakeWrapperAddress?: Address
   isStable?: boolean
   stableSwapAddress?: string
   stableLpFee?: number
   stableLpFeeRateOfTotalFee?: number
   lpTokenStakedAmount?: BigNumber
-  lpRewardsApr?: number
-  dual?: {
-    token: Token
-    aptIncentiveInfo: number
-  }
 }
 
 export interface DeserializedFarmsState {
@@ -270,8 +223,8 @@ export interface DeserializedFarmsState {
 
 export interface FarmWithStakedValue extends DeserializedFarm {
   apr?: number
+  lpRewardsApr?: number
   liquidity?: BigNumber
-  dualTokenRewardApr?: number
 }
 
 // V3
@@ -313,51 +266,4 @@ export interface FarmV3DataWithPriceAndUserInfo extends FarmV3DataWithPriceTVL {
   unstakedPositions: PositionDetails[]
   stakedPositions: PositionDetails[]
   pendingCakeByTokenIds: IPendingCakeByTokenId
-}
-
-export enum Protocol {
-  V2 = 'v2',
-  V3 = 'v3',
-  STABLE = 'stable',
-  V4BIN = 'v4bin',
-}
-
-export type FarmBaseConfig = {
-  // @deprecated
-  pid?: number
-  chainId: number
-  lpAddress: Address
-  token0: Token
-  token1: Token
-}
-
-export type UniversalFarmConfigStableSwap = {
-  protocol: Protocol.STABLE
-  stableSwapAddress: Address
-  bCakeWrapperAddress: Address
-} & FarmBaseConfig
-
-export type UniversalFarmConfigV2 = {
-  protocol: Protocol.V2
-  bCakeWrapperAddress: Address
-} & FarmBaseConfig
-
-export type UniversalFarmConfigV3 = {
-  pid: number
-  protocol: Protocol.V3
-  feeAmount: FeeAmount
-} & FarmBaseConfig
-
-/**
- * minimal pool info for a farm
- */
-export type UniversalFarmConfig = Prettify<
-  UniversalFarmConfigV2 | UniversalFarmConfigStableSwap | UniversalFarmConfigV3
->
-
-// only v2/ss farms have bCakeWrapperAddress
-export type BCakeWrapperFarmConfig = {
-  chainId: number
-  lpAddress: Address
-  bCakeWrapperAddress: Address
 }

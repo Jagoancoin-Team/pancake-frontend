@@ -1,4 +1,5 @@
 import React, { ReactElement, useMemo } from "react";
+import { ChainId } from "@pancakeswap/sdk";
 import Link from "./Link";
 import OpenNewIcon from "../Svg/Icons/OpenNew";
 import BscScanIcon from "../Svg/Icons/BscScan";
@@ -6,20 +7,19 @@ import { LinkProps } from "./types";
 
 interface ScanLinkProps extends Omit<LinkProps, "external" | "showExternalIcon"> {
   icon?: ReactElement;
-  useBscCoinFallback?: boolean;
+  chainId?: ChainId;
 }
 
-const ScanLink: React.FC<React.PropsWithChildren<ScanLinkProps>> = ({
-  children,
-  icon,
-  useBscCoinFallback,
-  ...props
-}) => {
+const icons: { [key in ChainId]?: ReactElement } = {
+  [ChainId.BSC]: <BscScanIcon />,
+};
+
+const ScanLink: React.FC<React.PropsWithChildren<ScanLinkProps>> = ({ children, icon, chainId, ...props }) => {
   const iconToShow = useMemo(() => {
     if (icon) return icon;
-    if (useBscCoinFallback) return <BscScanIcon />;
+    if (chainId && icons[chainId]) return icons[chainId];
     return <OpenNewIcon />;
-  }, [icon, useBscCoinFallback]);
+  }, [icon, chainId]);
   const iconElement = useMemo(() => {
     return React.isValidElement(iconToShow)
       ? React.cloneElement(iconToShow, {

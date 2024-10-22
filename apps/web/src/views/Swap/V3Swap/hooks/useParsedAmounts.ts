@@ -1,5 +1,5 @@
-import { PriceOrder } from '@pancakeswap/price-api-sdk'
-import { Currency, CurrencyAmount } from '@pancakeswap/sdk'
+import { Currency, CurrencyAmount, TradeType } from '@pancakeswap/sdk'
+import { SmartRouterTrade } from '@pancakeswap/smart-router/evm'
 import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
 
 import { Field } from 'state/swap/actions'
@@ -10,7 +10,11 @@ interface Balances {
   [Field.OUTPUT]?: CurrencyAmount<Currency>
 }
 
-export function useParsedAmounts(trade: PriceOrder['trade'] | undefined, balances: Balances, isWrapping: boolean) {
+export function useParsedAmounts(
+  trade: SmartRouterTrade<TradeType> | null | undefined,
+  balances: Balances,
+  isWrapping: boolean,
+) {
   const { independentField, typedValue } = useSwapState()
 
   const inputCurrency = balances[Field.INPUT]?.currency

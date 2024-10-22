@@ -15,10 +15,9 @@ import { styled } from 'styled-components'
 import { useTranslation } from '@pancakeswap/localization'
 import { RankListDetail } from 'views/TradingReward/hooks/useRankList'
 import { formatNumber } from '@pancakeswap/utils/formatBalance'
-import { useProfileForAddress } from 'state/profile/hooks'
 import { useDomainNameForAddress } from 'hooks/useDomain'
 import truncateHash from '@pancakeswap/utils/truncateHash'
-import { useCakePrice } from 'hooks/useCakePrice'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import { useMemo } from 'react'
 import BigNumber from 'bignumber.js'
 import Image from 'next/image'
@@ -51,13 +50,15 @@ const getRankingColor = (rank: number) => {
 const RankingCard: React.FC<React.PropsWithChildren<RankingCardProps>> = ({ rank, user }) => {
   const { t } = useTranslation()
   const rankColor = getRankingColor(rank)
-  const cakePrice = useCakePrice()
-  const { profile, isLoading: isProfileLoading } = useProfileForAddress(user?.origin)
+  const cakePriceBusd = usePriceCakeUSD()
+  const profile = undefined
+  const isProfileLoading = false
+  // const { profile, isLoading: isProfileLoading } = useProfileForAddress(user?.origin)
   const { domainName, avatar } = useDomainNameForAddress(user?.origin, !profile && !isProfileLoading)
 
   const cakeAmount = useMemo(
-    () => new BigNumber(user?.estimateRewardUSD).div(cakePrice).toNumber() ?? 0,
-    [cakePrice, user?.estimateRewardUSD],
+    () => new BigNumber(user?.estimateRewardUSD).div(cakePriceBusd).toNumber() ?? 0,
+    [cakePriceBusd, user?.estimateRewardUSD],
   )
 
   return (

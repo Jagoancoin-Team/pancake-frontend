@@ -4,7 +4,7 @@ import { formatAmount } from 'utils/formatInfoNumbers'
 import { BarChartLoader } from 'components/ChartLoaders'
 import { createChart, IChartApi } from 'lightweight-charts'
 import { useTranslation } from '@pancakeswap/localization'
-import dayjs from 'dayjs'
+import { format } from 'date-fns'
 import { lightColors, darkColors } from '@pancakeswap/uikit'
 
 export type LineChartProps = {
@@ -58,7 +58,7 @@ const Chart = ({ data, setHoverValue, setHoverDate }: LineChartProps) => {
         borderVisible: false,
         secondsVisible: false,
         tickMarkFormatter: (unixTime: number) => {
-          return dayjs.unix(unixTime).format('MM')
+          return format(unixTime * 1000, 'MM')
         },
       },
       grid: {

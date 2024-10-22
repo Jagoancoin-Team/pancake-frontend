@@ -11,15 +11,15 @@ import {
   useToast,
   useTooltip,
 } from '@pancakeswap/uikit'
-import { getFullDisplayBalance } from '@pancakeswap/utils/formatBalance'
 import BigNumber from 'bignumber.js'
 import { ToastDescriptionWithTx } from 'components/Toast'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import useCatchTxError from 'hooks/useCatchTxError'
 import { useBCakeProxyContract, useERC20 } from 'hooks/useContract'
 import { useEffect, useMemo, useState } from 'react'
 import { styled } from 'styled-components'
-import { useBCakeProxyContractAddress } from '../../../hooks/useBCakeProxyContractAddress'
+import { getFullDisplayBalance } from '@pancakeswap/utils/formatBalance'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import { useBCakeProxyContractAddress } from '../hooks/useBCakeProxyContractAddress'
 import useProxyStakedActions from './YieldBooster/hooks/useProxyStakedActions'
 
 export const StepperCircle = styled.div`
@@ -186,7 +186,7 @@ export const BCakeMigrateModal: React.FC<BCakeMigrateModalProps> = ({
   )
 
   useEffect(() => {
-    if (!bCakeProxy || !lpContract) return
+    if (!bCakeProxy) return
     bCakeProxy.read.lpApproved([lpContract.address]).then((enabled) => {
       setIsApproved(enabled)
     })
@@ -201,13 +201,11 @@ export const BCakeMigrateModal: React.FC<BCakeMigrateModalProps> = ({
         setIsLoading(false)
       })
     } else if (activatedState === Steps.Enable) {
-      if (onApprove) {
-        const receipt = await fetchWithCatchTxError(onApprove)
-        if (receipt?.status) {
-          toastSuccess(t('Contract Enabled'), <ToastDescriptionWithTx txHash={receipt.transactionHash} />)
-          setActivatedState(Steps.Stake)
-          onDone()
-        }
+      const receipt = await fetchWithCatchTxError(onApprove)
+      if (receipt?.status) {
+        toastSuccess(t('Contract Enabled'), <ToastDescriptionWithTx txHash={receipt.transactionHash} />)
+        setActivatedState(Steps.Stake)
+        onDone()
       }
     } else {
       setIsLoading(true)

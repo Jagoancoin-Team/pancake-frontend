@@ -1,16 +1,15 @@
-import { ChainId } from '@pancakeswap/chains'
-import { YEAR_IN_SECONDS } from '@pancakeswap/utils/getTimePeriods'
 import BigNumber from 'bignumber.js'
-import { BLOCKS_PER_YEAR } from 'config'
-import lpAprs1 from 'config/constants/lpAprs/1.json'
-import lpAprs56 from 'config/constants/lpAprs/56.json'
+import { ChainId } from '@pancakeswap/sdk'
+import { blocksPerYear } from '../config'
+import lpAprs32520 from '../config/constants/lpAprs/32520.json'
+import lpAprs1116 from '../config/constants/lpAprs/1116.json'
 
-const getLpApr = (chainId?: number) => {
+const getLpApr = (chainId: number) => {
   switch (chainId) {
-    case ChainId.BSC:
-      return lpAprs56
-    case ChainId.ETHEREUM:
-      return lpAprs1
+    case ChainId.BITGERT:
+      return lpAprs32520
+    case ChainId.CORE:
+      return lpAprs1116
     default:
       return {}
   }
@@ -25,60 +24,44 @@ const getLpApr = (chainId?: number) => {
  * @returns Null if the APR is NaN or infinite.
  */
 export const getPoolApr = (
-  stakingTokenPrice: number | null,
-  rewardTokenPrice: number | null,
-  totalStaked: number | null,
-  tokenPerBlock: number | null,
-): number | null => {
-  if (stakingTokenPrice === null || rewardTokenPrice === null || totalStaked === null || tokenPerBlock === null) {
-    return null
-  }
-
-  const totalRewardPricePerYear = new BigNumber(rewardTokenPrice).times(tokenPerBlock).times(BLOCKS_PER_YEAR)
+  stakingTokenPrice: number,
+  rewardTokenPrice: number,
+  totalStaked: number,
+  tokenPerBlock: number,
+  chainId: number,
+): number => {
+  const totalRewardPricePerYear = new BigNumber(rewardTokenPrice).times(tokenPerBlock).times(blocksPerYear(chainId))
   const totalStakingTokenInPool = new BigNumber(stakingTokenPrice).times(totalStaked)
   const apr = totalRewardPricePerYear.div(totalStakingTokenInPool).times(100)
   return apr.isNaN() || !apr.isFinite() ? null : apr.toNumber()
 }
 
-const BIG_NUMBER_NAN = new BigNumber(NaN)
-
 /**
  * Get farm APR value in %
- * @param chainId
  * @param poolWeight allocationPoint / totalAllocationPoint
  * @param cakePriceUsd Cake price in USD
  * @param poolLiquidityUsd Total pool liquidity in USD
  * @param farmAddress Farm Address
- * @param regularCakePerBlock
  * @returns Farm Apr
  */
 export const getFarmApr = (
-  chainId: number | undefined,
-  poolWeight: BigNumber | null | undefined,
-  cakePriceUsd: BigNumber | null,
-  poolLiquidityUsd: BigNumber | null | undefined,
-  farmAddress: string | null,
+  chainId: number,
+  poolWeight: BigNumber,
+  cakePriceUsd: BigNumber,
+  poolLiquidityUsd: BigNumber,
+  farmAddress: string,
   regularCakePerBlock: number,
-  lpRewardsApr?: number,
-  cakePerSecFromBCake?: number,
-): { cakeRewardsApr: number | null; lpRewardsApr: number } => {
-  const yearlyCakeRewardAllocation = cakePerSecFromBCake
-    ? new BigNumber(cakePerSecFromBCake).times(YEAR_IN_SECONDS)
-    : poolWeight
-    ? poolWeight.times(BLOCKS_PER_YEAR * regularCakePerBlock)
+): { cakeRewardsApr: number; lpRewardsApr: number } => {
+  const yearlyCakeRewardAllocation = poolWeight
+    ? poolWeight.times(blocksPerYear(chainId) * regularCakePerBlock)
     : new BigNumber(NaN)
-  const cakeRewardsApr = yearlyCakeRewardAllocation
-    .times(cakePriceUsd || BIG_NUMBER_NAN)
-    .div(poolLiquidityUsd || BIG_NUMBER_NAN)
-    .times(100)
-  let cakeRewardsAprAsNumber: number | null = null
+  const cakeRewardsApr = yearlyCakeRewardAllocation.times(cakePriceUsd).div(poolLiquidityUsd).times(100)
+  let cakeRewardsAprAsNumber = null
   if (!cakeRewardsApr.isNaN() && cakeRewardsApr.isFinite()) {
     cakeRewardsAprAsNumber = cakeRewardsApr.toNumber()
   }
-  const lpApr =
-    lpRewardsApr ??
-    (farmAddress ? (getLpApr(chainId)[farmAddress?.toLowerCase()] || getLpApr(chainId)[farmAddress]) ?? 0 : 0) // can get both checksummed or lowercase
-  return { cakeRewardsApr: cakeRewardsAprAsNumber, lpRewardsApr: lpApr }
+  const lpRewardsApr = (getLpApr(chainId)[farmAddress?.toLowerCase()] || getLpApr(chainId)[farmAddress]) ?? 0 // can get both checksummed or lowercase
+  return { cakeRewardsApr: cakeRewardsAprAsNumber, lpRewardsApr }
 }
 
 export default null

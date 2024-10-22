@@ -3,13 +3,11 @@ import { Card, Flex, Heading } from '@pancakeswap/uikit'
 import Page from 'components/Layout/Page'
 import { useMemo } from 'react'
 import {
-  useAllTokenDataQuery,
-  useProtocolChartDataTvlQuery,
-  useProtocolChartDataVolumeQuery,
-  useProtocolDataQuery,
-  useProtocolTransactionsQuery,
+  useAllTokenDataSWR,
+  useProtocolChartDataSWR,
+  useProtocolDataSWR,
+  useProtocolTransactionsSWR,
 } from 'state/info/hooks'
-import { TokenData } from 'state/info/types'
 import { styled } from 'styled-components'
 import BarChart from 'views/Info/components/InfoCharts/BarChart'
 import LineChart from 'views/Info/components/InfoCharts/LineChart'
@@ -17,7 +15,7 @@ import PoolTable from 'views/Info/components/InfoTables/PoolsTable'
 import TokenTable from 'views/Info/components/InfoTables/TokensTable'
 import TransactionTable from 'views/Info/components/InfoTables/TransactionsTable'
 import HoverableChart from '../components/InfoCharts/HoverableChart'
-import { useNonSpamPoolsData } from '../hooks/usePoolsData'
+import { usePoolsData } from '../hooks/usePoolsData'
 
 export const ChartCardsContainer = styled(Flex)`
   justify-content: space-between;
@@ -41,25 +39,24 @@ const Overview: React.FC<React.PropsWithChildren> = () => {
     currentLanguage: { locale },
   } = useTranslation()
 
-  const protocolData = useProtocolDataQuery()
-  const volumeChartData = useProtocolChartDataVolumeQuery()
-  const tvlChartData = useProtocolChartDataTvlQuery()
-  const transactions = useProtocolTransactionsQuery()
+  const protocolData = useProtocolDataSWR()
+  const chartData = useProtocolChartDataSWR()
+  const transactions = useProtocolTransactionsSWR()
 
   const currentDate = useMemo(
     () => new Date().toLocaleString(locale, { month: 'short', year: 'numeric', day: 'numeric' }),
     [locale],
   )
 
-  const allTokens = useAllTokenDataQuery()
+  const allTokens = useAllTokenDataSWR()
 
   const formattedTokens = useMemo(() => {
     return Object.values(allTokens)
       .map((token) => token.data)
-      .filter<TokenData>((token): token is TokenData => token?.name !== 'unknown')
+      .filter((token) => token.name !== 'unknown')
   }, [allTokens])
 
-  const { poolsData } = useNonSpamPoolsData()
+  const { poolsData } = usePoolsData()
 
   const somePoolsAreLoading = useMemo(() => {
     return poolsData.some((pool) => !pool?.token0Price)
@@ -68,13 +65,12 @@ const Overview: React.FC<React.PropsWithChildren> = () => {
   return (
     <Page>
       <Heading scale="lg" mb="16px" id="info-overview-title">
-        {t('PancakeSwap Info & Analytics')}
+        {t('DynastySwap Info & Analytics')}
       </Heading>
       <ChartCardsContainer>
         <Card>
           <HoverableChart
-            volumeChartData={volumeChartData}
-            tvlChartData={tvlChartData}
+            chartData={chartData}
             protocolData={protocolData}
             currentDate={currentDate}
             valueProperty="liquidityUSD"
@@ -84,8 +80,7 @@ const Overview: React.FC<React.PropsWithChildren> = () => {
         </Card>
         <Card>
           <HoverableChart
-            volumeChartData={volumeChartData}
-            tvlChartData={tvlChartData}
+            chartData={chartData}
             protocolData={protocolData}
             currentDate={currentDate}
             valueProperty="volumeUSD"

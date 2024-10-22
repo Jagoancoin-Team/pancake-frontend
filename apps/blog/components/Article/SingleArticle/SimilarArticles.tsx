@@ -1,22 +1,18 @@
-import { ArticleDataType } from '@pancakeswap/blog'
-import { useTranslation } from '@pancakeswap/localization'
-import { Flex } from '@pancakeswap/uikit'
-import { useQuery } from '@tanstack/react-query'
-import ArticleView from 'components/Article/ArticleView'
-import BlogCard from 'components/BlogCard'
-import MoreButton from 'components/MoreButton'
-import dynamic from 'next/dynamic'
-import NextLink from 'next/link'
-import 'swiper/css/bundle'
-import { Autoplay } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
+import { Flex } from '@pancakeswap/uikit'
+import BlogCard from 'components/BlogCard'
+import { useTranslation } from '@pancakeswap/localization'
+import { Autoplay } from 'swiper/modules'
+import ArticleView from 'components/Article/ArticleView'
+import NextLink from 'next/link'
+import MoreButton from 'components/MoreButton'
+import useSWR from 'swr'
+import { ArticleDataType } from 'utils/transformArticle'
+import 'swiper/css/bundle'
 
 const SimilarArticles = () => {
   const { t } = useTranslation()
-  const { data: similarArticles } = useQuery<ArticleDataType[]>({
-    queryKey: ['/similarArticles'],
-    enabled: false,
-  })
+  const { data: similarArticles } = useSWR<ArticleDataType[]>('/similarArticles')
 
   return (
     <Flex maxWidth="100%" m="50px auto" flexDirection="column">
@@ -71,6 +67,4 @@ const SimilarArticles = () => {
   )
 }
 
-export default dynamic(() => Promise.resolve(SimilarArticles), {
-  ssr: false,
-})
+export default SimilarArticles

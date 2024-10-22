@@ -5,16 +5,16 @@ import { useMemo } from 'react'
 
 import { useUserSingleHopOnly } from '@pancakeswap/utils/user'
 import {
-  ADDITIONAL_BASES,
-  BASES_TO_CHECK_TRADES_AGAINST,
-  BETTER_TRADE_LESS_HOPS_THRESHOLD,
   CUSTOM_BASES,
+  BETTER_TRADE_LESS_HOPS_THRESHOLD,
+  ADDITIONAL_BASES,
 } from 'config/constants/exchange'
-import { wrappedCurrency } from '../utils/wrappedCurrency'
 import { PairState, useV2Pairs } from './usePairs'
+import { wrappedCurrency } from "utils/wrappedCurrency"
 
 import { useUnsupportedTokens, useWarningTokens } from './Tokens'
 import { useActiveChainId } from './useActiveChainId'
+import { BASES_TO_CHECK_TRADES_AGAINST } from "@pancakeswap/smart-router/evm";
 
 export function useAllCurrencyCombinations(currencyA?: Currency, currencyB?: Currency): [Token, Token][] {
   const chainId = currencyA?.chainId
@@ -232,7 +232,7 @@ export function useTradeExactOut(
   }, [currencyIn, currencyAmountOut, allowedPairs, singleHopOnly])
 }
 
-export function useIsTransactionUnsupported(currencyIn?: Currency | null, currencyOut?: Currency | null): boolean {
+export function useIsTransactionUnsupported(currencyIn?: Currency, currencyOut?: Currency): boolean {
   const unsupportedTokens: { [address: string]: Token } = useUnsupportedTokens()
   const { chainId } = useActiveChainId()
 

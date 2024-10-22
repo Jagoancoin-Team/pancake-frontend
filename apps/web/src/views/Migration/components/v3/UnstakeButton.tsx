@@ -1,31 +1,29 @@
-import { ChainId } from '@pancakeswap/chains'
-import { FarmWithStakedValue } from '@pancakeswap/farms'
 import { useTranslation } from '@pancakeswap/localization'
 import { AutoRenewIcon, Button, useToast } from '@pancakeswap/uikit'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import { getFullDisplayBalance } from '@pancakeswap/utils/formatBalance'
+import { useAccount } from 'wagmi'
 import { ToastDescriptionWithTx } from 'components/Toast'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import useCatchTxError from 'hooks/useCatchTxError'
-import { useERC20 } from 'hooks/useContract'
-import { usePublicNodeWaitForTransaction } from 'hooks/usePublicNodeWaitForTransaction'
 import React, { useContext } from 'react'
 import { useAppDispatch } from 'state'
 import { fetchFarmUserDataAsync } from 'state/farms'
 import { useFarmFromPid, useFarmUser } from 'state/farms/hooks'
-import { pickFarmTransactionTx } from 'state/global/actions'
-import { FarmTransactionStatus, CrossChainFarmStepType } from 'state/transactions/actions'
-import { useCrossChainFarmPendingTransaction, useTransactionAdder } from 'state/transactions/hooks'
-import { TransactionReceipt } from 'viem'
-import { YieldBoosterStateContext } from 'views/Farms/components/YieldBooster/components/ProxyFarmContainer'
-import useProxyStakedActions from 'views/Farms/components/YieldBooster/hooks/useProxyStakedActions'
+import { getFullDisplayBalance } from '@pancakeswap/utils/formatBalance'
 import useUnstakeFarms from 'views/Farms/hooks/useUnstakeFarms'
-import { useAccount } from 'wagmi'
+import { useERC20 } from 'hooks/useContract'
+import useProxyStakedActions from 'views/Farms/components/YieldBooster/hooks/useProxyStakedActions'
+import { YieldBoosterStateContext } from 'views/Farms/components/YieldBooster/components/ProxyFarmContainer'
+import { useActiveChainId } from 'hooks/useActiveChainId'
+import { useNonBscFarmPendingTransaction, useTransactionAdder } from 'state/transactions/hooks'
+import { FarmTransactionStatus, NonBscFarmStepType } from 'state/transactions/actions'
+import { FarmWithStakedValue } from '@pancakeswap/farms'
+import { ChainId } from '@pancakeswap/sdk'
+import { pickFarmTransactionTx } from 'state/global/actions'
+import { usePublicNodeWaitForTransaction } from 'hooks/usePublicNodeWaitForTransaction'
 
 export interface UnstakeButtonProps {
-  pid?: number
+  pid: number
   vaultPid?: number
-  farm?: FarmWithStakedValue
+  farm: FarmWithStakedValue
 }
 
 const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ pid, vaultPid, farm }) => {
@@ -33,7 +31,7 @@ const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ 
   const { address: account } = useAccount()
   const { chainId } = useActiveChainId()
   const { toastSuccess } = useToast()
-  const { lpAddress } = useFarmFromPid(pid) ?? {}
+  const { lpAddress } = useFarmFromPid(pid)
   const { loading: pendingTx, fetchTxResponse, fetchWithCatchTxError } = useCatchTxError()
   const { stakedBalance, proxy } = useFarmUser(pid)
   const { onUnstake } = useUnstakeFarms(pid, vaultPid)
@@ -48,7 +46,7 @@ const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ 
 
   const { onUnstake: onUnstakeProxyFarm, onDone } = useProxyStakedActions(pid, lpContract)
 
-  const pendingFarm = useCrossChainFarmPendingTransaction(lpAddress)
+  const pendingFarm = useNonBscFarmPendingTransaction(lpAddress)
   const { waitForTransaction } = usePublicNodeWaitForTransaction()
 
   // eslint-disable-next-line consistent-return
@@ -64,20 +62,20 @@ const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ 
       })
 
       if (vaultPid) {
-        if (receipt && chainId) {
+        if (receipt) {
           const amount = getFullDisplayBalance(stakedBalance)
           addTransaction(receipt, {
-            type: 'cross-chain-farm',
+            type: 'non-bsc-farm',
             translatableSummary: {
               text: 'Unstake %amount% %lpSymbol% Token',
-              data: { amount, lpSymbol: farm?.lpSymbol },
+              data: { amount, lpSymbol: farm.lpSymbol },
             },
-            crossChainFarm: {
-              type: CrossChainFarmStepType.UNSTAKE,
+            nonBscFarm: {
+              type: NonBscFarmStepType.UNSTAKE,
               status: FarmTransactionStatus.PENDING,
               amount,
-              lpSymbol: farm?.lpSymbol ?? t('Unknown'),
-              lpAddress: lpAddress ?? '',
+              lpSymbol: farm.lpSymbol,
+              lpAddress,
               steps: [
                 {
                   step: 1,
@@ -104,14 +102,11 @@ const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ 
           dispatch(pickFarmTransactionTx({ tx: receipt.hash, chainId }))
         }
       }
-      let resp: TransactionReceipt | null = null
 
-      if (receipt?.hash) {
-        resp = await waitForTransaction({
-          hash: receipt.hash,
-          chainId,
-        })
-      }
+      const resp = await waitForTransaction({
+        hash: receipt.hash,
+        chainId,
+      })
 
       setIsLoading(false)
 
@@ -125,14 +120,13 @@ const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ 
         if (shouldUseProxyFarm) {
           onDone()
         }
-        if (chainId && account && typeof pid === 'number') {
-          dispatch(fetchFarmUserDataAsync({ account, pids: [pid], proxyAddress, chainId }))
-        }
+
+        dispatch(fetchFarmUserDataAsync({ account, pids: [pid], proxyAddress, chainId }))
       }
     } else {
       const receipt = await fetchWithCatchTxError(() => {
         if (shouldUseProxyFarm) {
-          const balance = getFullDisplayBalance(proxy?.stakedBalance ?? BIG_ZERO)
+          const balance = getFullDisplayBalance(proxy?.stakedBalance)
           return onUnstakeProxyFarm(balance)
         }
         const balance = getFullDisplayBalance(stakedBalance)
@@ -149,9 +143,7 @@ const UnstakeButton: React.FC<React.PropsWithChildren<UnstakeButtonProps>> = ({ 
         if (shouldUseProxyFarm) {
           onDone()
         }
-        if (chainId && account && typeof pid === 'number') {
-          dispatch(fetchFarmUserDataAsync({ account, pids: [pid], proxyAddress, chainId }))
-        }
+        dispatch(fetchFarmUserDataAsync({ account, pids: [pid], proxyAddress, chainId }))
       }
     }
   }

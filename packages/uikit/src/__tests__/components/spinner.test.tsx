@@ -1,6 +1,5 @@
-import { expect, it } from "vitest";
-import { Spinner } from "../../components/Spinner";
 import { renderWithProvider } from "../../testHelpers";
+import { Spinner } from "../../components/Spinner";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(<Spinner />);

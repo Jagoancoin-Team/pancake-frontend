@@ -1,12 +1,13 @@
-import { ChainId } from '@pancakeswap/chains'
-import { FarmWithPrices, SerializedFarmConfig } from '@pancakeswap/farms'
-import { CurrencyAmount, Pair } from '@pancakeswap/sdk'
-import { BUSD, CAKE } from '@pancakeswap/tokens'
 import BN from 'bignumber.js'
 import { formatUnits } from 'viem'
+import { SerializedFarmConfig, FarmWithPrices } from '@pancakeswap/farms'
+import { ChainId, CurrencyAmount, ERC20Token, FACTORY_ADDRESS_MAP, Pair } from '@pancakeswap/sdk'
+import { USD, ICE } from '@pancakeswap/tokens'
 import { farmFetcher } from './helper'
 import { FarmKV, FarmResult } from './kv'
-import { bscClient, bscTestnetClient } from './provider'
+import { updateLPsAPR } from './lpApr'
+import { viemProviders } from './provider'
+import { chains } from '@icecreamswap/constants'
 
 // copy from src/config, should merge them later
 const BSC_BLOCK_TIME = 3
@@ -61,22 +62,18 @@ const pairAbi = [
   },
 ] as const
 
-const cakeBusdPairMap = {
-  [ChainId.BSC]: {
-    address: Pair.getAddress(CAKE[ChainId.BSC], BUSD[ChainId.BSC]),
-    tokenA: CAKE[ChainId.BSC],
-    tokenB: BUSD[ChainId.BSC],
-  },
-  [ChainId.BSC_TESTNET]: {
-    address: Pair.getAddress(CAKE[ChainId.BSC_TESTNET], BUSD[ChainId.BSC_TESTNET]),
-    tokenA: CAKE[ChainId.BSC_TESTNET],
-    tokenB: BUSD[ChainId.BSC_TESTNET],
-  },
-}
+const iceUsdPairMap: {[p: number]: {address: `0x${string}`, tokenA: ERC20Token, tokenB: ERC20Token}} =chains.reduce((acc, chain) => {
+  if (!ICE[chain.id] || !USD[chain.id] || !FACTORY_ADDRESS_MAP[chain.id]) return acc
+  return {...acc, [chain.id]: {
+      address: Pair.getAddress(ICE[chain.id], USD[chain.id]),
+      tokenA: ICE[chain.id],
+      tokenB: USD[chain.id],
+    }}
+}, {})
 
-const getCakePrice = async (isTestnet: boolean) => {
-  const pairConfig = cakeBusdPairMap[isTestnet ? ChainId.BSC_TESTNET : ChainId.BSC]
-  const client = isTestnet ? bscTestnetClient : bscClient
+const getIcePrice = async () => {
+  const pairConfig = iceUsdPairMap[ChainId.CORE]
+  const client = viemProviders({chainId: ChainId.CORE})
   const [reserve0, reserve1] = await client.readContract({
     abi: pairAbi,
     address: pairConfig.address,
@@ -95,16 +92,15 @@ const getCakePrice = async (isTestnet: boolean) => {
   return pair.priceOf(tokenA)
 }
 
-const farmConfigApi = 'https://farms-config.pages.dev'
+const farmConfigApi = 'https://9636755c.farms-config-5x5.pages.dev'
 
 export async function saveFarms(chainId: number, event: ScheduledEvent | FetchEvent) {
   try {
-    const isTestnet = farmFetcher.isTestnet(chainId)
     const farmsConfig = await (await fetch(`${farmConfigApi}/${chainId}.json`)).json<SerializedFarmConfig[]>()
     let lpPriceHelpers: SerializedFarmConfig[] = []
     try {
       lpPriceHelpers = await (
-        await fetch(`${farmConfigApi}/priceHelperLps/${chainId}.json`)
+        await fetch(`${farmConfigApi}/farms/lists/priceHelperLps/${chainId}.json`)
       ).json<SerializedFarmConfig[]>()
     } catch (error) {
       console.error('Get LP price helpers error', error)
@@ -115,16 +111,17 @@ export async function saveFarms(chainId: number, event: ScheduledEvent | FetchEv
     }
     const { farmsWithPrice, poolLength, regularCakePerBlock } = await farmFetcher.fetchFarms({
       chainId,
-      isTestnet,
-      farms: farmsConfig.filter((f) => f.pid !== 0).concat(lpPriceHelpers),
+      farms: farmsConfig.concat(lpPriceHelpers),
     })
 
-    const cakeBusdPrice = await getCakePrice(isTestnet)
+    const iceBusdPrice = await getIcePrice()
+    const lpAprs = await handleLpAprs(chainId, farmsConfig)
 
     const finalFarm = farmsWithPrice.map((f) => {
       return {
         ...f,
-        cakeApr: getFarmCakeRewardApr(f, new BN(cakeBusdPrice.toSignificant(3)), regularCakePerBlock),
+        lpApr: lpAprs?.[f.lpAddress.toLowerCase()] || 0,
+        cakeApr: getFarmCakeRewardApr(f, new BN(iceBusdPrice.toSignificant(3)), regularCakePerBlock),
       }
     }) as FarmResult
 
@@ -144,6 +141,35 @@ export async function saveFarms(chainId: number, event: ScheduledEvent | FetchEv
   }
 }
 
+export async function handleLpAprs(chainId: number, farmsConfig?: SerializedFarmConfig[]) {
+  let lpAprs = await FarmKV.getApr(chainId)
+  if (!lpAprs) {
+    lpAprs = await saveLPsAPR(chainId, farmsConfig)
+  }
+  return lpAprs || {}
+}
+
+export async function saveLPsAPR(chainId: number, farmsConfig?: SerializedFarmConfig[]) {
+  // TODO: add other chains
+  if ([ChainId.CORE, ChainId.BITGERT, ChainId.TELOS, ChainId.BASE].includes(chainId)) {
+    let data = farmsConfig
+    if (!data) {
+      const value = await FarmKV.getFarms(chainId)
+      if (value && value.data) {
+        // eslint-disable-next-line prefer-destructuring
+        data = value.data
+      }
+    }
+    if (data) {
+      const aprMap = (await updateLPsAPR(chainId, data)) || null
+      FarmKV.saveApr(chainId, aprMap)
+      return aprMap || null
+    }
+    return null
+  }
+  return null
+}
+
 const chainlinkAbi = [
   {
     inputs: [],
@@ -154,13 +180,16 @@ const chainlinkAbi = [
   },
 ] as const
 
-export async function fetchCakePrice() {
+export async function fetchIcePrice() {
+  /*
   const address = '0xB6064eD41d4f67e353768aA239cA86f4F73665a1'
-  const latestAnswer = await bscClient.readContract({
+  const latestAnswer = await viemProviders(ChainId.CORE).readContract({
     abi: chainlinkAbi,
     address,
     functionName: 'latestAnswer',
   })
 
   return formatUnits(latestAnswer, 8)
+  */
+  return Number((await getIcePrice()).toSignificant())
 }

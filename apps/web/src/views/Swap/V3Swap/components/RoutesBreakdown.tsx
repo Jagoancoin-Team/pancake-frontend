@@ -1,17 +1,15 @@
-import { useDebounce } from '@pancakeswap/hooks'
 import { useTranslation } from '@pancakeswap/localization'
-import { Route } from '@pancakeswap/smart-router'
+import { Route } from '@pancakeswap/smart-router/evm'
 import { Box, IconButton, QuestionHelper, SearchIcon, Text, useModalV2 } from '@pancakeswap/uikit'
-import { memo } from 'react'
 import { styled } from 'styled-components'
+import { memo } from 'react'
 
 import { RowBetween } from 'components/Layout/Row'
 import SwapRoute from 'views/Swap/components/SwapRoute'
-import { useWallchainStatus } from '../hooks/useWallchain'
-import { RouteDisplayEssentials, RouteDisplayModal } from './RouteDisplayModal'
+import { RouteDisplayModal } from './RouteDisplayModal'
 
 interface Props {
-  routes?: RouteDisplayEssentials[]
+  routes?: Route[]
 }
 
 const RouteInfoContainer = styled(RowBetween)`
@@ -19,10 +17,8 @@ const RouteInfoContainer = styled(RowBetween)`
 `
 
 export const RoutesBreakdown = memo(function RoutesBreakdown({ routes = [] }: Props) {
-  const [wallchainStatus] = useWallchainStatus()
   const { t } = useTranslation()
   const routeDisplayModal = useModalV2()
-  const deferWallchainStatus = useDebounce(wallchainStatus, 500)
 
   if (!routes.length) {
     return null
@@ -35,18 +31,12 @@ export const RoutesBreakdown = memo(function RoutesBreakdown({ routes = [] }: Pr
       <RouteInfoContainer>
         <span style={{ display: 'flex', alignItems: 'center' }}>
           <Text fontSize="14px" color="textSubtle">
-            {deferWallchainStatus === 'found' ? t('Bonus Route') : t('Route')}
+            {t('Route')}
           </Text>
           <QuestionHelper
-            text={
-              deferWallchainStatus === 'found'
-                ? t(
-                    'A Bonus route provided by API is automatically selected for your trade to achieve the best price for your trade.',
-                  )
-                : t(
-                    'Route is automatically calculated based on your routing preference to achieve the best price for your trade.',
-                  )
-            }
+            text={t(
+              'Route is automatically calculated based on your routing preference to achieve the best price for your trade.',
+            )}
             ml="4px"
             placement="top-start"
           />
@@ -69,38 +59,8 @@ export const RoutesBreakdown = memo(function RoutesBreakdown({ routes = [] }: Pr
   )
 })
 
-export const XRoutesBreakdown = memo(function XRoutesBreakdown() {
-  const { t } = useTranslation()
-
-  return (
-    <>
-      <RouteInfoContainer>
-        <span style={{ display: 'flex', alignItems: 'center' }}>
-          <Text fontSize="14px" color="textSubtle">
-            {t('Route')}
-          </Text>
-          <QuestionHelper
-            text={t(
-              'Route is automatically calculated based on your routing preference to achieve the best price for your trade.',
-            )}
-            ml="4px"
-            placement="top-start"
-          />
-        </span>
-        <Box>
-          <span style={{ display: 'flex', alignItems: 'center' }}>
-            <Text color="primary" fontSize="14px">
-              PancakeSwap X
-            </Text>
-          </span>
-        </Box>
-      </RouteInfoContainer>
-    </>
-  )
-})
-
 interface RouteProps {
-  route: Pick<Route, 'path'>
+  route: Route
 }
 
 function RouteComp({ route }: RouteProps) {

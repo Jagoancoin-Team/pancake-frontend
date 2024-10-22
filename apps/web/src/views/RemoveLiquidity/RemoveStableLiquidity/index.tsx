@@ -14,22 +14,20 @@ import {
   PencilIcon,
   Slider,
   Text,
-  TooltipText,
   useMatchBreakpoints,
   useModal,
   useToast,
-  useTooltip,
 } from '@pancakeswap/uikit'
-import { useUserSlippage } from '@pancakeswap/utils/user'
 import { CommitButton } from 'components/CommitButton'
-import { useStableSwapNativeHelperContract } from 'hooks/useContract'
 import useNativeCurrency from 'hooks/useNativeCurrency'
 import { useRouter } from 'next/router'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { styled } from 'styled-components'
 import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
+import { StableConfigContext } from 'views/Swap/hooks/useStableConfig'
+import { useStableSwapNativeHelperContract } from 'hooks/useContract'
+import { useUserSlippage } from '@pancakeswap/utils/user'
 import { Hash } from 'viem'
-import { useStableConfigContext } from 'views/Swap/hooks/useStableConfig'
 
 import { LightGreyCard } from 'components/Card'
 import { RowBetween } from 'components/Layout/Row'
@@ -41,25 +39,22 @@ import { calculateGasMargin } from 'utils'
 import { currencyId } from 'utils/currencyId'
 import { calculateSlippageAmount } from 'utils/exchange'
 
-import { SettingsMode } from 'components/Menu/GlobalSettings/types'
-import { CommonBasesType } from 'components/SearchModal/types'
 import { Field } from 'state/burn/actions'
-import { useRemoveLiquidityV2FormState } from 'state/burn/reducer'
-import { useLPApr } from 'state/swap/useLPApr'
 import { useGasPrice } from 'state/user/hooks'
-import { logGTMClickRemoveLiquidityEvent } from 'utils/customGTMEventTracking'
-import { formatAmount } from 'utils/formatInfoNumbers'
 import { isUserRejected, logError } from 'utils/sentry'
-import { RemoveLiquidityLayout } from '..'
-import ConnectWalletButton from '../../../components/ConnectWalletButton'
-import CurrencyInputPanel from '../../../components/CurrencyInputPanel'
-import StyledInternalLink from '../../../components/Links'
-import Dots from '../../../components/Loader/Dots'
-import { CurrencyLogo } from '../../../components/Logo'
-import SettingsModal from '../../../components/Menu/GlobalSettings/SettingsModal'
-import useActiveWeb3React from '../../../hooks/useActiveWeb3React'
+import { CommonBasesType } from 'components/SearchModal/types'
+import { SettingsMode } from 'components/Menu/GlobalSettings/types'
+import { useRemoveLiquidityV2FormState } from 'state/burn/reducer'
 import ConfirmLiquidityModal from '../../Swap/components/ConfirmRemoveLiquidityModal'
 import { useStableDerivedBurnInfo } from './hooks/useStableDerivedBurnInfo'
+import SettingsModal from '../../../components/Menu/GlobalSettings/SettingsModal'
+import Dots from '../../../components/Loader/Dots'
+import StyledInternalLink from '../../../components/Links'
+import useActiveWeb3React from '../../../hooks/useActiveWeb3React'
+import { CurrencyLogo } from '../../../components/Logo'
+import CurrencyInputPanel from '../../../components/CurrencyInputPanel'
+import ConnectWalletButton from '../../../components/ConnectWalletButton'
+import { RemoveLiquidityLayout } from '..'
 
 const BorderCard = styled.div`
   border: solid 1px ${({ theme }) => theme.colors.cardBorder};
@@ -88,13 +83,6 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
 
   const { pair, parsedAmounts, error } = useStableDerivedBurnInfo(currencyA ?? undefined, currencyB ?? undefined)
 
-  const poolData = useLPApr('stable', pair)
-  const { targetRef, tooltip, tooltipVisible } = useTooltip(
-    t(`Based on last 24 hours' performance. Does not account for impermanent loss`),
-    {
-      placement: 'bottom',
-    },
-  )
   const { onUserInput: _onUserInput } = useBurnActionHandlers()
   const isValid = !error
 
@@ -128,7 +116,7 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
       independentField === Field.CURRENCY_B ? typedValue : parsedAmounts[Field.CURRENCY_B]?.toSignificant(6) ?? '',
   }
 
-  const { stableSwapConfig, stableSwapContract } = useStableConfigContext()
+  const { stableSwapConfig, stableSwapContract } = useContext(StableConfigContext)
 
   const { approvalState, approveCallback } = useApproveCallback(
     parsedAmounts[Field.LIQUIDITY],
@@ -185,7 +173,7 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
     // we have approval, use normal remove liquidity
     if (approvalState === ApprovalState.APPROVED) {
       methodNames = ['remove_liquidity']
-      if (needUnwrapped && stableSwapContract) {
+      if (needUnwrapped) {
         args = [
           stableSwapContract.address,
           liquidityAmount.quotient.toString(),
@@ -204,7 +192,7 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
       throw new Error('Attempting to confirm without approval or a signature')
     }
 
-    let methodSafeGasEstimate: { methodName: string; safeGasEstimate: bigint } | undefined
+    let methodSafeGasEstimate: { methodName: string; safeGasEstimate: bigint }
     for (let i = 0; i < methodNames.length; i++) {
       let safeGasEstimate
       try {
@@ -287,9 +275,9 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
   const handleSelectCurrencyA = useCallback(
     (currency: Currency) => {
       if (currencyIdB && currencyId(currency) === currencyIdB) {
-        router.replace(`/stable/remove/${currencyId(currency)}/${currencyIdA}`, undefined, { shallow: true })
+        router.replace(`/v2/remove/${currencyId(currency)}/${currencyIdA}?stable=1`, undefined, { shallow: true })
       } else {
-        router.replace(`/stable/remove/${currencyId(currency)}/${currencyIdB}`, undefined, { shallow: true })
+        router.replace(`/v2/remove/${currencyId(currency)}/${currencyIdB}?stable=1`, undefined, { shallow: true })
       }
     },
     [currencyIdA, currencyIdB, router],
@@ -297,9 +285,9 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
   const handleSelectCurrencyB = useCallback(
     (currency: Currency) => {
       if (currencyIdA && currencyId(currency) === currencyIdA) {
-        router.replace(`/stable/remove/${currencyIdB}/${currencyId(currency)}`, undefined, { shallow: true })
+        router.replace(`/v2/remove/${currencyIdB}/${currencyId(currency)}?stable=1`, undefined, { shallow: true })
       } else {
-        router.replace(`/stable/remove/${currencyIdA}/${currencyId(currency)}`, undefined, { shallow: true })
+        router.replace(`/v2/remove/${currencyIdA}/${currencyId(currency)}?stable=1`, undefined, { shallow: true })
       }
     },
     [currencyIdA, currencyIdB, router],
@@ -432,17 +420,17 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
                   <RowBetween style={{ justifyContent: 'flex-end', fontSize: '14px' }}>
                     {oneCurrencyIsNative ? (
                       <StyledInternalLink
-                        href={`/stable/remove/${currencyA?.isNative ? WNATIVE[chainId]?.address : currencyIdA}/${
+                        href={`/v2/remove/${currencyA?.isNative ? WNATIVE[chainId]?.address : currencyIdA}/${
                           currencyB?.isNative ? WNATIVE[chainId]?.address : currencyIdB
-                        }`}
+                        }?stable=1`}
                       >
                         {t('Receive %currency%', { currency: WNATIVE[chainId]?.symbol })}
                       </StyledInternalLink>
                     ) : oneCurrencyIsWNative ? (
                       <StyledInternalLink
-                        href={`/stable/remove/${
+                        href={`/v2/remove/${
                           currencyA && currencyA.equals(WNATIVE[chainId]) ? native?.symbol : currencyIdA
-                        }/${currencyB && currencyB.equals(WNATIVE[chainId]) ? native?.symbol : currencyIdB}`}
+                        }/${currencyB && currencyB.equals(WNATIVE[chainId]) ? native?.symbol : currencyIdB}?stable=1`}
                       >
                         {t('Receive %currency%', { currency: native?.symbol })}
                       </StyledInternalLink>
@@ -548,17 +536,6 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
             {allowedSlippage / 100}%
           </Text>
         </RowBetween>
-        {poolData && (
-          <RowBetween mt="16px">
-            <TooltipText ref={targetRef} bold fontSize="12px" color="secondary">
-              {t('LP reward APR')}
-            </TooltipText>
-            {tooltipVisible && tooltip}
-            <Text bold color="primary">
-              {formatAmount(poolData.lpApr)}%
-            </Text>
-          </RowBetween>
-        )}
 
         <Box position="relative" mt="16px">
           {!account ? (
@@ -595,7 +572,6 @@ export default function RemoveStableLiquidity({ currencyA, currencyB, currencyId
                     txHash: undefined,
                   })
                   onPresentRemoveLiquidity()
-                  logGTMClickRemoveLiquidityEvent()
                 }}
                 width="100%"
                 disabled={!isValid || approvalState !== ApprovalState.APPROVED}
@@ -614,7 +590,7 @@ export const RemoveLiquidityStableLayout = ({ currencyA, currencyB, children }) 
   const { pair } = useStableDerivedBurnInfo(currencyA ?? undefined, currencyB ?? undefined)
 
   return (
-    <RemoveLiquidityLayout currencyA={currencyA} currencyB={currencyB} pair={pair} isStable>
+    <RemoveLiquidityLayout currencyA={currencyA} currencyB={currencyB} pair={pair}>
       {children}
     </RemoveLiquidityLayout>
   )

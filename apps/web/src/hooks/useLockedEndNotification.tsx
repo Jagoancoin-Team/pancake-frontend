@@ -1,13 +1,11 @@
-import { useToast, Text, StyledLink } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { useToast, Text, NextLinkFromReactRouter, StyledLink } from '@pancakeswap/uikit'
 import { useEffect } from 'react'
+import { useSWRConfig } from 'swr'
 import { useTranslation } from '@pancakeswap/localization'
 import isUndefinedOrNull from '@pancakeswap/utils/isUndefinedOrNull'
 import { useAtom } from 'jotai'
 import { useAccount } from 'wagmi'
 import atomWithStorageWithErrorCatch from 'utils/atomWithStorageWithErrorCatch'
-import { useQueryClient } from '@tanstack/react-query'
 import { useUserCakeLockStatus } from './useUserCakeLockStatus'
 
 const lockedNotificationShowAtom = atomWithStorageWithErrorCatch('lockedNotificationShow', true, () => sessionStorage)
@@ -30,7 +28,7 @@ const LockedEndDescription: React.FC = () => {
 const useLockedEndNotification = () => {
   const { t } = useTranslation()
   const { toastInfo } = useToast()
-  const queryClient = useQueryClient()
+  const { mutate } = useSWRConfig()
   const { address: account } = useAccount()
   const isUserLockedEnd = useUserCakeLockStatus()
   const [lockedNotificationShow, setLockedNotificationShow] = useLockedNotificationShow()
@@ -39,14 +37,12 @@ const useLockedEndNotification = () => {
     if (account) {
       if (!isUndefinedOrNull(isUserLockedEnd)) {
         setLockedNotificationShow(true)
-        queryClient.invalidateQueries({
-          queryKey: ['userCakeLockStatus', account],
-        })
+        mutate(['userCakeLockStatus', account])
       }
     } else {
       setLockedNotificationShow(true)
     }
-  }, [setLockedNotificationShow, account, queryClient, isUserLockedEnd])
+  }, [setLockedNotificationShow, account, mutate, isUserLockedEnd])
 
   useEffect(() => {
     if (toastInfo && isUserLockedEnd && lockedNotificationShow) {

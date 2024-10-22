@@ -19,12 +19,7 @@ const stepsConfigBuilder = ({ t, userInfos, eventInfos, userStatus, account, the
     numberTokensOfUser,
   } = userInfos || {}
 
-  const {
-    saleStatus = SaleStatusEnum.Pending,
-    totalTicketsDistributed,
-    totalSupplyMinted,
-    startTimestamp,
-  } = eventInfos || {}
+  const { saleStatus, totalTicketsDistributed, totalSupplyMinted, startTimestamp } = eventInfos || {}
 
   const hasProfileActivated = [UserStatusEnum.PROFILE_ACTIVE, UserStatusEnum.PROFILE_ACTIVE_GEN0].includes(userStatus)
   const isBuyPhaseFinished = totalTicketsDistributed === maxSupply
@@ -40,7 +35,7 @@ const stepsConfigBuilder = ({ t, userInfos, eventInfos, userStatus, account, the
         eventStatus: [SaleStatusEnum.Pending, SaleStatusEnum.Premint],
       }),
       title: t('Activate your profile'),
-      bodyText: [t('You’ll need an active PancakeSwap Profile to buy Minting Tickets and mint a Pancake Squad NFT!')],
+      bodyText: [t('You’ll need an active IceCreamSwap Profile to buy Minting Tickets and mint a Pancake Squad NFT!')],
       buttons: (
         <>
           <ActivateProfileButton userStatus={userStatus} t={t} />
@@ -55,17 +50,17 @@ const stepsConfigBuilder = ({ t, userInfos, eventInfos, userStatus, account, the
         hasProfileActivated,
         eventStatus: [SaleStatusEnum.Pending, SaleStatusEnum.Premint],
       }),
-      title: t('Hold CAKE'),
-      bodyText: [t('Each NFT costs CAKE to mint. Remember you also need BNB to cover transaction fees too!')],
+      title: t('Hold ICE'),
+      bodyText: [t('Each NFT costs ICE to mint. Remember you also need BNB to cover transaction fees too!')],
       buttons: (
         <>
           <Button
             as="a"
-            href="https://pancakeswap.finance/swap?outputCurrency=0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82&chainId=56"
+            href="https://icecreamswap.com/swap?outputCurrency=0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82&chainId=56"
             target="_blank"
             width="100%"
           >
-            {t('Buy CAKE')}
+            {t('Buy ICE')}
           </Button>
         </>
       ),
@@ -96,15 +91,15 @@ const stepsConfigBuilder = ({ t, userInfos, eventInfos, userStatus, account, the
               theme={theme}
               userStatus={userStatus}
               saleStatus={saleStatus}
-              canClaimForGen0={Boolean(canClaimForGen0)}
+              canClaimForGen0={canClaimForGen0}
               maxPerAddress={maxPerAddress}
               numberTicketsOfUser={numberTicketsOfUser}
               numberTicketsUsedForGen0={numberTicketsUsedForGen0}
               cakeBalance={cakeBalance}
               maxPerTransaction={maxPerTransaction}
               numberTicketsForGen0={numberTicketsForGen0}
-              pricePerTicket={pricePerTicket ?? 0n}
-              startTimestamp={startTimestamp ?? 0}
+              pricePerTicket={pricePerTicket}
+              startTimestamp={startTimestamp}
             />
           )}
           {isBuyPhaseFinished && hasData && <ReadyText mt="16px" text={t('Phase Complete!')} />}
@@ -132,7 +127,7 @@ const stepsConfigBuilder = ({ t, userInfos, eventInfos, userStatus, account, the
               saleStatus={saleStatus}
               numberTicketsOfUser={numberTicketsOfUser}
               numberTokensOfUser={numberTokensOfUser}
-              ticketsOfUser={ticketsOfUser ?? []}
+              ticketsOfUser={ticketsOfUser}
             />
           )}
           {isMintingFinished && hasData && <ReadyText mt="16px" text={t('Phase Complete!')} />}

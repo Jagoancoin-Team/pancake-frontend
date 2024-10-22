@@ -1,21 +1,21 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { Currency } from '@pancakeswap/sdk'
-import { AutoColumn, Heading, RowBetween, RowFixed, Text } from '@pancakeswap/uikit'
+import { AutoColumn, RowBetween, RowFixed, Text, Heading } from '@pancakeswap/uikit'
 import { Position } from '@pancakeswap/v3-sdk'
 import { LightGreyCard } from 'components/Card'
-import Divider from 'components/Divider'
-import FormattedCurrencyAmount from 'components/FormattedCurrencyAmount/FormattedCurrencyAmount'
 import { DoubleCurrencyLogo } from 'components/Logo'
 import CurrencyLogo from 'components/Logo/CurrencyLogo'
-import { RangePriceSection } from 'components/RangePriceSection'
-import { Bound } from 'config/constants/types'
-import { useStablecoinPrice } from 'hooks/useStablecoinPrice'
+import { useStablecoinPrice } from 'hooks/useBUSDPrice'
 import { formatTickPrice } from 'hooks/v3/utils/formatTickPrice'
-import { ReactNode, useCallback, useState } from 'react'
-import { formatPrice } from 'utils/formatCurrencyAmount'
+import { ReactNode, useState, useCallback } from 'react'
 import { unwrappedToken } from 'utils/wrappedCurrency'
+import { Bound } from 'config/constants/types'
+import Divider from 'components/Divider'
+import { RangePriceSection } from 'components/RangePriceSection'
+import { formatPrice } from 'utils/formatCurrencyAmount'
+import FormattedCurrencyAmount from 'components/Chart/FormattedCurrencyAmount/FormattedCurrencyAmount'
 
-import { RangeTag } from 'components/RangeTag'
+import { RangeTag } from '../../../../../components/RangeTag'
 import RateToggle from './RateToggle'
 
 export const PositionPreview = ({
@@ -28,7 +28,7 @@ export const PositionPreview = ({
   position: Position
   title?: ReactNode
   inRange: boolean
-  baseCurrencyDefault?: Currency | undefined | null
+  baseCurrencyDefault?: Currency | undefined
   ticksAtLimit: { [bound: string]: boolean | undefined }
 }) => {
   const {

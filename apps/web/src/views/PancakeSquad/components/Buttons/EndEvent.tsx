@@ -1,26 +1,24 @@
-import { Button, Flex } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { Button, Flex, NextLinkFromReactRouter } from '@pancakeswap/uikit'
 import { ContextApi } from '@pancakeswap/localization'
 import { SaleStatusEnum, UserStatusEnum } from '../../types'
 
 type EndEventProps = {
   t: ContextApi['t']
-  account?: string
+  account: string
   saleStatus: SaleStatusEnum
   userStatus: UserStatusEnum
-  maxSupply?: number
-  totalSupplyMinted?: number
-  numberTokensOfUser?: number
+  maxSupply: number
+  totalSupplyMinted: number
+  numberTokensOfUser: number
 }
 
 const EndEventButtons: React.FC<React.PropsWithChildren<EndEventProps>> = ({
   t,
   account,
   saleStatus,
-  numberTokensOfUser = 0,
-  maxSupply = 0,
-  totalSupplyMinted = 0,
+  numberTokensOfUser,
+  maxSupply,
+  totalSupplyMinted,
 }) => {
   const hasSquad = saleStatus === SaleStatusEnum.Claim && numberTokensOfUser > 0
   const canViewMarket = maxSupply === totalSupplyMinted

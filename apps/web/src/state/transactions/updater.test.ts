@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { TransactionDetails } from './reducer'
 import { shouldCheck } from './updater'
+import { TransactionDetails } from './reducer'
 
 describe('transactions updater', () => {
   const trxDetailInFetchedTransactions: TransactionDetails = {

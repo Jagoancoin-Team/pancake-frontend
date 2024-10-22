@@ -1,35 +1,18 @@
-import { useTranslation } from '@pancakeswap/localization'
-import {
-  AddIcon,
-  Balance,
-  Flex,
-  IconButton,
-  Message,
-  MessageText,
-  MinusIcon,
-  Skeleton,
-  Text,
-  useModal,
-} from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-import { LearnMoreLink } from 'views/CakeStaking/components/SyrupPool'
-import { useIsMigratedToVeCake } from 'views/CakeStaking/hooks/useIsMigratedToVeCake'
-
-import { Token } from '@pancakeswap/sdk'
-import { getBalanceNumber } from '@pancakeswap/utils/formatBalance'
+import { Flex, Text, IconButton, AddIcon, MinusIcon, useModal, Skeleton, Box, Balance, Pool } from '@pancakeswap/uikit'
 import BigNumber from 'bignumber.js'
-import { LightGreyCard } from 'components/Card'
-import { useCakePrice } from 'hooks/useCakePrice'
-import { useVaultPoolByKey } from 'state/pools/hooks'
+import { getBalanceNumber } from '@pancakeswap/utils/formatBalance'
 import { VaultKey } from 'state/types'
-import { getVaultPosition, VaultPosition } from 'utils/cakePool'
+import { usePriceCakeUSD } from 'state/farms/hooks'
+import { useVaultPoolByKey } from 'state/pools/hooks'
+import { Token } from '@pancakeswap/sdk'
 import NotEnoughTokensModal from '../../Modals/NotEnoughTokensModal'
 import VaultStakeModal from '../VaultStakeModal'
+import ConvertToLock from '../../LockedPool/Common/ConvertToLock'
 
 interface HasStakeActionProps {
   pool: Pool.DeserializedPool<Token>
   stakingTokenBalance: BigNumber
-  performanceFee?: number
+  performanceFee: number
 }
 
 const HasSharesActions: React.FC<React.PropsWithChildren<HasStakeActionProps>> = ({
@@ -37,19 +20,17 @@ const HasSharesActions: React.FC<React.PropsWithChildren<HasStakeActionProps>> =
   stakingTokenBalance,
   performanceFee,
 }) => {
-  const { userData } = useVaultPoolByKey(pool.vaultKey ?? VaultKey.CakeVaultV1)
+  const {
+    userData: {
+      balance: { cakeAsBigNumber, cakeAsNumberBalance },
+    },
+  } = useVaultPoolByKey(pool.vaultKey)
 
-  const cakeAsBigNumber = userData?.balance?.cakeAsBigNumber
-  const cakeAsNumberBalance = userData?.balance?.cakeAsNumberBalance
-  const isMigratedToVeCake = useIsMigratedToVeCake()
+  const { stakingToken, stakingTokenPrice } = pool
 
-  const lockPosition = getVaultPosition(userData)
-
-  const { stakingToken } = pool
-  const { t } = useTranslation()
-  const cakePrice = useCakePrice()
-  const stakedDollarValue = cakePrice.gt(0)
-    ? getBalanceNumber(cakeAsBigNumber?.multipliedBy(cakePrice), stakingToken.decimals)
+  const cakePriceBusd = usePriceCakeUSD()
+  const stakedDollarValue = cakePriceBusd.gt(0)
+    ? getBalanceNumber(cakeAsBigNumber.multipliedBy(cakePriceBusd), stakingToken.decimals)
     : 0
 
   const [onPresentTokenRequired] = useModal(<NotEnoughTokensModal tokenSymbol={stakingToken.symbol} />)
@@ -57,18 +38,19 @@ const HasSharesActions: React.FC<React.PropsWithChildren<HasStakeActionProps>> =
     <VaultStakeModal stakingMax={stakingTokenBalance} performanceFee={performanceFee} pool={pool} />,
   )
   const [onPresentUnstake] = useModal(
-    <VaultStakeModal stakingMax={cakeAsBigNumber ?? new BigNumber(0)} pool={pool} isRemovingStake />,
+    <VaultStakeModal stakingMax={cakeAsBigNumber} pool={pool} isRemovingStake />,
     true,
     true,
     `withdraw-vault-${pool.sousId}-${pool.vaultKey}`,
   )
+
   return (
-    <LightGreyCard>
+    <>
       <Flex mb="16px" justifyContent="space-between" alignItems="center">
         <Flex flexDirection="column">
-          <Balance fontSize="20px" bold value={cakeAsNumberBalance ?? 0} decimals={5} />
+          <Balance fontSize="20px" bold value={cakeAsNumberBalance} decimals={5} />
           <Text as={Flex} fontSize="12px" color="textSubtle" flexWrap="wrap">
-            {cakePrice.gt(0) ? (
+            {cakePriceBusd.gt(0) ? (
               <Balance
                 value={stakedDollarValue}
                 fontSize="12px"
@@ -92,34 +74,21 @@ const HasSharesActions: React.FC<React.PropsWithChildren<HasStakeActionProps>> =
           >
             <MinusIcon color="primary" width="24px" />
           </IconButton>
-          <IconButton
-            disabled
-            variant="secondary"
-            onClick={stakingTokenBalance.gt(0) ? onPresentStake : onPresentTokenRequired}
-          >
+          <IconButton variant="secondary" onClick={stakingTokenBalance.gt(0) ? onPresentStake : onPresentTokenRequired}>
             <AddIcon color="primary" width="24px" height="24px" />
           </IconButton>
         </Flex>
       </Flex>
-      <Message variant="warning" mb="16px">
-        <MessageText>
-          {lockPosition === VaultPosition.Flexible ? (
-            <>
-              {t('Flexible CAKE pool is discontinued and no longer distributing rewards.')}
-              <LearnMoreLink withArrow />
-            </>
-          ) : isMigratedToVeCake ? (
-            t(
-              'Extending or adding CAKE is not available for migrated positions. To get more veCAKE, withdraw from the unlocked CAKE pool position, and add CAKE to veCAKE.',
-            )
-          ) : (
-            t(
-              'The lock period has ended. To get more veCAKE, withdraw from the unlocked CAKE pool position, and add CAKE to veCAKE.',
-            )
-          )}
-        </MessageText>
-      </Message>
-    </LightGreyCard>
+      {pool.vaultKey === VaultKey.CakeVault && (
+        <Box mb="16px">
+          <ConvertToLock
+            stakingToken={stakingToken}
+            stakingTokenPrice={stakingTokenPrice}
+            currentStakedAmount={cakeAsNumberBalance}
+          />
+        </Box>
+      )}
+    </>
   )
 }
 

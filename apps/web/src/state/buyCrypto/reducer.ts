@@ -1,100 +1,109 @@
-import { createReducer, type ActionReducerMapBuilder } from '@reduxjs/toolkit'
+import { createReducer } from '@reduxjs/toolkit'
 import { atomWithReducer } from 'jotai/utils'
-import { createContext, useContext } from 'react'
-import { useAtomValue, useSetAtom } from 'jotai'
 import {
   Field,
   replaceBuyCryptoState,
   resetBuyCryptoState,
   selectCurrency,
-  switchCurrencies,
+  setMinAmount,
+  setRecipient,
+  setUsersIpAddress,
   typeInput,
 } from './actions'
 
 export interface BuyCryptoState {
-  readonly typedValue: string | undefined
-  readonly independentField: Field
+  readonly typedValue: string
+  readonly recipient: string | null
   readonly [Field.INPUT]: {
     readonly currencyId: string | undefined
   }
   readonly [Field.OUTPUT]: {
     readonly currencyId: string | undefined
   }
+  readonly minAmount: number
+  readonly minBaseAmount: number
+  readonly maxAmount: number
+  readonly maxBaseAmount: number
+  readonly userIpAddress: string | null
 }
 
 const initialState: BuyCryptoState = {
   typedValue: '',
-  independentField: Field.INPUT,
-
+  recipient: null,
   [Field.INPUT]: {
     currencyId: '',
   },
   [Field.OUTPUT]: {
     currencyId: '',
   },
+  minAmount: null,
+  minBaseAmount: null,
+  maxAmount: null,
+  maxBaseAmount: null,
+  userIpAddress: null,
 }
 
-/// casting builder as any as its causing a 'no overload match call' ts error
-export const reducer = createReducer<BuyCryptoState>(
-  initialState,
-  (builder: ActionReducerMapBuilder<BuyCryptoState>) => {
-    builder
-      .addCase(resetBuyCryptoState, () => initialState)
-      .addCase(typeInput, (state, { payload: { field, typedValue } }) => {
+export const reducer = createReducer<BuyCryptoState>(initialState, (builder) =>
+  builder
+    .addCase(resetBuyCryptoState, () => initialState)
+    .addCase(typeInput, (state, { payload: { typedValue } }) => {
+      return {
+        ...state,
+        typedValue,
+      }
+    })
+    .addCase(selectCurrency, (state, { payload: { currencyId, field } }) => {
+      return {
+        ...state,
+        [field]: { currencyId },
+      }
+    })
+    .addCase(setMinAmount, (state, { payload: { minAmount, minBaseAmount, maxAmount, maxBaseAmount } }) => {
+      state.minAmount = minAmount
+      state.minBaseAmount = minBaseAmount
+      state.maxAmount = maxAmount
+      state.maxBaseAmount = maxBaseAmount
+    })
+    .addCase(setRecipient, (state, { payload: { recipient } }) => {
+      state.recipient = recipient
+    })
+    .addCase(setUsersIpAddress, (state, { payload: { ip } }) => {
+      state.userIpAddress = ip
+    })
+    .addCase(
+      replaceBuyCryptoState,
+      (
+        state,
+        {
+          payload: {
+            typedValue,
+            recipient,
+            inputCurrencyId,
+            outputCurrencyId,
+            minAmount,
+            minBaseAmount,
+            maxAmount,
+            maxBaseAmount,
+          },
+        },
+      ) => {
         return {
-          ...state,
-          independentField: field,
+          [Field.INPUT]: {
+            currencyId: inputCurrencyId,
+          },
+          [Field.OUTPUT]: {
+            currencyId: outputCurrencyId,
+          },
           typedValue,
+          recipient,
+          minAmount,
+          minBaseAmount,
+          maxAmount,
+          maxBaseAmount,
+          userIpAddress: state.userIpAddress,
         }
-      })
-      .addCase(selectCurrency, (state, { payload: { currencyId, field } }) => {
-        const otherField = field === Field.INPUT ? Field.OUTPUT : Field.INPUT
-        if (currencyId === state[otherField].currencyId) {
-          // the case where we have to swap the order
-          return {
-            ...state,
-            independentField: state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
-            [field]: { currencyId },
-            [otherField]: { currencyId: state[field].currencyId },
-          }
-        }
-        // the normal case
-        return {
-          ...state,
-          [field]: { currencyId },
-        }
-      })
-      .addCase(replaceBuyCryptoState, (state, { payload: { typedValue, inputCurrencyId, outputCurrencyId } }) => {
-        state[Field.INPUT].currencyId = inputCurrencyId
-        state[Field.OUTPUT].currencyId = outputCurrencyId
-        state.typedValue = typedValue
-      })
-      .addCase(switchCurrencies, (state) => {
-        return {
-          ...state,
-          typedValue: '0',
-          independentField: state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
-          [Field.INPUT]: { currencyId: state[Field.OUTPUT].currencyId },
-          [Field.OUTPUT]: { currencyId: state[Field.INPUT].currencyId },
-        }
-      })
-  },
+      },
+    ),
 )
 
-export const createFormAtom = () => atomWithReducer(initialState, reducer)
-
-const BuyCryptoAtomContext = createContext({
-  formAtom: createFormAtom(),
-})
-
-export const BuyCryptoAtomProvider = BuyCryptoAtomContext.Provider
-
-export function useBuyCryptoFormState() {
-  const ctx = useContext(BuyCryptoAtomContext)
-  return useAtomValue(ctx.formAtom)
-}
-
-export function useBuyCryptoFormDispatch() {
-  const ctx = useContext(BuyCryptoAtomContext)
-  return useSetAtom(ctx.formAtom)
-}
+export const buyCryptoReducerAtom = atomWithReducer(initialState, reducer)

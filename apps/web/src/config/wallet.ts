@@ -1,11 +1,9 @@
-import { isCyberWallet } from '@cyberlab/cyber-app-sdk'
 import { WalletConfigV2 } from '@pancakeswap/ui-wallets'
 import { WalletFilledIcon } from '@pancakeswap/uikit'
-import { getTrustWalletProvider } from '@pancakeswap/wagmi/connectors/trustWallet'
 import type { ExtendEthereum } from 'global'
-import { Config } from 'wagmi'
-import { ConnectMutateAsync } from 'wagmi/query'
-import { chains, createWagmiConfig, walletConnectNoQrCodeConnector } from '../utils/wagmi'
+import { isFirefox } from 'react-device-detect'
+import { getTrustWalletProvider } from '@pancakeswap/wagmi/connectors/trustWallet'
+import { metaMaskConnector, walletConnectNoQrCodeConnector } from '../utils/wagmi'
 import { ASSET_CDN } from './constants/endpoints'
 
 export enum ConnectorNames {
@@ -13,41 +11,26 @@ export enum ConnectorNames {
   Injected = 'injected',
   WalletConnect = 'walletConnect',
   WalletConnectV1 = 'walletConnectLegacy',
-  // BSC = 'bsc',
-  BinanceW3W = 'BinanceW3WSDK',
+  BSC = 'bsc',
   Blocto = 'blocto',
-  WalletLink = 'coinbaseWalletSDK',
-  // Ledger = 'ledger',
-  TrustWallet = 'trust',
-  CyberWallet = 'cyberWallet',
+  WalletLink = 'coinbaseWallet',
+  BitKeep = 'bitKeep',
+  Nabox = 'nabox',
+  Okx = 'okx',
+  Ledger = 'ledger',
+  TrustWallet = 'trustWallet',
 }
 
-const createQrCode =
-  <config extends Config = Config, context = unknown>(chainId: number, connect: ConnectMutateAsync<config, context>) =>
-  async () => {
-    const wagmiConfig = createWagmiConfig()
-    const injectedConnector = wagmiConfig.connectors.find((connector) => connector.id === ConnectorNames.Injected)
-    if (!injectedConnector) {
-      return ''
-    }
-    // HACK: utilizing event emitter from injected connector to notify wagmi of the connect events
-    const connector = {
-      ...walletConnectNoQrCodeConnector({
-        chains,
-        emitter: injectedConnector?.emitter,
-      }),
-      emitter: injectedConnector.emitter,
-      uid: injectedConnector.uid,
-    }
-    const provider = await connector.getProvider()
+const createQrCode = (chainId: number, connect) => async () => {
+  connect({ connector: walletConnectNoQrCodeConnector, chainId })
 
-    return new Promise<string>((resolve) => {
-      provider.on('display_uri', (uri) => {
-        resolve(uri)
-      })
-      connect({ connector, chainId })
+  const r = await walletConnectNoQrCodeConnector.getProvider()
+  return new Promise<string>((resolve) => {
+    r.on('display_uri', (uri) => {
+      resolve(uri)
     })
-  }
+  })
+}
 
 const isMetamaskInstalled = () => {
   if (typeof window === 'undefined') {
@@ -65,31 +48,45 @@ const isMetamaskInstalled = () => {
   return false
 }
 
-function isBinanceWeb3WalletInstalled() {
-  return typeof window !== 'undefined' && Boolean((window.ethereum as ExtendEthereum)?.isBinance)
-}
-
-const walletsConfig = <config extends Config = Config, context = unknown>({
+const walletsConfig = ({
   chainId,
   connect,
 }: {
   chainId: number
-  connect: ConnectMutateAsync<config, context>
+  connect: (connectorID: ConnectorNames) => void
 }): WalletConfigV2<ConnectorNames>[] => {
   const qrCode = createQrCode(chainId, connect)
   return [
     {
       id: 'metamask',
       title: 'Metamask',
-      icon: `${ASSET_CDN}/web/wallets/metamask.png`,
-      get installed() {
-        return isMetamaskInstalled()
-        // && metaMaskConnector.ready
-      },
+      icon: '/images/wallets/metamask.png',
+      installed: typeof window !== 'undefined' && Boolean(window.ethereum?.isMetaMask) && metaMaskConnector.ready,
       connectorId: ConnectorNames.MetaMask,
-      deepLink: 'https://metamask.app.link/dapp/pancakeswap.finance/',
+      deepLink: 'https://metamask.app.link/dapp/icecreamswap.com/',
       qrCode,
-      downloadLink: 'https://metamask.app.link/dapp/pancakeswap.finance/',
+      downloadLink: 'https://metamask.app.link/dapp/icecreamswap.com/',
+    },
+    {
+      id: 'binance',
+      title: 'Binance Wallet',
+      icon: '/images/wallets/binance.png',
+      installed: typeof window !== 'undefined' && Boolean(window.BinanceChain),
+      connectorId: ConnectorNames.BSC,
+      guide: {
+        desktop: 'https://www.bnbchain.org/en/binance-wallet',
+      },
+      downloadLink: {
+        desktop: isFirefox
+          ? 'https://addons.mozilla.org/en-US/firefox/addon/binance-chain/?src=search'
+          : 'https://chrome.google.com/webstore/detail/binance-wallet/fhbohimaelbohpjbbldcngcnapndodjp',
+      },
+    },
+    {
+      id: 'coinbase',
+      title: 'Coinbase Wallet',
+      icon: '/images/wallets/coinbase.png',
+      connectorId: ConnectorNames.WalletLink,
     },
     {
       id: 'trust',
@@ -99,48 +96,13 @@ const walletsConfig = <config extends Config = Config, context = unknown>({
       get installed() {
         return !!getTrustWalletProvider()
       },
-      deepLink: 'https://link.trustwallet.com/open_url?coin_id=20000714&url=https://pancakeswap.finance/',
+      deepLink: 'https://link.trustwallet.com/open_url?coin_id=20000714&url=https://icecreamswap.com/',
       downloadLink: 'https://chrome.google.com/webstore/detail/trust-wallet/egjidjbpglichdcondbcbdnbeeppgdph',
       guide: {
         desktop: 'https://trustwallet.com/browser-extension',
         mobile: 'https://trustwallet.com/',
       },
       qrCode,
-    },
-    {
-      id: 'okx',
-      title: 'OKX Wallet',
-      icon: `${ASSET_CDN}/web/wallets/okx-wallet.png`,
-      connectorId: ConnectorNames.Injected,
-      get installed() {
-        return typeof window !== 'undefined' && Boolean(window.okxwallet)
-      },
-      downloadLink: 'https://chromewebstore.google.com/detail/okx-wallet/mcohilncbfahbmgdjkbpemcciiolgcge',
-      deepLink:
-        'https://www.okx.com/download?deeplink=okx%3A%2F%2Fwallet%2Fdapp%2Furl%3FdappUrl%3Dhttps%253A%252F%252Fpancakeswap.finance',
-      guide: {
-        desktop: 'https://www.okx.com/web3',
-        mobile: 'https://www.okx.com/web3',
-      },
-    },
-    {
-      id: 'BinanceW3W',
-      title: 'Binance Web3 Wallet',
-      icon: `${ASSET_CDN}/web/wallets/binance-w3w.png`,
-      connectorId: isBinanceWeb3WalletInstalled() ? ConnectorNames.Injected : ConnectorNames.BinanceW3W,
-      get installed() {
-        if (isBinanceWeb3WalletInstalled()) {
-          return true
-        }
-        // still showing the SDK if not installed
-        return undefined
-      },
-    },
-    {
-      id: 'coinbase',
-      title: 'Coinbase Wallet',
-      icon: `${ASSET_CDN}/web/wallets/coinbase.png`,
-      connectorId: ConnectorNames.WalletLink,
     },
     {
       id: 'walletconnect',
@@ -167,21 +129,6 @@ const walletsConfig = <config extends Config = Config, context = unknown>({
         return typeof window !== 'undefined' && Boolean(window.ethereum?.isBraveWallet)
       },
       downloadLink: 'https://brave.com/wallet/',
-    },
-    {
-      id: 'rabby',
-      title: 'Rabby Wallet',
-      icon: `${ASSET_CDN}/web/wallets/rabby.png`,
-      get installed() {
-        return typeof window !== 'undefined' && Boolean(window.ethereum?.isRabby)
-      },
-      connectorId: ConnectorNames.Injected,
-      guide: {
-        desktop: 'https://rabby.io/',
-      },
-      downloadLink: {
-        desktop: 'https://chrome.google.com/webstore/detail/rabby/acmacodkjbdgmoleebolmdjonilkdbch',
-      },
     },
     {
       id: 'math',
@@ -240,45 +187,62 @@ const walletsConfig = <config extends Config = Config, context = unknown>({
       },
     },
     {
-      id: 'cyberwallet',
-      title: 'CyberWallet',
-      icon: `${ASSET_CDN}/web/wallets/cyberwallet.png`,
-      connectorId: ConnectorNames.CyberWallet,
-      get installed() {
-        return typeof window !== 'undefined' && isCyberWallet()
-      },
-      isNotExtension: true,
-      guide: {
-        desktop: 'https://docs.cyber.co/sdk/cyber-account#supported-chains',
-      },
+      id: 'ledger',
+      title: 'Ledger',
+      icon: `${ASSET_CDN}/web/wallets/ledger.png`,
+      connectorId: ConnectorNames.Ledger,
     },
-    // {
-    //   id: 'ledger',
-    //   title: 'Ledger',
-    //   icon: `${ASSET_CDN}/web/wallets/ledger.png`,
-    //   connectorId: ConnectorNames.Ledger,
-    // },
+    {
+      id: 'bitkeep',
+      title: 'BitKeep',
+      icon: '/images/wallets/bitkeep.png',
+      connectorId: ConnectorNames.BitKeep,
+      installed: typeof window !== 'undefined' && Boolean(window.bitkeep),
+      downloadLink: {
+        desktop: 'https://chrome.google.com/webstore/detail/bitkeep-crypto-nft-wallet/jiidiaalihmmhddjgbnbgdfflelocpak',
+      },
+      qrCode,
+    },
+    {
+      id: 'nabox',
+      title: 'Nabox',
+      icon: '/images/wallets/nabox.png',
+      connectorId: ConnectorNames.Nabox,
+      installed: typeof window !== 'undefined' && Boolean(window.NaboxWallet),
+      downloadLink: {
+        desktop: 'https://chrome.google.com/webstore/detail/nabox-wallet/nknhiehlklippafakaeklbeglecifhad',
+      },
+      qrCode,
+    },
+    {
+      id: 'okx',
+      title: 'Okx',
+      icon: '/images/wallets/okx.png',
+      connectorId: ConnectorNames.Okx,
+      installed: typeof window !== 'undefined' && Boolean(window.okxwallet),
+      downloadLink: {
+        desktop: 'https://chrome.google.com/webstore/detail/okx-wallet/mcohilncbfahbmgdjkbpemcciiolgcge',
+      },
+      qrCode,
+    },
   ]
 }
 
-export const createWallets = <config extends Config = Config, context = unknown>(
-  chainId: number,
-  connect: ConnectMutateAsync<config, context>,
-) => {
+export const createWallets = (chainId: number, connect: any) => {
   const hasInjected = typeof window !== 'undefined' && !window.ethereum
   const config = walletsConfig({ chainId, connect })
   return hasInjected && config.some((c) => c.installed && c.connectorId === ConnectorNames.Injected)
     ? config // add injected icon if none of injected type wallets installed
     : [
-        ...config,
-        {
-          id: 'injected',
-          title: 'Injected',
-          icon: WalletFilledIcon,
-          connectorId: ConnectorNames.Injected,
-          installed: typeof window !== 'undefined' && Boolean(window.ethereum),
-        },
-      ]
+      ...config,
+      {
+        id: 'injected',
+        title: 'Injected',
+        icon: WalletFilledIcon,
+        connectorId: ConnectorNames.Injected,
+        installed: typeof window !== 'undefined' && Boolean(window.ethereum),
+      },
+    ]
 }
 
 const docLangCodeMapping: Record<string, string> = {
@@ -288,11 +252,11 @@ const docLangCodeMapping: Record<string, string> = {
   tr: 'turkish',
   vi: 'vietnamese',
   id: 'indonesian',
-  'zh-cn': 'chinese',
+  'zh-cn': 'zh',
   'pt-br': 'portuguese-brazilian',
 }
 
 export const getDocLink = (code: string) =>
   docLangCodeMapping[code]
-    ? `https://docs.pancakeswap.finance/v/${docLangCodeMapping[code]}/get-started/wallet-guide`
-    : `https://docs.pancakeswap.finance/get-started/wallet-guide`
+    ? `https://wiki.icecreamswap.com/v/${docLangCodeMapping[code]}/get-started/setup-wallet`
+    : `https://wiki.icecreamswap.com/get-started/setup-wallet`

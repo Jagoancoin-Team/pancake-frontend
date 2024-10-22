@@ -1,9 +1,8 @@
-import { expect, it } from "vitest";
-import { Link, LinkExternal } from "../../components/Link";
 import { renderWithProvider } from "../../testHelpers";
+import { Link, LinkExternal } from "../../components/Link";
 
 it("renders link correctly", () => {
-  const { asFragment } = renderWithProvider(<Link href="https://pancakeswap.finance">Link</Link>);
+  const { asFragment } = renderWithProvider(<Link href="https://icecreamswap.com">Link</Link>);
   expect(asFragment()).toMatchInlineSnapshot(`
     <DocumentFragment>
       .c0 {
@@ -26,7 +25,7 @@ it("renders link correctly", () => {
 
     <a
         class="c0 c1"
-        href="https://pancakeswap.finance"
+        href="https://icecreamswap.com"
       >
         Link
       </a>
@@ -35,10 +34,18 @@ it("renders link correctly", () => {
 });
 
 it("renders link external link correctly", () => {
-  const { asFragment } = renderWithProvider(<LinkExternal href="https://pancakeswap.finance">Link</LinkExternal>);
+  const { asFragment } = renderWithProvider(<LinkExternal href="https://icecreamswap.com">Link</LinkExternal>);
   expect(asFragment()).toMatchInlineSnapshot(`
     <DocumentFragment>
-      .c0 {
+      .c2 {
+      align-self: center;
+      fill: var(--colors-primary);
+      color: var(--colors-primary);
+      flex-shrink: 0;
+      margin-left: 4px;
+    }
+
+    .c0 {
       color: var(--colors-primary);
       font-weight: 400;
       line-height: 1.5;
@@ -54,14 +61,6 @@ it("renders link external link correctly", () => {
 
     .c1:hover {
       text-decoration: underline;
-    }
-
-    .c2 {
-      align-self: center;
-      fill: var(--colors-primary);
-      color: var(--colors-primary);
-      flex-shrink: 0;
-      margin-left: 4px;
     }
 
     @supports (-webkit-text-size-adjust: none) and (not (-ms-accelerator: true)) and (not (-moz-appearance: none)) {
@@ -72,7 +71,7 @@ it("renders link external link correctly", () => {
 
     <a
         class="c0 c1"
-        href="https://pancakeswap.finance"
+        href="https://icecreamswap.com"
         rel="noreferrer noopener"
         target="_blank"
       >

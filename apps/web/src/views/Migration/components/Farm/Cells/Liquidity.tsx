@@ -1,8 +1,6 @@
-import { Flex, HelpIcon, Text, useTooltip } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
 import React from 'react'
 import { styled } from 'styled-components'
-
+import { Flex, HelpIcon, Text, Pool, useTooltip } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
 import BigNumber from 'bignumber.js'
 
@@ -45,7 +43,7 @@ const Liquidity: React.FC<React.PropsWithChildren<LiquidityProps>> = ({ liquidit
     <StyledCell role="cell">
       <Pool.CellContent>
         <Text fontSize="12px" color="textSubtle" textAlign="left">
-          {t('Total Staked')}
+          {t('Liquidity')}
         </Text>
         <Flex mt="4px">
           <LiquidityWrapper>

@@ -1,12 +1,12 @@
 import { ConnectorNames } from 'config/wallet'
 import { ExtendEthereum } from 'global'
-import { useAccount } from 'wagmi'
+import { useAccount, useNetwork } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import FarmsV3 from './FarmsV3'
 import { FarmsContext, FarmsV3Context } from './context'
+import FarmsV3 from './FarmsV3'
 
 export function useIsBloctoETH() {
-  const { chain } = useAccount()
+  const { chain } = useNetwork()
   const { isConnected, connector } = useAccount()
   const isETH = chain?.id === mainnet.id
   return (

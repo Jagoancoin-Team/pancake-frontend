@@ -1,8 +1,8 @@
-import { ChainId } from '@pancakeswap/chains'
-import chunk from 'lodash/chunk'
+import { ChainId } from '@pancakeswap/sdk'
 import { Address, PublicClient } from 'viem'
-import { crossFarmingVaultAddresses } from '../const'
-import { SerializedFarmConfig, SerializedFarmPublicData } from '../types'
+import chunk from 'lodash/chunk'
+import { SerializedFarmPublicData, SerializedFarmConfig } from '../types'
+import { nonBSCVaultAddresses } from '../const'
 
 const abi = [
   {
@@ -41,7 +41,7 @@ const abi = [
 ] as const
 
 const fetchFarmCalls = (farm: SerializedFarmPublicData, masterChefAddress: string, vaultAddress?: string) => {
-  const { lpAddress, token, quoteToken, bCakeWrapperAddress } = farm
+  const { lpAddress, token, quoteToken } = farm
   return [
     // Balance of token in the LP contract
     {
@@ -62,7 +62,7 @@ const fetchFarmCalls = (farm: SerializedFarmPublicData, masterChefAddress: strin
       abi,
       address: lpAddress,
       functionName: 'balanceOf',
-      args: [(bCakeWrapperAddress || vaultAddress || masterChefAddress) as Address],
+      args: [(vaultAddress || masterChefAddress) as Address],
     },
     // Total supply of LP tokens
     {
@@ -75,17 +75,14 @@ const fetchFarmCalls = (farm: SerializedFarmPublicData, masterChefAddress: strin
 
 export const fetchPublicFarmsData = async (
   farms: SerializedFarmConfig[],
-  chainId = ChainId.BSC,
+  chainId,
   provider: ({ chainId }: { chainId: number }) => PublicClient,
   masterChefAddress: string,
 ) => {
   try {
+    // @ts-ignore fix chainId support
     const farmCalls = farms.flatMap((farm) =>
-      fetchFarmCalls(
-        farm,
-        masterChefAddress,
-        crossFarmingVaultAddresses[chainId as keyof typeof crossFarmingVaultAddresses],
-      ),
+      fetchFarmCalls(farm, masterChefAddress, nonBSCVaultAddresses[chainId as keyof typeof nonBSCVaultAddresses]),
     )
     const chunkSize = farmCalls.length / farms.length
     const farmMultiCallResult = await provider({ chainId }).multicall({ contracts: farmCalls, allowFailure: false })

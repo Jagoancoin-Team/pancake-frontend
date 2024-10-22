@@ -1,10 +1,9 @@
 import { Token } from '@pancakeswap/sdk'
 import { TokenLogo } from '@pancakeswap/uikit'
-import { chainName as CHAIN_PATH } from '@pancakeswap/widgets-internal'
 import { useMemo } from 'react'
 import { multiChainId, MultiChainName } from 'state/info/constant'
 import { styled } from 'styled-components'
-import { safeGetAddress } from 'utils'
+import { isAddress } from 'utils'
 import { Address } from 'viem'
 import getTokenLogoURL from '../../../../utils/getTokenLogoURL'
 
@@ -12,13 +11,10 @@ const StyledLogo = styled(TokenLogo)<{ size: string }>`
   width: ${({ size }) => size};
   height: ${({ size }) => size};
   border-radius: ${({ size }) => size};
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.075);
+  background-color: #faf9fa;
+  color: ${({ theme }) => theme.colors.text};
 `
-
-const chainNameToPath = (chainName: MultiChainName) => {
-  if (chainName === 'BSC') return ''
-  if (CHAIN_PATH[multiChainId[chainName]]) return `${CHAIN_PATH[multiChainId[chainName]]}/`
-  return `${chainName.toLowerCase()}/`
-}
 
 export const CurrencyLogo: React.FC<
   React.PropsWithChildren<{
@@ -27,18 +23,16 @@ export const CurrencyLogo: React.FC<
     size?: string
     chainName?: MultiChainName
   }>
-> = ({ address, size = '24px', chainName = 'BSC', ...rest }) => {
+> = ({ address, size = '24px', chainName, ...rest }) => {
   const src = useMemo(() => {
     return getTokenLogoURL(new Token(multiChainId[chainName], address as Address, 18, ''))
   }, [address, chainName])
 
-  const imagePath = chainNameToPath(chainName)
-  const checkedsummedAddress = safeGetAddress(address)
-  const srcFromPCS = checkedsummedAddress
-    ? `https://tokens.pancakeswap.finance/images/${imagePath}${checkedsummedAddress}.png`
+  const checkedSumAddress = isAddress(address)
+  const srcFromICS = checkedSumAddress
+    ? `https://icecreamswap-assets.s3.amazonaws.com/token/${multiChainId[chainName]}/${checkedSumAddress}.png`
     : ''
-
-  return <StyledLogo size={size} srcs={src ? [srcFromPCS, src] : [srcFromPCS]} alt="token logo" {...rest} />
+  return <StyledLogo size={size} srcs={[srcFromICS, src]} alt="token logo" useFilledIcon {...rest} />
 }
 
 const DoubleCurrencyWrapper = styled.div`
@@ -53,14 +47,14 @@ interface DoubleCurrencyLogoProps {
   address0?: string
   address1?: string
   size?: number
-  chainName?: MultiChainName
+  chainName: MultiChainName
 }
 
 export const DoubleCurrencyLogo: React.FC<React.PropsWithChildren<DoubleCurrencyLogoProps>> = ({
   address0,
   address1,
   size = 16,
-  chainName = 'BSC',
+  chainName,
 }) => {
   return (
     <DoubleCurrencyWrapper>

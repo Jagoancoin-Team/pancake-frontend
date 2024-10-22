@@ -1,10 +1,9 @@
 import { useTheme } from '@pancakeswap/hooks'
-import { AtomBox, AutoColumn, AutoRow, Heading, LinkExternal, Text } from '@pancakeswap/uikit'
-import { Chart } from '@pancakeswap/widgets-internal'
+import { AtomBox, AutoColumn, AutoRow, Heading, LinkExternal, Text, Chart } from '@pancakeswap/uikit'
 import { format } from 'd3'
 import { useTranslation } from '@pancakeswap/localization'
-import { ChainId } from '@pancakeswap/chains'
-import { bscTokens, ethereumTokens } from '@pancakeswap/tokens'
+import { ChainId } from '@pancakeswap/sdk'
+import { bscTokens } from '@pancakeswap/tokens'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
 import { LightCard } from 'components/Card'
 import { Bound } from 'config/constants/types'
@@ -44,7 +43,6 @@ const feeAmount = FeeAmount.MEDIUM
 
 const MOCK_TOKENS = {
   [ChainId.BSC]: [bscTokens.cake, bscTokens.wbnb],
-  [ChainId.ETHEREUM]: [ethereumTokens.wbtc, ethereumTokens.weth],
 }
 
 const distributions = {
@@ -65,7 +63,7 @@ export function Step3() {
   const { theme } = useTheme()
   const { chainId } = useActiveChainId()
 
-  const [token0, token1] = chainId && MOCK_TOKENS[chainId] ? MOCK_TOKENS[chainId] : MOCK_TOKENS[ChainId.BSC]
+  const [token0, token1] = MOCK_TOKENS[chainId] || MOCK_TOKENS[ChainId.BSC]
 
   const formState = useV3FormState()
 
@@ -164,11 +162,11 @@ export function Step3() {
   return (
     <AtomBox textAlign="center">
       <Heading scale="lg" pb="16px">
-        {t('Quick Start')} - {t('PancakeSwap V3')}
+        {t('Quick Start')} - {t('IceCreamSwap V3')}
       </Heading>
       <Text pb="48px">
         {t(
-          'In PancakeSwap Exchange V3, liquidity providers are able to customize the trading fee tier and concentrate their liquidity to a specific price range to maximize their capital efficiency.',
+          'In IceCreamSwap Exchange V3, liquidity providers are able to customize the trading fee tier and concentrate their liquidity to a specific price range to maximize their capital efficiency.',
         )}
       </Text>
 

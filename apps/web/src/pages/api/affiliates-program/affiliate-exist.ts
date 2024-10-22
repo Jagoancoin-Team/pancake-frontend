@@ -7,8 +7,8 @@ const zQuery = zObject({
 })
 
 const affiliateExist = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (!process.env.AFFILIATE_PROGRAM_API_URL || !req.query) {
-    return res.status(400).json({ message: 'API URL Empty / Method wrong' })
+  if (!process.env.AFFILIATE_PROGRAM_API_URL && !req.query) {
+    return res.status(400).json({ message: 'API URL Empty' })
   }
 
   const queryString = qs.stringify(req.query)

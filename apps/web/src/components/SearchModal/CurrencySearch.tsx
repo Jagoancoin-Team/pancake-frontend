@@ -1,28 +1,25 @@
-import { useDebounce, useSortedTokensByQuery } from '@pancakeswap/hooks'
-import { useTranslation } from '@pancakeswap/localization'
-import { UsdvWidget } from '@pancakeswap/widgets-internal'
 /* eslint-disable no-restricted-syntax */
-import { Currency, Token } from '@pancakeswap/sdk'
-import { WrappedTokenInfo, createFilterToken } from '@pancakeswap/token-lists'
-import { AutoColumn, Box, Column, Input, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
-import { useAudioPlay } from '@pancakeswap/utils/user'
-import { KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FixedSizeList } from 'react-window'
-import { isAddress } from 'viem'
-
-import { useActiveChainId } from 'hooks/useActiveChainId'
+import { Currency, ERC20Token, Token } from '@pancakeswap/sdk'
+import { Box, Input, Text, useMatchBreakpoints, AutoColumn, Column } from '@pancakeswap/uikit'
+import { KeyboardEvent, RefObject, useCallback, useMemo, useRef, useState, useEffect } from 'react'
+import { useTranslation } from '@pancakeswap/localization'
+import { useDebounce, useSortedTokensByQuery } from '@pancakeswap/hooks'
 import useNativeCurrency from 'hooks/useNativeCurrency'
-import { useUsdvMintAvailable } from 'hooks/useUsdvMintAvailable'
+import { FixedSizeList } from 'react-window'
 import { useAllLists, useInactiveListUrls } from 'state/lists/hooks'
-import { safeGetAddress } from 'utils'
-
-import { useTokenComparator } from 'hooks/useTokenComparator'
+import { WrappedTokenInfo, createFilterToken } from '@pancakeswap/token-lists'
+import { useAudioPlay } from '@pancakeswap/utils/user'
+import { isAddress } from 'utils'
+import { useActiveChainId } from 'hooks/useActiveChainId'
+import { whiteListedFiatCurrencies } from 'views/BuyCrypto/constants'
 import { useAllTokens, useIsUserAddedToken, useToken } from '../../hooks/Tokens'
 import Row from '../Layout/Row'
 import CommonBases from './CommonBases'
 import CurrencyList from './CurrencyList'
-import ImportRow from './ImportRow'
+import useTokenComparator from './sorting'
 import { getSwapSound } from './swapSound'
+
+import ImportRow from './ImportRow'
 
 interface CurrencySearchProps {
   selectedCurrency?: Currency | null
@@ -34,7 +31,11 @@ interface CurrencySearchProps {
   showImportView: () => void
   setImportToken: (token: Token) => void
   height?: number
+  tokens?: { [address: string]: Token }
+  showNative?: boolean
   tokensToShow?: Token[]
+  mode?: string
+  onRampFlow?: boolean
 }
 
 function useSearchInactiveTokenLists(search: string | undefined, minResults = 10): WrappedTokenInfo[] {
@@ -44,7 +45,7 @@ function useSearchInactiveTokenLists(search: string | undefined, minResults = 10
   const activeTokens = useAllTokens()
   return useMemo(() => {
     if (!search || search.trim().length === 0) return []
-    const filterToken = createFilterToken(search, (address) => isAddress(address))
+    const filterToken = createFilterToken(search, (address) => Boolean(isAddress(address)))
     const exactMatches: WrappedTokenInfo[] = []
     const rest: WrappedTokenInfo[] = []
     const addressSet: { [address: string]: true } = {}
@@ -62,7 +63,7 @@ function useSearchInactiveTokenLists(search: string | undefined, minResults = 10
         ) {
           const wrapped: WrappedTokenInfo = new WrappedTokenInfo({
             ...tokenInfo,
-            address: safeGetAddress(tokenInfo.address) || tokenInfo.address,
+            address: isAddress(tokenInfo.address) || tokenInfo.address,
           })
           addressSet[wrapped.address] = true
           if (
@@ -91,6 +92,10 @@ function CurrencySearch({
   setImportToken,
   height,
   tokensToShow,
+  tokens,
+  mode,
+  onRampFlow,
+  ...props
 }: CurrencySearchProps) {
   const { t } = useTranslation()
   const { chainId } = useActiveChainId()
@@ -100,14 +105,11 @@ function CurrencySearch({
 
   const [searchQuery, setSearchQuery] = useState<string>('')
   const debouncedQuery = useDebounce(searchQuery, 200)
-  const usdvMintAvailable = useUsdvMintAvailable({
-    chainId,
-    tokenSymbol: debouncedQuery,
-  })
 
   const [invertSearchOrder] = useState<boolean>(false)
 
-  const allTokens = useAllTokens()
+  const allAllTokens = useAllTokens()
+  const allTokens = tokens || allAllTokens
 
   // if they input an address, use it
   const searchToken = useToken(debouncedQuery)
@@ -119,23 +121,29 @@ function CurrencySearch({
   const native = useNativeCurrency()
 
   const showNative: boolean = useMemo(() => {
-    if (tokensToShow) return false
+    if (tokensToShow || mode === 'onramp-input') return false
     const s = debouncedQuery.toLowerCase().trim()
     return native && native.symbol?.toLowerCase?.()?.indexOf(s) !== -1
-  }, [debouncedQuery, native, tokensToShow])
+  }, [debouncedQuery, native, tokensToShow, mode]) &&
+    (props.showNative || typeof props.showNative === 'undefined')
 
   const filteredTokens: Token[] = useMemo(() => {
-    const filterToken = createFilterToken(debouncedQuery, (address) => isAddress(address))
+    const filterToken = createFilterToken(debouncedQuery, (address) => Boolean(isAddress(address)))
     return Object.values(tokensToShow || allTokens).filter(filterToken)
   }, [tokensToShow, allTokens, debouncedQuery])
 
-  const filteredQueryTokens = useSortedTokensByQuery(filteredTokens, debouncedQuery)
+  const queryTokens = useSortedTokensByQuery(filteredTokens, debouncedQuery)
+  const filteredQueryTokens = useMemo(() => {
+    return mode === 'onramp-input'
+      ? queryTokens.filter((curr) => whiteListedFiatCurrencies.includes(curr.symbol))
+      : queryTokens
+  }, [mode, queryTokens])
+
   const tokenComparator = useTokenComparator(invertSearchOrder)
 
-  const filteredSortedTokens: Token[] = useMemo(
-    () => [...filteredQueryTokens].sort(tokenComparator),
-    [filteredQueryTokens, tokenComparator],
-  )
+  const filteredSortedTokens: Token[] = useMemo(() => {
+    return onRampFlow ? [...filteredQueryTokens] : [...filteredQueryTokens].sort(tokenComparator)
+  }, [filteredQueryTokens, tokenComparator, onRampFlow])
 
   const handleCurrencySelect = useCallback(
     (currency: Currency) => {
@@ -156,7 +164,7 @@ function CurrencySearch({
 
   const handleInput = useCallback((event) => {
     const input = event.target.value
-    const checksummedInput = safeGetAddress(input)
+    const checksummedInput = isAddress(input)
     setSearchQuery(checksummedInput || input)
     fixedList.current?.scrollTo(0)
   }, [])
@@ -205,7 +213,7 @@ function CurrencySearch({
           height={isMobile ? (showCommonBases ? height || 250 : height ? height + 80 : 350) : 390}
           showNative={showNative}
           currencies={filteredSortedTokens}
-          inactiveCurrencies={filteredInactiveTokens}
+          inactiveCurrencies={mode === 'onramp-input' ? [] : filteredInactiveTokens}
           breakIndex={
             Boolean(filteredInactiveTokens?.length) && filteredSortedTokens ? filteredSortedTokens.length : undefined
           }
@@ -215,6 +223,7 @@ function CurrencySearch({
           fixedListRef={fixedList}
           showImportView={showImportView}
           setImportToken={setImportToken}
+          mode={mode}
         />
       </Box>
     ) : (
@@ -240,16 +249,17 @@ function CurrencySearch({
     showCommonBases,
     isMobile,
     height,
+    mode,
   ])
 
   return (
     <>
       <AutoColumn gap="16px">
-        {showSearchInput && (
+        {(Object.keys(allTokens).length > 5 || showSearchInput) && (
           <Row>
             <Input
               id="token-search-input"
-              placeholder={t('Search name or paste address')}
+              placeholder={t(onRampFlow ? 'Search name' : 'Search name or paste address')}
               scale="lg"
               autoComplete="off"
               value={searchQuery}
@@ -267,7 +277,6 @@ function CurrencySearch({
             commonBasesType={commonBasesType}
           />
         )}
-        {usdvMintAvailable ? <UsdvWidget.MintLink mt="0.625rem" /> : null}
       </AutoColumn>
       {getCurrencyListRows()}
     </>

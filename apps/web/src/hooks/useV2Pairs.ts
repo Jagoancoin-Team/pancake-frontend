@@ -4,7 +4,7 @@ import { toV2LiquidityToken, useTrackedTokenPairs } from 'state/user/hooks'
 import { useTokenBalancesWithLoadingIndicator } from 'state/wallet/hooks'
 import { PairState, useV2Pairs } from './usePairs'
 
-export default function useV2PairsByAccount(account: string | undefined) {
+export default function useV2PairsByAccount(account: string) {
   // fetch the user's balances of all tracked V2 LP tokens
   const trackedTokenPairs = useTrackedTokenPairs()
 
@@ -30,16 +30,14 @@ export default function useV2PairsByAccount(account: string | undefined) {
     [tokenPairsWithLiquidityTokens, v2PairsBalances],
   )
 
-  const v2Pairs = useV2Pairs(
-    useMemo(() => liquidityTokensWithBalances.map(({ tokens }) => tokens), [liquidityTokensWithBalances]),
-  )
+  const v2Pairs = useV2Pairs(liquidityTokensWithBalances.map(({ tokens }) => tokens))
 
   return useMemo(() => {
     const v2IsLoading =
       fetchingV2PairBalances ||
       v2Pairs?.length < liquidityTokensWithBalances.length ||
       (v2Pairs?.length && v2Pairs.every(([pairState]) => pairState === PairState.LOADING))
-    const allV2PairsWithLiquidity: (Pair | null)[] = v2Pairs
+    const allV2PairsWithLiquidity: Pair[] = v2Pairs
       ?.filter(([pairState, pair]) => pairState === PairState.EXISTS && Boolean(pair))
       .map(([, pair]) => pair)
 

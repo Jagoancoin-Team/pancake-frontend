@@ -1,16 +1,16 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { BlockIcon, BscScanIcon, CheckmarkCircleIcon, Flex, RefreshIcon } from '@pancakeswap/uikit'
-import { useAppDispatch } from 'state'
-import { pickFarmTransactionTx } from 'state/global/actions'
-import { FarmTransactionStatus, TransactionType } from 'state/transactions/actions'
-import { TransactionDetails } from 'state/transactions/reducer'
+import { BlockIcon, CheckmarkCircleIcon, Flex, BscScanIcon, RefreshIcon } from '@pancakeswap/uikit'
 import { styled } from 'styled-components'
+import { useAppDispatch } from 'state'
+import { useTranslation } from '@pancakeswap/localization'
+import { TransactionDetails } from 'state/transactions/reducer'
+import { pickFarmTransactionTx } from 'state/global/actions'
+import { TransactionType, FarmTransactionStatus } from 'state/transactions/actions'
 import { getBlockExploreLink } from 'utils'
 
 interface TransactionRowProps {
   txn: TransactionDetails
   chainId: number
-  type?: TransactionType
+  type: TransactionType
   onDismiss: () => void
 }
 
@@ -39,12 +39,12 @@ const TxnLink = styled.div`
 `
 
 const renderIcon = (txn: TransactionDetails) => {
-  const { receipt, crossChainFarm } = txn
-  if (!txn.receipt || crossChainFarm?.status === FarmTransactionStatus.PENDING) {
+  const { receipt, nonBscFarm } = txn
+  if (!txn.receipt || nonBscFarm?.status === FarmTransactionStatus.PENDING) {
     return <RefreshIcon spin width="24px" />
   }
 
-  const isFarmStatusSuccess = crossChainFarm ? crossChainFarm.status === FarmTransactionStatus.SUCCESS : true
+  const isFarmStatusSuccess = nonBscFarm ? nonBscFarm.status === FarmTransactionStatus.SUCCESS : true
   return (receipt?.status === 1 && isFarmStatusSuccess) || typeof receipt?.status === 'undefined' ? (
     <CheckmarkCircleIcon color="success" width="24px" />
   ) : (
@@ -57,7 +57,7 @@ const TransactionRow: React.FC<React.PropsWithChildren<TransactionRowProps>> = (
   const dispatch = useAppDispatch()
 
   const onClickTransaction = () => {
-    if (type === 'cross-chain-farm') {
+    if (type === 'non-bsc-farm') {
       onDismiss()
       dispatch(pickFarmTransactionTx({ tx: txn.hash, chainId }))
     } else {

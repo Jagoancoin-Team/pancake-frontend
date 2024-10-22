@@ -1,13 +1,6 @@
-import {
-  ArticleDataType,
-  ArticleType,
-  Categories,
-  ResponseArticleDataType,
-  ResponseArticleType,
-  ResponseCategoriesType,
-  transformArticle,
-} from '@pancakeswap/blog'
 import { fetchAPI } from 'utils/api'
+import { ResponseArticleType, ResponseArticleDataType, ResponseCategoriesType, Categories } from 'types'
+import { transformArticle, ArticleType, ArticleDataType } from 'utils/transformArticle'
 import { filterTagArray } from 'utils/filterTagArray'
 
 interface GetArticleProps {
@@ -55,7 +48,6 @@ export const getSingleArticle = async ({ url, urlParamsObject = {} }: GetArticle
       categories: [],
       newsOutBoundLink: '',
       newsFromPlatform: '',
-      gamesCategories: [],
     }
   }
 }
@@ -63,7 +55,7 @@ export const getSingleArticle = async ({ url, urlParamsObject = {} }: GetArticle
 export const getCategories = async (): Promise<Categories[]> => {
   try {
     const response = await fetchAPI('/categories', {
-      fields: 'name',
+      fields: 'id,name',
       filters: {
         name: {
           $notIn: filterTagArray,

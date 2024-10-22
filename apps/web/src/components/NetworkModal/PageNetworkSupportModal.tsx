@@ -1,17 +1,17 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Button, Grid, Message, MessageText, Modal, Text } from '@pancakeswap/uikit'
-import { useMenuItems } from 'components/Menu/hooks/useMenuItems'
-import { getActiveMenuItem, getActiveSubMenuItem } from 'components/Menu/utils'
-import { useHistory } from 'contexts/HistoryContext'
-import useActiveWeb3React from 'hooks/useActiveWeb3React'
-import useAuth from 'hooks/useAuth'
-import { useSwitchNetwork, useSwitchNetworkLocal } from 'hooks/useSwitchNetwork'
+import { Button, Modal, Text, Grid, Box, Message, MessageText } from '@pancakeswap/uikit'
+import { ChainId } from '@pancakeswap/sdk'
 import Image from 'next/image'
-import NextLink from 'next/link'
-import { useRouter } from 'next/router'
+import { useSwitchNetwork, useSwitchNetworkLocal } from '../../hooks/useSwitchNetwork'
+import useActiveWeb3React from '../../hooks/useActiveWeb3React'
+import { chains } from '../../utils/wagmi'
+import { useTranslation } from '@pancakeswap/localization'
 import { useMemo } from 'react'
-import { chains } from 'utils/wagmi'
+import { useHistory } from '../../contexts/HistoryContext'
+import NextLink from 'next/link'
+import { useMenuItems } from '../Menu/hooks/useMenuItems'
+import { getActiveMenuItem, getActiveSubMenuItem } from '../Menu/utils'
+import { useRouter } from 'next/router'
+import useAuth from '../../hooks/useAuth'
 
 export function PageNetworkSupportModal() {
   const { t } = useTranslation()
@@ -42,26 +42,22 @@ export function PageNetworkSupportModal() {
 
   return (
     <Modal title={title || t('Check your network')} hideCloseButton headerBackground="gradientCardHeader">
-      <Grid style={{ gap: '16px' }} maxWidth={['100%', null, '336px']}>
-        <Text bold>{t('It’s a BNB Smart Chain only feature')}</Text>
+      <Grid style={{ gap: '16px' }} maxWidth="360px">
+        <Text bold>{t('It’s a Bitgert Chain only feature')}</Text>
 
         {image && (
           <Box mx="auto" my="8px" position="relative" width="100%" minHeight="250px">
             <Image src={image} alt="feature" fill style={{ objectFit: 'contain' }} unoptimized />
           </Box>
         )}
-        <Text small>
-          {t(
-            'Our Limit, Trading Competition, Lottery and NFTs features are currently available only on BNB Chain! Come over and join the community in the fun!',
-          )}
-        </Text>
+        <Text small>{t('The chain you are on is not supporting this feature. Please switch your network.')}</Text>
         {canSwitch ? (
           <Button
             variant={foundChain && lastValidPath ? 'secondary' : 'primary'}
             isLoading={isLoading}
-            onClick={() => (isWrongNetwork ? switchNetworkLocal(ChainId.BSC) : switchNetworkAsync(ChainId.BSC))}
+            onClick={() => (isWrongNetwork ? switchNetworkLocal(ChainId.BITGERT) : switchNetworkAsync(ChainId.BITGERT))}
           >
-            {t('Switch to %chain%', { chain: 'BNB Chain' })}
+            {t('Switch to %chain%', { chain: 'Bitgert' })}
           </Button>
         ) : (
           <Message variant="danger">
@@ -81,7 +77,7 @@ export function PageNetworkSupportModal() {
           </Button>
         )}
         {foundChain && lastValidPath && (
-          <NextLink href={lastValidPath ?? ''} passHref>
+          <NextLink href={lastValidPath ?? ''} passHref prefetch={false}>
             <Button width="100%">{t('Stay on %chain%', { chain: foundChain.name })}</Button>
           </NextLink>
         )}

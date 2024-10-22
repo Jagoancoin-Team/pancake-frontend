@@ -1,45 +1,36 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
 import {
   Box,
   Flex,
   LogoutIcon,
   RefreshIcon,
+  useModal,
   UserMenu as UIKitUserMenu,
   UserMenuDivider,
   UserMenuItem,
   UserMenuVariant,
-  useModal,
 } from '@pancakeswap/uikit'
 import ConnectWalletButton from 'components/ConnectWalletButton'
-import useAirdropModalStatus from 'components/GlobalCheckClaimStatus/hooks/useAirdropModalStatus'
 import Trans from 'components/Trans'
 import { useActiveChainId } from 'hooks/useActiveChainId'
 import useAuth from 'hooks/useAuth'
-import { useDomainNameForAddress } from 'hooks/useDomain'
-import NextLink from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
-import { useProfile } from 'state/profile/hooks'
+import { useEffect, useState, useCallback } from 'react'
 import { usePendingTransactions } from 'state/transactions/hooks'
 import { useAccount } from 'wagmi'
-import ClaimYourNFT from './ClaimYourNFT'
-import ProfileUserMenuItem from './ProfileUserMenuItem'
+import { useDomainNameForAddress } from 'hooks/useDomain'
 import WalletModal, { WalletView } from './WalletModal'
 import WalletUserMenuItem from './WalletUserMenuItem'
+import LoginButton from '../../../strict/components/LoginButton'
 
 const UserMenuItems = () => {
   const { t } = useTranslation()
   const { chainId, isWrongNetwork } = useActiveChainId()
   const { logout } = useAuth()
-  const { address: account } = useAccount()
-  const { hasPendingTransactions } = usePendingTransactions()
-  const { isInitialized, isLoading, profile } = useProfile()
-  const { shouldShowModal } = useAirdropModalStatus()
-
+  const { hasPendingTransactions, pendingNumber } = usePendingTransactions()
   const [onPresentWalletModal] = useModal(<WalletModal initialView={WalletView.WALLET_INFO} />)
   const [onPresentTransactionModal] = useModal(<WalletModal initialView={WalletView.TRANSACTIONS} />)
   const [onPresentWrongNetworkModal] = useModal(<WalletModal initialView={WalletView.WRONG_NETWORK} />)
-  const hasProfile = isInitialized && !!profile
+  const hasProfile = false
 
   const onClickWalletMenu = useCallback((): void => {
     if (isWrongNetwork) {
@@ -57,16 +48,7 @@ const UserMenuItems = () => {
         {hasPendingTransactions && <RefreshIcon spin />}
       </UserMenuItem>
       <UserMenuDivider />
-      <NextLink href={`/profile/${account?.toLowerCase()}`} passHref>
-        <UserMenuItem disabled={isWrongNetwork || chainId !== ChainId.BSC}>{t('Your NFTs')}</UserMenuItem>
-      </NextLink>
-      {shouldShowModal && <ClaimYourNFT />}
-      <ProfileUserMenuItem
-        isLoading={isLoading}
-        hasProfile={hasProfile}
-        disabled={isWrongNetwork || chainId !== ChainId.BSC}
-      />
-      <UserMenuDivider />
+      <LoginButton />
       <UserMenuItem as="button" onClick={logout}>
         <Flex alignItems="center" justifyContent="space-between" width="100%">
           {t('Disconnect')}
@@ -83,8 +65,6 @@ const UserMenu = () => {
   const { domainName, avatar } = useDomainNameForAddress(account)
   const { isWrongNetwork } = useActiveChainId()
   const { hasPendingTransactions, pendingNumber } = usePendingTransactions()
-  const { profile } = useProfile()
-  const avatarSrc = profile?.nft?.image?.thumbnail ?? avatar
   const [userMenuText, setUserMenuText] = useState<string>('')
   const [userMenuVariable, setUserMenuVariable] = useState<UserMenuVariant>('default')
 
@@ -98,12 +78,13 @@ const UserMenu = () => {
     }
   }, [hasPendingTransactions, pendingNumber, t])
 
+  const menu = useCallback(({ isOpen }) => (isOpen ? <UserMenuItems /> : null), [UserMenuItems])
+
   if (account) {
     return (
       <UIKitUserMenu
         account={domainName || account}
         ellipsis={!domainName}
-        avatarSrc={avatarSrc}
         text={userMenuText}
         variant={userMenuVariable}
       >
@@ -115,17 +96,17 @@ const UserMenu = () => {
   if (isWrongNetwork) {
     return (
       <UIKitUserMenu text={t('Network')} variant="danger">
-        {({ isOpen }) => (isOpen ? <UserMenuItems /> : null)}
+        {menu}
       </UIKitUserMenu>
     )
   }
 
   return (
     <ConnectWalletButton scale="sm">
-      <Box display={['none', null, null, 'block']}>
+      <Box display={['none', , , 'block']}>
         <Trans>Connect Wallet</Trans>
       </Box>
-      <Box display={['block', null, null, 'none']}>
+      <Box display={['block', , , 'none']}>
         <Trans>Connect</Trans>
       </Box>
     </ConnectWalletButton>

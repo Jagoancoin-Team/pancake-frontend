@@ -1,21 +1,21 @@
+import { useMemo } from 'react'
 import { Order } from '@gelatonetwork/limit-orders-lib'
 import { Currency, CurrencyAmount, Fraction, Token } from '@pancakeswap/sdk'
 import { useCurrency } from 'hooks/Tokens'
 import useGelatoLimitOrdersLib from 'hooks/limitOrders/useGelatoLimitOrdersLib'
-import { useActiveChainId } from 'hooks/useActiveChainId'
-import { useMemo } from 'react'
-import { useIsTransactionPending } from 'state/transactions/hooks'
 import { getBlockExploreLink } from 'utils'
-import { LimitOrderStatus } from '../types'
+import { useIsTransactionPending } from 'state/transactions/hooks'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import getPriceForOneToken from '../utils/getPriceForOneToken'
+import { LimitOrderStatus } from '../types'
 
 export interface FormattedOrderData {
-  inputToken?: Currency | Token
-  outputToken?: Currency | Token
-  inputAmount?: string
-  outputAmount?: string
-  executionPrice?: string
-  invertedExecutionPrice?: string
+  inputToken: Currency | Token
+  outputToken: Currency | Token
+  inputAmount: string
+  outputAmount: string
+  executionPrice: string
+  invertedExecutionPrice: string
   isOpen: boolean
   isCancelled: boolean
   isExecuted: boolean
@@ -23,13 +23,13 @@ export interface FormattedOrderData {
   isSubmissionPending: boolean
   isCancellationPending: boolean
   bscScanUrls: {
-    created: string | null
-    executed: string | null
-    cancelled: string | null
+    created: string
+    executed: string
+    cancelled: string
   }
 }
 
-const formatForDisplay = (amount?: Fraction) => {
+const formatForDisplay = (amount: Fraction) => {
   if (!amount) {
     return undefined
   }
@@ -43,8 +43,8 @@ const formatForDisplay = (amount?: Fraction) => {
 const useFormattedOrderData = (order: Order): FormattedOrderData => {
   const { chainId } = useActiveChainId()
   const gelatoLibrary = useGelatoLimitOrdersLib()
-  const inputToken = useCurrency(order.inputToken) ?? undefined
-  const outputToken = useCurrency(order.outputToken) ?? undefined
+  const inputToken = useCurrency(order.inputToken)
+  const outputToken = useCurrency(order.outputToken)
 
   const isSubmissionPending = useIsTransactionPending(order.createdTxHash)
   const isCancellationPending = useIsTransactionPending(order.cancelledTxHash ?? undefined)
@@ -89,9 +89,9 @@ const useFormattedOrderData = (order: Order): FormattedOrderData => {
     isSubmissionPending,
     isCancellationPending,
     bscScanUrls: {
-      created: order.createdTxHash ? getBlockExploreLink(order.createdTxHash, 'transaction') : null,
-      executed: order.executedTxHash ? getBlockExploreLink(order.executedTxHash, 'transaction') : null,
-      cancelled: order.cancelledTxHash ? getBlockExploreLink(order.cancelledTxHash, 'transaction') : null,
+      created: order.createdTxHash ? getBlockExploreLink(order.createdTxHash, 'transaction', chainId) : null,
+      executed: order.executedTxHash ? getBlockExploreLink(order.executedTxHash, 'transaction', chainId) : null,
+      cancelled: order.cancelledTxHash ? getBlockExploreLink(order.cancelledTxHash, 'transaction', chainId) : null,
     },
   }
 }

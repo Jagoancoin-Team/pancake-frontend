@@ -5,7 +5,6 @@ import dayjs from 'dayjs'
 import { useActiveChainId } from 'hooks/useActiveChainId'
 import useTheme from 'hooks/useTheme'
 import { useEffect, useMemo, useState } from 'react'
-import isUndefinedOrNull from '@pancakeswap/utils/isUndefinedOrNull'
 import BarChart from './components/BarChart/alt'
 import { DarkGreyCard } from './components/Card'
 import LineChart from './components/LineChart/alt'
@@ -24,6 +23,8 @@ import {
 } from './hooks'
 import { useTransformedVolumeData } from './hooks/chart'
 import { VolumeWindow } from './types'
+import { notEmpty } from './utils'
+import { getPercentChange } from './utils/data'
 import { unixToDate } from './utils/date'
 import { formatDollarAmount } from './utils/numbers'
 
@@ -91,7 +92,7 @@ export default function Home() {
     if (topTokensData)
       return Object.values(topTokensData)
         .map((d) => d)
-        .filter((d) => !isUndefinedOrNull(d))
+        .filter(notEmpty)
         .filter((d) => d.tvlUSD > 0)
     return []
   }, [topTokensData])
@@ -100,7 +101,7 @@ export default function Home() {
     if (topPoolsData)
       return Object.values(topPoolsData)
         .map((p) => p)
-        .filter((p) => !isUndefinedOrNull(p))
+        .filter(notEmpty)
     return []
   }, [topPoolsData])
 
@@ -111,7 +112,7 @@ export default function Home() {
   return (
     <Page>
       <Heading scale="lg" mb="16px">
-        {t('PancakeSwap Info & Analytics')}
+        {t('DynastySwap Info & Analytics')}
       </Heading>
       <ChartCardsContainer>
         <Card>
@@ -145,8 +146,8 @@ export default function Home() {
               volumeWindow === VolumeWindow.monthly
                 ? monthlyVolumeData
                 : volumeWindow === VolumeWindow.weekly
-                ? weeklyVolumeData
-                : formattedVolumeData
+                  ? weeklyVolumeData
+                  : formattedVolumeData
             }
             color={theme.colors.primary}
             setValue={setVolumeHover}
@@ -161,7 +162,7 @@ export default function Home() {
                   variant={volumeWindow === VolumeWindow.daily ? 'primary' : 'bubblegum'}
                   onClick={() => setVolumeWindow(VolumeWindow.daily)}
                 >
-                  D
+                  {t('D')}
                 </Button>
                 <Button
                   scale="sm"
@@ -169,7 +170,7 @@ export default function Home() {
                   style={{ marginLeft: '8px' }}
                   onClick={() => setVolumeWindow(VolumeWindow.weekly)}
                 >
-                  W
+                  {t('W')}
                 </Button>
                 <Button
                   variant={volumeWindow === VolumeWindow.monthly ? 'primary' : 'bubblegum'}
@@ -177,7 +178,7 @@ export default function Home() {
                   style={{ marginLeft: '8px' }}
                   onClick={() => setVolumeWindow(VolumeWindow.monthly)}
                 >
-                  M
+                  {t('M')}
                 </Button>
               </RowFixed>
             }
@@ -205,8 +206,14 @@ export default function Home() {
             <RowFixed>
               <RowFixed mr="20px">
                 <Text mr="4px">{t('Volume 24H')}: </Text>
-                <Text mr="4px">{formatDollarAmount(protocolData?.volumeUSD)}</Text>
-                <Percent value={protocolData?.volumeUSDChange} wrap />
+                <Text mr="4px">{formatDollarAmount(formattedVolumeData[formattedVolumeData.length - 1]?.value)}</Text>
+                <Percent
+                  value={getPercentChange(
+                    formattedVolumeData[formattedVolumeData.length - 1]?.value.toString(),
+                    formattedVolumeData[formattedVolumeData.length - 2]?.value.toString(),
+                  )}
+                  wrap
+                />
               </RowFixed>
               <RowFixed mr="20px">
                 <Text mr="4px">{t('Fees 24H')}: </Text>

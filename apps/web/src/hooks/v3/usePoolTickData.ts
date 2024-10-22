@@ -1,5 +1,5 @@
 import { Currency } from '@pancakeswap/sdk'
-import { FeeAmount, Pool, TICK_SPACINGS, tickToPrice } from '@pancakeswap/v3-sdk'
+import { FeeAmount, Pool, tickToPrice, TICK_SPACINGS } from '@pancakeswap/v3-sdk'
 import { useMemo } from 'react'
 
 import { PoolState, TickProcessed } from './types'
@@ -15,31 +15,29 @@ const getActiveTick = (tickCurrent: number | undefined, feeAmount: FeeAmount | u
     : undefined
 
 function useTicksFromSubgraph(
-  currencyA: Currency | undefined | null,
-  currencyB: Currency | undefined | null,
+  currencyA: Currency | undefined,
+  currencyB: Currency | undefined,
   feeAmount: FeeAmount | undefined,
-  enabled = true,
 ) {
   const poolAddress =
     currencyA && currencyB && feeAmount
       ? Pool.getAddress(currencyA?.wrapped, currencyB?.wrapped, feeAmount, undefined)
       : undefined
 
-  return useAllV3TicksQuery(poolAddress, 30000, enabled)
+  return useAllV3TicksQuery(poolAddress, 30000)
 }
 
 // Fetches all ticks for a given pool
 export function useAllV3Ticks(
-  currencyA: Currency | undefined | null,
-  currencyB: Currency | undefined | null,
+  currencyA: Currency | undefined,
+  currencyB: Currency | undefined,
   feeAmount: FeeAmount | undefined,
-  enabled = true,
 ): {
   isLoading: boolean
   error: unknown
   ticks: TickData[] | undefined
 } {
-  const subgraphTickData = useTicksFromSubgraph(currencyA, currencyB, feeAmount, enabled)
+  const subgraphTickData = useTicksFromSubgraph(currencyA, currencyB, feeAmount)
 
   return {
     isLoading: subgraphTickData.isLoading,

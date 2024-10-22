@@ -2,21 +2,19 @@ import {
   Box,
   ButtonMenu,
   ButtonMenuItem,
-  CalculatorMode,
   RoiCalculatorModal,
   RoiCalculatorModalProps,
+  CalculatorMode,
+  Pool,
 } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
-
 import { useTranslation } from '@pancakeswap/localization'
-import { Token } from '@pancakeswap/sdk'
-import { getRoi } from '@pancakeswap/utils/compoundApyHelpers'
 import { useVaultApy } from 'hooks/useVaultApy'
-import { useEffect, useMemo, useState } from 'react'
-import { useVaultPoolByKey } from 'state/pools/hooks'
+import { useEffect, useState, useMemo } from 'react'
 import { VaultKey } from 'state/types'
+import { useVaultPoolByKey } from 'state/pools/hooks'
+import { getRoi } from '@pancakeswap/utils/compoundApyHelpers'
+import { Token } from '@pancakeswap/sdk'
 
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import { useAccount } from 'wagmi'
 import LockDurationField from '../LockedPool/Common/LockDurationField'
 import { weeksToSeconds } from '../utils/formatSecondsToWeeks'
@@ -26,9 +24,12 @@ export const VaultRoiCalculatorModal = ({
   initialView,
   ...rest
 }: { pool: Pool.DeserializedPool<Token>; initialView?: number } & Partial<RoiCalculatorModalProps>) => {
-  const { userData } = useVaultPoolByKey(pool.vaultKey)
+  const {
+    userData: {
+      balance: { cakeAsBigNumber },
+    },
+  } = useVaultPoolByKey(pool.vaultKey)
 
-  const cakeAsBigNumber = userData?.balance?.cakeAsBigNumber
   const { getLockedApy, flexibleApy } = useVaultApy()
   const { t } = useTranslation()
   const { address: account } = useAccount()
@@ -56,7 +57,7 @@ export const VaultRoiCalculatorModal = ({
       isLocked={cakeVaultView === 1}
       account={account}
       stakingTokenSymbol={pool.stakingToken.symbol}
-      apy={+(apy ?? 0)}
+      apy={+apy}
       initialState={{
         controls: {
           compounding: false, // no compounding if apy is specify
@@ -64,12 +65,10 @@ export const VaultRoiCalculatorModal = ({
       }}
       linkHref="/swap"
       linkLabel={t('Get %symbol%', { symbol: pool.stakingToken.symbol })}
-      earningTokenPrice={pool.earningTokenPrice ?? 0}
-      stakingTokenPrice={pool.stakingTokenPrice ?? 0}
+      earningTokenPrice={pool.earningTokenPrice}
+      stakingTokenPrice={pool.stakingTokenPrice}
       stakingTokenBalance={
-        (pool.userData?.stakingTokenBalance
-          ? cakeAsBigNumber?.plus(pool.userData?.stakingTokenBalance)
-          : cakeAsBigNumber) ?? BIG_ZERO
+        pool.userData?.stakingTokenBalance ? cakeAsBigNumber.plus(pool.userData?.stakingTokenBalance) : cakeAsBigNumber
       }
       stakingTokenDecimals={pool.stakingToken.decimals}
       autoCompoundFrequency={1}
@@ -128,7 +127,7 @@ function LockedRoiStrategy({ state, dispatch, earningTokenPrice, duration, staki
     if (mode === CalculatorMode.ROI_BASED_ON_PRINCIPAL) {
       const principalInUSDAsNumber = parseFloat(principalAsUSD)
       const interest =
-        (principalInUSDAsNumber / earningTokenPrice) * (+getLockedApy(duration)! / 100) * (duration / 31449600)
+        (principalInUSDAsNumber / earningTokenPrice) * (+getLockedApy(duration) / 100) * (duration / 31449600)
 
       const hasInterest = !Number.isNaN(interest)
       const roiTokens = hasInterest ? interest : 0
@@ -155,7 +154,7 @@ function LockedRoiStrategy({ state, dispatch, earningTokenPrice, duration, staki
 
   useEffect(() => {
     if (mode === CalculatorMode.PRINCIPAL_BASED_ON_ROI) {
-      const principalUSD = roiUSD / (+getLockedApy(duration)! / 100) / (duration / 31449600)
+      const principalUSD = roiUSD / (+getLockedApy(duration) / 100) / (duration / 31449600)
       const roiPercentage = getRoi({
         amountEarned: roiUSD,
         amountInvested: principalUSD,

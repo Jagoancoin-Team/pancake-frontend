@@ -1,18 +1,18 @@
 /* eslint-disable prefer-destructuring */
 /* eslint-disable consistent-return */
 /* eslint-disable class-methods-use-this */
-import { type EthereumProvider } from '@walletconnect/ethereum-provider'
-import { getAddress } from 'viem'
-import { createConnector, normalizeChainId } from 'wagmi'
+import { Chain, ConnectorNotFoundError, WindowProvider, Address } from 'wagmi'
+import { InjectedConnector } from 'wagmi/connectors/injected'
+import 'wagmi/window'
+import { getAddress, ResourceUnavailableRpcError, ProviderRpcError, UserRejectedRequestError } from 'viem'
 
 declare global {
   interface Window {
-    trustwallet?: any
-    ethereum?: any
+    trustwallet?: WindowProvider
   }
 }
 
-export function getTrustWalletProvider(): any | undefined {
+export function getTrustWalletProvider(): WindowProvider | undefined {
   const isTrustWallet = (ethereum: NonNullable<Window['ethereum']>) => {
     // Identify if Trust Wallet injected provider is present.
     const trustWallet = !!ethereum.isTrust
@@ -20,11 +20,7 @@ export function getTrustWalletProvider(): any | undefined {
     return trustWallet
   }
 
-  const injectedProviderExist =
-    typeof window !== 'undefined' &&
-    window !== null &&
-    typeof window.ethereum !== 'undefined' &&
-    window.ethereum !== null
+  const injectedProviderExist = typeof window !== 'undefined' && typeof window.ethereum !== 'undefined'
 
   // No injected providers exist.
   if (!injectedProviderExist) {
@@ -49,96 +45,109 @@ export function getTrustWalletProvider(): any | undefined {
   return window.trustwallet
 }
 
-trustWalletConnect.type = 'trustWalletConnect' as const
-export function trustWalletConnect() {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  type Properties = {}
-  type StorageItem = {
-    store: any
-    'wagmi.recentConnectorId': string
+export class TrustWalletConnector extends InjectedConnector {
+  readonly id = 'trustWallet'
+
+  constructor({
+    chains,
+    options: _options,
+  }: {
+    chains?: Chain[]
+    options?: {
+      shimDisconnect?: boolean
+      shimChainChangedDisconnect?: boolean
+    }
+  } = {}) {
+    const options = {
+      name: 'Trust Wallet',
+      shimDisconnect: _options?.shimDisconnect ?? false,
+      shimChainChangedDisconnect: _options?.shimChainChangedDisconnect ?? true,
+    }
+
+    super({
+      chains,
+      options,
+    })
   }
 
-  type Provider = Awaited<ReturnType<(typeof EthereumProvider)['init']>>
+  private handleFailedConnect(error: Error): never {
+    if (this.isUserRejectedRequestError(error)) {
+      throw new UserRejectedRequestError(error)
+    }
 
-  let walletProvider: Provider | undefined
+    if ((error as ProviderRpcError).code === -32002) {
+      throw new ResourceUnavailableRpcError(error)
+    }
 
-  const handleConnectReset = () => {
-    walletProvider = undefined
+    throw error
   }
 
-  return createConnector<Provider, Properties, StorageItem>((config) => ({
-    id: 'trustWalletConnect',
-    name: 'TrustWallet',
-    type: trustWalletConnect.type,
-    async connect({ chainId } = {}) {
-      try {
-        const provider = await this.getProvider({ chainId })
+  async connect({ chainId }: { chainId?: number } = {}) {
+    try {
+      const provider = await this.getProvider()
+      if (!provider) {
+        throw new ConnectorNotFoundError()
+      }
 
-        config.emitter.emit('message', { type: 'connecting' })
+      if (provider.on) {
+        provider.on('accountsChanged', this.onAccountsChanged)
+        provider.on('chainChanged', this.onChainChanged)
+        provider.on('disconnect', this.onDisconnect)
+      }
 
-        await provider.request({
+      this.emit('message', { type: 'connecting' })
+
+      // Attempt to show wallet select prompt with `wallet_requestPermissions` when
+      // `shimDisconnect` is active and account is in disconnected state (flag in storage)
+      let account: Address | null = null
+      if (this.options?.shimDisconnect && !this.storage?.getItem(this.shimDisconnectKey)) {
+        account = await this.getAccount().catch(() => null)
+        const isConnected = !!account
+        if (isConnected) {
+          // Attempt to show another prompt for selecting wallet if already connected
+          try {
+            await provider.request({
+              method: 'wallet_requestPermissions',
+              params: [{ eth_accounts: {} }],
+            })
+            // User may have selected a different account so we will need to revalidate here.
+            account = await this.getAccount()
+          } catch (error) {
+            // Only bubble up error if user rejects request
+            if (this.isUserRejectedRequestError(error)) {
+              throw new UserRejectedRequestError(error as Error)
+            }
+          }
+        }
+      }
+
+      if (!account) {
+        const accounts = await provider.request({
           method: 'eth_requestAccounts',
         })
-
-        const accounts = await this.getAccounts()
-        const _chainId = await this.getChainId()
-
-        return { accounts, chainId: _chainId }
-      } catch (error: unknown) {
-        handleConnectReset()
-        throw error
-      }
-    },
-    async disconnect() {
-      const provider = await this.getProvider()
-      await provider.request({ method: 'wallet_disconnect' })
-      handleConnectReset()
-    },
-    async getAccounts() {
-      const provider = await this.getProvider()
-      const accounts = (await provider.request({
-        method: 'eth_accounts',
-      })) as string[]
-
-      return accounts.map((x) => getAddress(x))
-    },
-    async getChainId() {
-      const provider = await this.getProvider()
-      const chainId = await provider?.request({ method: 'eth_chainId' })
-      return normalizeChainId(chainId)
-    },
-    async getProvider() {
-      if (!walletProvider) {
-        walletProvider = getTrustWalletProvider()
-        if (!walletProvider) {
-          throw new Error('Blocto SDK is not initialized.')
-        }
-
-        walletProvider.on('accountsChanged', this.onAccountsChanged.bind(this))
-        walletProvider.on('chainChanged', this.onChainChanged.bind(this))
-        walletProvider.on('disconnect', this.onDisconnect.bind(this))
+        account = getAddress(accounts[0] as Address)
       }
 
-      return Promise.resolve(walletProvider)
-    },
-    async isAuthorized() {
-      const recentConnectorId = await config.storage?.getItem('recentConnectorId')
-      if (recentConnectorId !== this.id) return false
+      // Switch to chain if provided
+      let id = await this.getChainId()
+      let unsupported = this.isChainUnsupported(id)
+      if (chainId && id !== chainId) {
+        const chain = await this.switchChain(chainId)
+        id = chain.id
+        unsupported = this.isChainUnsupported(id)
+      }
 
-      const accounts = await this.getAccounts()
-      return !!accounts.length
-    },
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onAccountsChanged() {},
-    async onChainChanged(chainId: string) {
-      const accounts = await this.getAccounts()
-      config.emitter.emit('change', {
-        chainId: normalizeChainId(chainId),
-        accounts,
-      })
-    },
-    async onDisconnect() {
-      config.emitter.emit('disconnect')
-    },
-  }))
+      if (this.options?.shimDisconnect) {
+        this.storage?.setItem(this.shimDisconnectKey, true)
+      }
+
+      return { account, chain: { id, unsupported }, provider }
+    } catch (error) {
+      this.handleFailedConnect(error as Error)
+    }
+  }
+
+  async getProvider() {
+    return getTrustWalletProvider()
+  }
 }

@@ -1,131 +1,86 @@
+import { Heading, Flex, Text, Skeleton, ChartIcon, CommunityIcon, SwapIcon } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
-import { Flex, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
-import { useQuery } from '@tanstack/react-query'
-import { ASSET_CDN } from 'config/constants/endpoints'
-import Image from 'next/legacy/image'
-import { styled } from 'styled-components'
-import { ChainTags } from './ChainTags'
-import { MetricsCard } from './MetricsCard'
-
-const ImageLayer = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  overflow: hidden;
-  display: none;
-  ${({ theme }) => theme.mediaQueries.lg} {
-    display: block;
-  }
-`
-const BnbBallRocket = styled.div`
-  position: absolute;
-  left: -65px;
-  ${({ theme }) => theme.mediaQueries.xxl} {
-    bottom: 151px;
-    left: 20px;
-  }
-`
-const EthBallRocket = styled.div`
-  position: absolute;
-  right: 0;
-  top: 81px;
-  ${({ theme }) => theme.mediaQueries.xxl} {
-    right: 0;
-    bottom: -30px;
-  }
-`
-
-const AptosBallRocket = styled.div`
-  position: absolute;
-  top: 0px;
-  right: 98px;
-  ${({ theme }) => theme.mediaQueries.xxl} {
-    top: 72px;
-    right: 119px;
-  }
-`
+import useTheme from 'hooks/useTheme'
+import { formatLocalisedCompactNumber } from '@pancakeswap/utils/formatBalance'
+import useSWRImmutable from 'swr/immutable'
+import IconCard, { IconCardData } from '../IconCard'
+import StatCardContent from './StatCardContent'
+import GradientLogo from '../GradientLogoSvg'
 
 const Stats = () => {
   const { t } = useTranslation()
-  const { data: tvl = 0 } = useQuery<number>({
-    queryKey: ['tvl'],
-    enabled: false,
-  })
-  const { data: txCount = 0 } = useQuery<number>({
-    queryKey: ['totalTx30Days'],
-    enabled: false,
-  })
-  const { data: addressCount = 0 } = useQuery<number>({
-    queryKey: ['addressCount30Days'],
-    enabled: false,
-  })
-  const { isMobile, isSm, isMd, isXxl } = useMatchBreakpoints()
+  const { theme } = useTheme()
+
+  const { data: tvl } = useSWRImmutable('tvl')
+  const { data: txCount } = useSWRImmutable('totalTx30Days')
+  const { data: addressCount } = useSWRImmutable('addressCount30Days')
+  const trades = formatLocalisedCompactNumber(txCount)
+  const users = formatLocalisedCompactNumber(addressCount)
+  const tvlString = tvl ? formatLocalisedCompactNumber(tvl) : '-'
+
+  const tvlText = t('And those users are now entrusting the platform with over $%tvl% in funds.', { tvl: tvlString })
+  const [entrusting, inFunds] = tvlText.split(tvlString)
+
+  const UsersCardData: IconCardData = {
+    icon: <CommunityIcon color="secondary" width="36px" />,
+  }
+
+  const TradesCardData: IconCardData = {
+    icon: <SwapIcon color="primary" width="36px" />,
+  }
+
+  const StakedCardData: IconCardData = {
+    icon: <ChartIcon color="failure" width="36px" />,
+  }
 
   return (
-    <Flex justifyContent="center" alignItems="center" flexDirection="column" overflow="hidden">
-      <Text textAlign="center" lineHeight="110%" fontWeight={600} mb="4px" fontSize={isMobile ? '20px' : '32px'}>
-        {t('Shaping the Future of Decentralized Trading:')}
+    <Flex justifyContent="center" alignItems="center" flexDirection="column">
+      <GradientLogo height="48" width="48" style={{ marginBottom: '24px' }} />
+      <Heading textAlign="center" scale="xl" mb="32px">
+        {t('Self improving AI DEX aggregator')}
+      </Heading>
+      <Text textAlign="center" color="textSubtle">
+        {t('The AI powered DEX aggregator improves with every swap. The more you trade, the smarter and more efficient the aggregator becomes.')}<br/>
       </Text>
-      <Text
-        textAlign="center"
-        lineHeight="110%"
-        fontWeight={600}
-        fontSize={isMobile ? '20px' : '32px'}
-        mb={isMobile ? '32px' : '48px'}
-      >
-        {t('PancakeSwap’s Unstoppable Expansion')}
-      </Text>
-      <Flex
-        justifyContent="center"
-        alignItems="center"
-        flexDirection={isMobile ? 'column' : 'row'}
-        width={['100%', '100%', '100%', '800px']}
-        style={{ gap: isMobile ? 32 : 50 }}
-        mb={isMobile ? '32px' : '48px'}
-        flexWrap="wrap"
-      >
-        <MetricsCard
-          width={isSm || isMd ? '100%' : 'auto'}
-          title={t('Total Users:')}
-          value={addressCount}
-          description={t('in the last 30 days')}
-        />
-        <MetricsCard title={t('Total Trades:')} value={txCount} description={t('in the last 30 days')} />
-        <MetricsCard title={t('Total Value Locked:')} value={tvl} description="" prefix="$" />
+      {/*
+      <Flex flexWrap="wrap">
+        <Text display="inline" textAlign="center" color="textSubtle" mb="20px">
+          {entrusting}
+          <>{tvl ? <>{tvlString}</> : <Skeleton display="inline-block" height={16} width={70} mt="2px" />}</>
+          {inFunds}
+        </Text>
       </Flex>
-      <ChainTags />
-      <ImageLayer>
-        <BnbBallRocket>
-          <Image
-            src={`${ASSET_CDN}/web/landing/bnb-ball-rocket.png`}
-            alt="bnbBallRocket"
-            width={144}
-            height={168}
-            unoptimized
-          />
-        </BnbBallRocket>
-        <EthBallRocket>
-          <Image
-            src={`${ASSET_CDN}/web/landing/eth-ball-rocket.png`}
-            alt="ethBallRocket"
-            width={isXxl ? 116 : 70}
-            height={isXxl ? 230 : 140}
-            unoptimized
-          />
-        </EthBallRocket>
-        <AptosBallRocket>
-          <Image
-            src={`${ASSET_CDN}/web/landing/aptos-ball-rocket.png`}
-            alt="aptosBallRocket"
-            width={isXxl ? 84 : 53}
-            height={isXxl ? 101 : 64}
-            unoptimized
-          />
-        </AptosBallRocket>
-      </ImageLayer>
+      */}
+
+      {/*
+      <Text textAlign="center" color="textSubtle" bold mb="32px">
+        {t('Will you join them?')}
+      </Text>
+      */}
+
+      {/* <Flex flexDirection={['column', null, null, 'row']}> */}
+      {/*   <IconCard {...UsersCardData} mr={[null, null, null, '16px']} mb={['16px', null, null, '0']}> */}
+      {/*     <StatCardContent */}
+      {/*       headingText={t('%users% users', { users })} */}
+      {/*       bodyText={t('in the last 30 days')} */}
+      {/*       highlightColor={theme.colors.secondary} */}
+      {/*     /> */}
+      {/*   </IconCard> */}
+      {/*   <IconCard {...TradesCardData} mr={[null, null, null, '16px']} mb={['16px', null, null, '0']}> */}
+      {/*     <StatCardContent */}
+      {/*       headingText={t('%trades% trades', { trades })} */}
+      {/*       bodyText={t('made in the last 30 days')} */}
+      {/*       highlightColor={theme.colors.primary} */}
+      {/*     /> */}
+      {/*   </IconCard> */}
+      {/*   <IconCard {...StakedCardData}> */}
+      {/*     <StatCardContent */}
+      {/*       headingText={t('$%tvl% staked', { tvl: tvlString })} */}
+      {/*       bodyText={t('Total Value Locked')} */}
+      {/*       highlightColor={theme.colors.failure} */}
+      {/*     /> */}
+      {/*   </IconCard> */}
+      {/* </Flex> */}
     </Flex>
   )
 }

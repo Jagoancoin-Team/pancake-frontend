@@ -1,13 +1,14 @@
-import { LanguageProvider } from '@pancakeswap/localization'
-import { DialogProvider, ModalProvider, UIKitProvider, dark, light } from '@pancakeswap/uikit'
-import { Store } from '@reduxjs/toolkit'
-import { HydrationBoundary, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { HistoryManagerProvider } from 'contexts/HistoryContext'
-import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from 'next-themes'
-import { useMemo } from 'react'
+import { ModalProvider, light, dark, UIKitProvider } from '@pancakeswap/uikit'
 import { Provider } from 'react-redux'
-import { createWagmiConfig } from 'utils/wagmi'
-import { WagmiProvider } from 'wagmi'
+import { SWRConfig } from 'swr'
+import { LanguageProvider } from '@pancakeswap/localization'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { fetchStatusMiddleware } from 'hooks/useSWRContract'
+import { Store } from '@reduxjs/toolkit'
+import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from 'next-themes'
+import { WagmiConfig } from 'wagmi'
+import { wagmiConfig } from 'utils/wagmi'
+import { HistoryManagerProvider } from 'contexts/HistoryContext'
 
 // Create a client
 const queryClient = new QueryClient()
@@ -21,28 +22,32 @@ const StyledUIKitProvider: React.FC<React.PropsWithChildren> = ({ children, ...p
   )
 }
 
-const Providers: React.FC<
-  React.PropsWithChildren<{ store: Store; children: React.ReactNode; dehydratedState: any }>
-> = ({ children, store, dehydratedState }) => {
-  const wagmiConfig = useMemo(() => createWagmiConfig(), [])
+const Providers: React.FC<React.PropsWithChildren<{ store: Store; children: React.ReactNode }>> = ({
+  children,
+  store,
+}) => {
   return (
-    <WagmiProvider reconnectOnMount config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <HydrationBoundary state={dehydratedState}>
-          <Provider store={store}>
-            <NextThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <WagmiConfig config={wagmiConfig}>
+        <Provider store={store}>
+          <NextThemeProvider>
+            <StyledUIKitProvider>
               <LanguageProvider>
-                <StyledUIKitProvider>
+                <SWRConfig
+                  value={{
+                    use: [fetchStatusMiddleware],
+                  }}
+                >
                   <HistoryManagerProvider>
-                    <ModalProvider portalProvider={DialogProvider}>{children}</ModalProvider>
+                    <ModalProvider>{children}</ModalProvider>
                   </HistoryManagerProvider>
-                </StyledUIKitProvider>
+                </SWRConfig>
               </LanguageProvider>
-            </NextThemeProvider>
-          </Provider>
-        </HydrationBoundary>
-      </QueryClientProvider>
-    </WagmiProvider>
+            </StyledUIKitProvider>
+          </NextThemeProvider>
+        </Provider>
+      </WagmiConfig>
+    </QueryClientProvider>
   )
 }
 

@@ -1,15 +1,14 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Card, Flex, Text } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { Box, Card, Flex, Text, NextLinkFromReactRouter } from '@pancakeswap/uikit'
 import { useEffect, useMemo, useRef } from 'react'
-import { checkIsStableSwap } from 'state/info/constant'
-import { useAllTokenDataQuery, useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
+import { useAllTokenDataSWR, useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
 import { TokenData } from 'state/info/types'
 import { styled } from 'styled-components'
 import { formatAmount } from 'utils/formatInfoNumbers'
 import { CurrencyLogo } from 'views/Info/components/CurrencyLogo'
 import Percent from 'views/Info/components/Percent'
+import {useActiveChainId} from "../../../../hooks/useActiveChainId";
+import { ICE } from '@pancakeswap/tokens'
 
 const CardWrapper = styled(NextLinkFromReactRouter)`
   display: inline-block;
@@ -40,9 +39,8 @@ export const ScrollableRow = styled.div`
 const DataCard = ({ tokenData }: { tokenData: TokenData }) => {
   const chainName = useChainNameByQuery()
   const chainPath = useMultiChainPath()
-  const stableSwapQuery = checkIsStableSwap() ? '?type=stableSwap' : ''
   return (
-    <CardWrapper to={`/info${chainPath}/tokens/${tokenData.address}${stableSwapQuery}`}>
+    <CardWrapper to={`/info${chainPath}/tokens/${tokenData.address}`}>
       <TopMoverCard>
         <Flex>
           <Box width="32px" height="32px">
@@ -65,14 +63,21 @@ const DataCard = ({ tokenData }: { tokenData: TokenData }) => {
 }
 
 const TopTokenMovers: React.FC<React.PropsWithChildren> = () => {
-  const allTokens = useAllTokenDataQuery()
+  const allTokens = useAllTokenDataSWR()
+  const { chainId } = useActiveChainId()
   const { t } = useTranslation()
 
   const topPriceIncrease = useMemo(() => {
     return Object.values(allTokens)
       .sort(({ data: a }, { data: b }) => {
+        if (!(a && b)) {
+          return -1
+        }
+        if (a.address.toLowerCase() === ICE[chainId].address.toLowerCase() || b.address.toLowerCase() === ICE[chainId].address.toLowerCase()){
+          return a.priceUSDChange > b.priceUSDChange ? -1 : 1
+        }
         // eslint-disable-next-line no-nested-ternary
-        return a && b ? (Math.abs(a?.priceUSDChange) > Math.abs(b?.priceUSDChange) ? -1 : 1) : -1
+        return Math.abs(a.priceUSDChange) > Math.abs(b.priceUSDChange) ? -1 : 1
       })
       .slice(0, Math.min(20, Object.values(allTokens).length))
       .filter((d) => d?.data?.exists)

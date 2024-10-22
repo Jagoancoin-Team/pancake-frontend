@@ -1,6 +1,7 @@
 import Token from 'views/Info/Tokens/TokenPage'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { InfoPageLayout } from 'views/Info'
+import { SUPPORT_INFO } from 'config/constants/supportChains'
 import { getTokenStaticPaths, getTokenStaticProps } from 'utils/pageUtils'
 
 const TokenPage = ({ address }: { address: string }) => {
@@ -12,7 +13,7 @@ const TokenPage = ({ address }: { address: string }) => {
 }
 
 TokenPage.Layout = InfoPageLayout
-TokenPage.chains = [] // set all
+TokenPage.chains = SUPPORT_INFO
 
 export default TokenPage
 

@@ -26,7 +26,7 @@ export const FarmMultiplierInfo: React.FC<React.PropsWithChildren<FarmMultiplier
   return (
     <>
       <Text bold>
-        {t("Farm’s CAKE Per Second:")}
+        {t("Farm's ICE Per Second:")}
         <InlineText marginLeft={2}>{farmCakePerSecond}</InlineText>
       </Text>
       <Text bold>
@@ -35,22 +35,14 @@ export const FarmMultiplierInfo: React.FC<React.PropsWithChildren<FarmMultiplier
       </Text>
       <Text my="24px">
         {t(
-          "The Farm Multiplier represents the proportion of CAKE rewards each farm receives as a proportion of its farm group."
+          "The Farm Multiplier represents the proportion of ICE rewards each farm receives as a proportion of its farm group."
         )}
       </Text>
       <Text my="24px">
-        {t("For example, if a 1x farm received 1 CAKE per block, a 40x farm would receive 40 CAKE per block.")}
+        {t("For example, if a 1x farm received 1 ICE per block, a 40x farm would receive 40 ICE per block.")}
       </Text>
       <Text>
         {t("Different farm groups have different sets of multipliers.")}
-        <InlineLink
-          mt="8px"
-          display="inline"
-          href="https://docs.pancakeswap.finance/products/yield-farming/faq#why-a-2x-farm-in-v3-has-less-apr-than-a-1x-farm-in-v2"
-          external
-        >
-          {t("Learn More")}
-        </InlineLink>
       </Text>
     </>
   );

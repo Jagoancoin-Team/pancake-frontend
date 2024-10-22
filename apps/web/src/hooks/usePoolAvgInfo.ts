@@ -1,13 +1,14 @@
 /* eslint-disable no-console */
-import { ChainId } from '@pancakeswap/chains'
-import { useQuery } from '@tanstack/react-query'
+import { ChainId } from '@pancakeswap/sdk'
+import { gql } from 'graphql-request'
+import useSWR from 'swr'
 
-import { chainIdToExplorerInfoChainName, explorerApiClient } from 'state/info/api/client'
+import { v3Clients } from 'utils/graphql'
 
 export interface UsePoolAvgInfoParams {
+  numberOfDays?: number
   address?: string
   chainId?: ChainId
-  enabled?: boolean
 }
 
 export const averageArray = (dataToCalculate: number[]): number => {
@@ -32,44 +33,44 @@ const defaultInfo: Info = {
   feeUSD: 0,
 }
 
-export function usePoolAvgInfo({ address = '', chainId, enabled = true }: UsePoolAvgInfoParams) {
-  const { data } = useQuery({
-    queryKey: ['poolAvgInfo', address, chainId],
-
-    queryFn: async ({ signal }) => {
-      if (!chainId) throw new Error('Chain ID not found')
-      if (!address) throw new Error('Address not found')
-
-      const chainName = chainIdToExplorerInfoChainName[chainId]
-      if (!chainName) {
-        throw new Error('Chain name not found')
-      }
-
-      const resp = await explorerApiClient.GET('/cached/pools/v3/{chainName}/{address}', {
-        signal,
-        params: {
-          path: {
-            address,
-            chainName,
-          },
-        },
-      })
-
-      if (!resp.data) {
+export function usePoolAvgInfo({ address = '', numberOfDays = 7, chainId }: UsePoolAvgInfoParams) {
+  const { data } = useSWR<Info>(
+    address && chainId && [address, chainId],
+    async () => {
+      const client = v3Clients[chainId]
+      if (!client) {
         console.log('[Failed] Trading volume', address, chainId)
         return defaultInfo
       }
 
+      const query = gql`
+        query getVolume($days: Int!, $address: String!) {
+          poolDayDatas(first: $days, orderBy: date, orderDirection: desc, where: { pool: $address }) {
+            volumeUSD
+            tvlUSD
+            feesUSD
+            protocolFeesUSD
+          }
+        }
+      `
+      const { poolDayDatas } = await client.request(query, {
+        days: numberOfDays,
+        address: address.toLocaleLowerCase(),
+      })
+      const volumes = poolDayDatas.map((d: { volumeUSD: string }) => Number(d.volumeUSD))
+      const feeUSDs = poolDayDatas.map(
+        (d: { feesUSD: string; protocolFeesUSD: string }) => Number(d.feesUSD) - Number(d.protocolFeesUSD),
+      )
       return {
-        volumeUSD: +resp.data.volumeUSD7d / 7,
-        tvlUSD: +resp.data.tvlUSD,
-        feeUSD: (+resp.data.feeUSD7d - +resp.data.protocolFeeUSD7d) / 7,
+        volumeUSD: averageArray(volumes),
+        tvlUSD: parseFloat(poolDayDatas[0]?.tvlUSD) || 0,
+        feeUSD: averageArray(feeUSDs),
       }
     },
-
-    enabled: Boolean(address && chainId && enabled),
-    refetchOnWindowFocus: false,
-  })
+    {
+      revalidateOnFocus: false,
+    },
+  )
 
   return data || defaultInfo
 }

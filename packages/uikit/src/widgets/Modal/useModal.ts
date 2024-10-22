@@ -1,15 +1,15 @@
 import React, { useCallback, useContext, useEffect, useRef } from "react";
 import get from "lodash/get";
+import { serialize } from "wagmi";
 import { Context } from "./ModalContext";
 import { Handler } from "./types";
-import { serialize } from "../../util/serialize";
 
 const useModal = (
   modal: React.ReactNode,
   closeOnOverlayClick = true,
   updateOnPropsChange = false,
   modalId = "defaultNodeId"
-): [Handler, Handler] => {
+): [Handler, Handler, boolean] => {
   const currentModal = useRef<React.ReactNode>();
   currentModal.current = modal;
   const { isOpen, nodeId, modalNode, setModalNode, onPresent, onDismiss } = useContext(Context);
@@ -42,7 +42,7 @@ const useModal = (
     }
   }, [updateOnPropsChange, nodeId, modalId, isOpen, modal, modalNode, setModalNode]);
 
-  return [onPresentCallback, onDismissCallback];
+  return [onPresentCallback, onDismissCallback, isOpen];
 };
 
 export default useModal;

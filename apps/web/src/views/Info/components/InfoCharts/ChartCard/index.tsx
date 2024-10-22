@@ -1,13 +1,13 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Card, Flex, Skeleton, Text } from '@pancakeswap/uikit'
-import { TabToggle, TabToggleGroup } from 'components/TabToggle'
-import dayjs from 'dayjs'
-import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
-import { PriceChartEntry, TokenData, TvlChartEntry, VolumeChartEntry } from 'state/info/types'
-import { formatAmount } from 'utils/formatInfoNumbers'
-import BarChart from 'views/Info/components/InfoCharts/BarChart'
+import { Text, Box, Card, Flex, Skeleton } from '@pancakeswap/uikit'
 import LineChart from 'views/Info/components/InfoCharts/LineChart'
+import BarChart from 'views/Info/components/InfoCharts/BarChart'
+import { TabToggleGroup, TabToggle } from 'components/TabToggle'
+import { useTranslation } from '@pancakeswap/localization'
+import { formatAmount } from 'utils/formatInfoNumbers'
+import { ChartEntry, TokenData, PriceChartEntry } from 'state/info/types'
+import { fromUnixTime } from 'date-fns'
+import dynamic from 'next/dynamic'
 
 const CandleChart = dynamic(() => import('../CandleChart'), {
   ssr: false,
@@ -21,20 +21,18 @@ enum ChartView {
 
 interface ChartCardProps {
   variant: 'pool' | 'token'
-  volumeChartData: VolumeChartEntry[] | undefined
-  tvlChartData: TvlChartEntry[] | undefined
+  chartData: ChartEntry[]
   tokenData?: TokenData
   tokenPriceData?: PriceChartEntry[]
 }
 
 const ChartCard: React.FC<React.PropsWithChildren<ChartCardProps>> = ({
   variant,
-  volumeChartData,
-  tvlChartData,
+  chartData,
   tokenData,
   tokenPriceData,
 }) => {
-  const [view, setView] = useState(ChartView.VOLUME)
+  const [view, setView] = useState(variant === 'token' ? ChartView.PRICE : ChartView.VOLUME)
   const [hoverValue, setHoverValue] = useState<number | undefined>()
   const [hoverDate, setHoverDate] = useState<string | undefined>()
   const {
@@ -45,30 +43,30 @@ const ChartCard: React.FC<React.PropsWithChildren<ChartCardProps>> = ({
   const currentDate = new Date().toLocaleString(locale, { month: 'short', year: 'numeric', day: 'numeric' })
 
   const formattedTvlData = useMemo(() => {
-    if (tvlChartData) {
-      return tvlChartData.map((day) => {
+    if (chartData) {
+      return chartData.map((day) => {
         return {
-          time: dayjs.unix(day.date).toDate(),
+          time: fromUnixTime(day.date),
           value: day.liquidityUSD,
         }
       })
     }
     return []
-  }, [tvlChartData])
+  }, [chartData])
   const formattedVolumeData = useMemo(() => {
-    if (volumeChartData) {
-      return volumeChartData.map((day) => {
+    if (chartData) {
+      return chartData.map((day) => {
         return {
-          time: dayjs.unix(day.date).toDate(),
+          time: fromUnixTime(day.date),
           value: day.volumeUSD,
         }
       })
     }
     return []
-  }, [volumeChartData])
+  }, [chartData])
 
   const getLatestValueDisplay = () => {
-    let valueToDisplay: string | undefined = ''
+    let valueToDisplay = null
     if (hoverValue) {
       valueToDisplay = formatAmount(hoverValue)
     } else if (view === ChartView.VOLUME && formattedVolumeData.length > 0) {
@@ -91,19 +89,17 @@ const ChartCard: React.FC<React.PropsWithChildren<ChartCardProps>> = ({
   return (
     <Card>
       <TabToggleGroup>
+        {variant === 'token' && (
+          <TabToggle isActive={view === ChartView.PRICE} onClick={() => setView(ChartView.PRICE)}>
+            <Text>{t('Price')}</Text>
+          </TabToggle>
+        )}
         <TabToggle isActive={view === ChartView.VOLUME} onClick={() => setView(ChartView.VOLUME)}>
           <Text>{t('Volume')}</Text>
         </TabToggle>
         <TabToggle isActive={view === ChartView.LIQUIDITY} onClick={() => setView(ChartView.LIQUIDITY)}>
           <Text>{t('Liquidity')}</Text>
         </TabToggle>
-        {variant === 'token' ? (
-          <TabToggle isActive={view === ChartView.PRICE} onClick={() => setView(ChartView.PRICE)}>
-            <Text>{t('Price')}</Text>
-          </TabToggle>
-        ) : (
-          <></>
-        )}
       </TabToggleGroup>
 
       <Flex flexDirection="column" px="24px" pt="24px">

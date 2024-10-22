@@ -1,7 +1,7 @@
+import useSWR from 'swr'
 import { useAccount } from 'wagmi'
 import { getCookie, deleteCookie } from 'cookies-next'
 import { AFFILIATE_SID } from 'pages/api/affiliates-program/affiliate-login'
-import { useQuery } from '@tanstack/react-query'
 
 export interface FeeType {
   affiliateAddress: string
@@ -77,37 +77,31 @@ const useAuthAffiliate = (): AffiliateInfoType => {
   const { address } = useAccount()
   const cookie = getCookie(AFFILIATE_SID)
 
-  const { data, refetch } = useQuery({
-    queryKey: ['affiliates-program', 'auth-affiliate', address],
-
-    queryFn: async () => {
-      try {
-        const response = await fetch(`/api/affiliates-program/affiliate-info`)
-        const result: AffiliateInfoResponse = await response.json()
-        if (result.status === 'error') {
-          deleteCookie(AFFILIATE_SID, { sameSite: true })
-        }
-
-        return {
-          isAffiliate: result.status === 'success',
-          affiliate: result.affiliate,
-        }
-      } catch (error) {
-        console.error(`Fetch Affiliate Exist Error: ${error}`)
-        return {
-          isAffiliate: false,
-          affiliate: initAffiliateData,
-        }
+  const { data, mutate } = useSWR(address && cookie !== '' && ['/auth-affiliate', address, cookie], async () => {
+    try {
+      const response = await fetch(`/api/affiliates-program/affiliate-info`)
+      const result: AffiliateInfoResponse = await response.json()
+      if (result.status === 'error') {
+        deleteCookie(AFFILIATE_SID, { sameSite: true })
       }
-    },
 
-    enabled: Boolean(address && cookie !== ''),
+      return {
+        isAffiliate: result.status === 'success',
+        affiliate: result.affiliate,
+      }
+    } catch (error) {
+      console.error(`Fetch Affiliate Exist Error: ${error}`)
+      return {
+        isAffiliate: false,
+        affiliate: initAffiliateData,
+      }
+    }
   })
 
   return {
     isAffiliate: (data?.isAffiliate && !!address) ?? false,
     affiliate: data?.affiliate ?? initAffiliateData,
-    refresh: refetch,
+    refresh: mutate,
   }
 }
 

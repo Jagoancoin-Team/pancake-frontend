@@ -1,7 +1,6 @@
 import { useTranslation } from '@pancakeswap/localization'
 import {
   ArrowForwardIcon,
-  AtomBox,
   AutoColumn,
   Box,
   Button,
@@ -10,18 +9,19 @@ import {
   PageHeader,
   RowBetween,
   Text,
+  AtomBox,
 } from '@pancakeswap/uikit'
 import Page from 'components/Layout/Page'
-import Image from 'next/image'
-import { useRouter } from 'next/router'
 import React, { useEffect, useRef, useState } from 'react'
-import { usePollFarmsWithUserData } from 'state/farms/hooks'
+import Image from 'next/image'
 import LiquidityFormProvider from 'views/AddLiquidityV3/formViews/V3FormView/form/LiquidityFormProvider'
 import { farmV3MigrationBunny, farmV3MigrationBunnyFull } from 'views/Home/components/Banners/images'
-import MigrationSticky, { TEXT } from './components/MigrationSticky'
-import { MigrationProgressSteps, Step } from './components/ProgressSteps'
+import { useRouter } from 'next/router'
+import { usePollFarmsWithUserData } from 'state/farms/hooks'
 import OldFarm from './components/v3/Step1'
 import { Step2 } from './components/v3/Step2'
+import MigrationSticky, { TEXT } from './components/MigrationSticky'
+import { MigrationProgressSteps, Step } from './components/ProgressSteps'
 import { Step3 } from './components/v3/Step3'
 import { Step4 } from './components/v3/Step4'
 import { Step5 } from './components/v3/Step5'
@@ -68,7 +68,7 @@ const MigrationPage: React.FC<React.PropsWithChildren> = () => {
   const [step, setStep] = useState<number>(0)
 
   useEffect(() => {
-    if (router.isReady && stepFromQuery) {
+    if (router.isReady) {
       if (+stepFromQuery >= 1 && +stepFromQuery <= 5) {
         setStep(+stepFromQuery - 1)
       }
@@ -78,12 +78,10 @@ const MigrationPage: React.FC<React.PropsWithChildren> = () => {
   usePollFarmsWithUserData()
 
   const scrollToTop = (): void => {
-    if (tableWrapperEl.current) {
-      window.scrollTo({
-        top: tableWrapperEl.current.offsetTop,
-        behavior: 'smooth',
-      })
-    }
+    window.scrollTo({
+      top: tableWrapperEl.current.offsetTop,
+      behavior: 'smooth',
+    })
   }
 
   const handleMigrationStickyClick = () => {
@@ -119,8 +117,8 @@ const MigrationPage: React.FC<React.PropsWithChildren> = () => {
             <Heading as="h1" scale="xxl" color="secondary" mb="24px">
               {t('Migration')}
             </Heading>
-            <Text fontSize={['12px', null, '16px']} color="text">
-              {t('Migrate your liquidity to Exchange V3 and keep farming CAKE rewards.')}
+            <Text fontSize={['12px', , '16px']} color="text">
+              {t('Migrate your liquidity to Exchange V3 and keep farming ICE rewards.')}
             </Text>
             <AutoColumn gap="4px" pt="4px">
               <Link href="https://docs.pancakeswap.finance/code/v3-migration/how-to-migrate" external>
@@ -158,7 +156,7 @@ const MigrationPage: React.FC<React.PropsWithChildren> = () => {
               height={200}
               placeholder="blur"
             />
-            <Box position="absolute" right={['-20px', null, null, '-35px']} bottom={['-80px', null, null, '-40px']}>
+            <Box position="absolute" right={['-20px', , , '-35px']} bottom={['-80px', , , '-40px']}>
               <Image
                 src={farmV3MigrationBunnyFull}
                 alt="farmV3MigrationBunnyFull"

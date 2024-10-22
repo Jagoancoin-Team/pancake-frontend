@@ -1,11 +1,12 @@
+/* eslint-disable no-console */
 import { Currency } from '@pancakeswap/sdk'
-import { logger } from '../utils/logger'
+import { metric } from '../utils/metric'
 
 import { BaseRoute, Pool } from '../types'
 import { buildBaseRoute, getOutputCurrency, involvesCurrency } from '../utils'
 
 export function computeAllRoutes(input: Currency, output: Currency, candidatePools: Pool[], maxHops = 3): BaseRoute[] {
-  logger.metric('Computing routes from', candidatePools.length, 'pools')
+  metric('Computing routes from', candidatePools.length, 'pools')
   const poolsUsed = Array<boolean>(candidatePools.length).fill(false)
   const routes: BaseRoute[] = []
 
@@ -39,10 +40,6 @@ export function computeAllRoutes(input: Currency, output: Currency, candidatePoo
       }
 
       const currentTokenOut = getOutputCurrency(curPool, previousCurrencyOut)
-      if (currencyIn.wrapped.equals(currentTokenOut.wrapped)) {
-        // eslint-disable-next-line
-        continue
-      }
 
       currentRoute.push(curPool)
       poolsUsed[i] = true
@@ -54,6 +51,6 @@ export function computeAllRoutes(input: Currency, output: Currency, candidatePoo
 
   computeRoutes(input, output, [])
 
-  logger.metric('Computed routes from', candidatePools.length, 'pools', routes.length, 'routes')
+  metric('Computed routes from', candidatePools.length, 'pools', routes.length, 'routes')
   return routes
 }

@@ -442,6 +442,7 @@ export const snBnbABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  { inputs: [], name: 'refreshTotalDelegated', outputs: [], stateMutability: 'nonpayable', type: 'function' },
   {
     inputs: [
       { internalType: 'bytes32', name: 'role', type: 'bytes32' },

@@ -1,12 +1,12 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { Heading, AtomBox } from '@pancakeswap/uikit'
 import { useMemo } from 'react'
-import { useCakePrice } from 'hooks/useCakePrice'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import { useFarmsV3WithPositionsAndBooster } from 'state/farmsV3/hooks'
 import FarmTable from 'views/Farms/components/FarmTable/FarmTable'
 import { useCakeVaultUserData } from 'state/pools/hooks'
+import { V3FarmWithoutStakedValue } from 'views/Farms/FarmsV3'
 import { useAccount } from 'wagmi'
-import { V3FarmWithoutStakedValue } from 'state/farms/types'
 
 export function Step5() {
   const { farmsWithPositions: farmsV3, userDataLoaded: v3UserDataLoaded } = useFarmsV3WithPositionsAndBooster()
@@ -17,7 +17,7 @@ export function Step5() {
   const userDataReady = !account || (!!account && v3UserDataLoaded)
   useCakeVaultUserData()
 
-  const cakePrice = useCakePrice()
+  const cakePrice = usePriceCakeUSD()
 
   const { t } = useTranslation()
 

@@ -1,36 +1,43 @@
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
+
+import { pools as corePools, livePools as coreLivePools } from './1116'
+import { pools as bitgertPools, livePools as bitgertLivePools } from './32520'
+import { pools as xdcPools, livePools as xdcLivePools } from './50'
+import { pools as neonPools, livePools as neonLivePools } from './245022934'
 import { SerializedPool } from '../../types'
+import { SupportedChainId } from '../supportedChains'
 import { isPoolsSupported } from '../../utils/isPoolsSupported'
-import { POOLS_API } from '../config/endpoint'
 
-export const getPoolsConfig = async (chainId: ChainId) => {
-  if (!isPoolsSupported(chainId)) {
-    return undefined
-  }
-
-  try {
-    const response = await fetch(`${POOLS_API}?chainId=${chainId}`)
-    const result: SerializedPool[] = await response.json()
-    return result
-  } catch (error) {
-    console.error('Get all pools by chain config error: ', error)
-    return []
-  }
+export type PoolsConfigByChain<TChainId extends ChainId> = {
+  [chainId in TChainId]: SerializedPool[]
 }
 
-export const getLivePoolsConfig = async (chainId: ChainId) => {
+export const POOLS_CONFIG_BY_CHAIN = {
+  [ChainId.CORE]: corePools,
+  [ChainId.BITGERT]: bitgertPools,
+  [ChainId.XDC]: xdcPools,
+  [ChainId.NEON]: neonPools,
+} as PoolsConfigByChain<SupportedChainId>
+
+export const LIVE_POOLS_CONFIG_BY_CHAIN = {
+  [ChainId.BSC]: coreLivePools,
+  [ChainId.BITGERT]: bitgertLivePools,
+  [ChainId.XDC]: xdcLivePools,
+  [ChainId.NEON]: neonLivePools,
+} as PoolsConfigByChain<SupportedChainId>
+
+export const getPoolsConfig = (chainId: ChainId) => {
   if (!isPoolsSupported(chainId)) {
     return undefined
   }
+  return POOLS_CONFIG_BY_CHAIN[chainId]
+}
 
-  try {
-    const response = await fetch(`${POOLS_API}?chainId=${chainId}&isFinished=false`)
-    const result: SerializedPool[] = await response.json()
-    return result
-  } catch (error) {
-    console.error('Get live pools by chain config error: ', error)
-    return []
+export const getLivePoolsConfig = (chainId: ChainId) => {
+  if (!isPoolsSupported(chainId)) {
+    return undefined
   }
+  return LIVE_POOLS_CONFIG_BY_CHAIN[chainId]
 }
 
 export const MAX_LOCK_DURATION = 31536000

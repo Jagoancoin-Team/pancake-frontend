@@ -1,7 +1,6 @@
-import { Flex, Image, Skeleton } from '@pancakeswap/uikit'
-import { ASSET_CDN } from 'config/constants/endpoints'
 import { memo } from 'react'
 import { styled } from 'styled-components'
+import { Flex, Image, Skeleton } from '@pancakeswap/uikit'
 import Sticker from '../../Sticker'
 
 const Wrapper = styled(Flex)<{ imageSize?: number }>`
@@ -13,18 +12,18 @@ const Wrapper = styled(Flex)<{ imageSize?: number }>`
   }
 
   /* Podium is about 66% of initial size on xs devices  */
-  width: ${({ imageSize }) => (imageSize !== undefined ? imageSize * 0.66 + 4 : 0)}px;
-  height: ${({ imageSize }) => (imageSize !== undefined ? imageSize * 0.66 + 4 : 0)}px;
+  width: ${({ imageSize }) => imageSize * 0.66 + 4}px;
+  height: ${({ imageSize }) => imageSize * 0.66 + 4}px;
 
   /* Podium is about 80% of initial size on sm devices  */
   ${({ theme }) => theme.mediaQueries.xs} {
-    width: ${({ imageSize }) => (imageSize !== undefined ? imageSize * 0.8 + 4 : 0)}px;
-    height: ${({ imageSize }) => (imageSize !== undefined ? imageSize * 0.8 + 4 : 0)}px;
+    width: ${({ imageSize }) => imageSize * 0.8 + 4}px;
+    height: ${({ imageSize }) => imageSize * 0.8 + 4}px;
   }
 
   ${({ theme }) => theme.mediaQueries.sm} {
-    width: ${({ imageSize }) => (imageSize !== undefined ? imageSize + 4 : 0)}px;
-    height: ${({ imageSize }) => (imageSize !== undefined ? imageSize + 4 : 0)}px;
+    width: ${({ imageSize }) => imageSize + 4}px;
+    height: ${({ imageSize }) => imageSize + 4}px;
   }
 `
 
@@ -47,7 +46,7 @@ const TeamPodiumIcon: React.FC<React.PropsWithChildren<PodiumIconProps>> = ({ te
         <Skeleton variant="circle" width="100%" height="100%" />
       ) : (
         <Sticker backgroundColor={teamData[teamId].stickerCol} borderColor={teamData[teamId].stickerCol}>
-          <Image src={`${ASSET_CDN}/web/teams/${teamData[teamId].imgSrc}`} width={imageSize} height={imageSize} />
+          <Image src={`/images/teams/${teamData[teamId].imgSrc}`} width={imageSize} height={imageSize} />
         </Sticker>
       )}
     </Wrapper>

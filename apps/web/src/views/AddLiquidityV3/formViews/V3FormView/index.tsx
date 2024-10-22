@@ -3,72 +3,61 @@ import { CommonBasesType } from 'components/SearchModal/types'
 import { Currency, CurrencyAmount, Percent } from '@pancakeswap/sdk'
 import {
   AutoColumn,
+  Button,
+  RowBetween,
+  Text,
   AutoRow,
   Box,
-  Button,
-  DynamicSection,
-  Flex,
+  NumericalInput,
+  ConfirmationModalContent,
+  useModal,
   Message,
   MessageText,
   PreTitle,
-  RowBetween,
-  Text,
-  useModal,
-} from '@pancakeswap/uikit'
-import {
-  ConfirmationModalContent,
+  DynamicSection,
+  Flex,
   LiquidityChartRangeInput,
-  NumericalInput,
   ZOOM_LEVELS,
   ZoomLevels,
-} from '@pancakeswap/widgets-internal'
-
+} from '@pancakeswap/uikit'
+import { logGTMClickAddLiquidityEvent } from 'utils/customGTMEventTracking'
 import { tryParsePrice } from 'hooks/v3/utils'
-import {
-  logGTMAddLiquidityTxSentEvent,
-  logGTMClickAddLiquidityConfirmEvent,
-  logGTMClickAddLiquidityEvent,
-} from 'utils/customGTMEventTracking'
 
-import { useIsExpertMode, useUserSlippage } from '@pancakeswap/utils/user'
-import { FeeAmount, NonfungiblePositionManager, Pool } from '@pancakeswap/v3-sdk'
-import CurrencyInputPanel from 'components/CurrencyInputPanel'
-import { useTransactionDeadline } from 'hooks/useTransactionDeadline'
 import useV3DerivedInfo from 'hooks/v3/useV3DerivedInfo'
+import { FeeAmount, NonfungiblePositionManager } from '@pancakeswap/v3-sdk'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import useTransactionDeadline from 'hooks/useTransactionDeadline'
+import CurrencyInputPanel from 'components/CurrencyInputPanel'
+import { useUserSlippage, useIsExpertMode } from '@pancakeswap/utils/user'
 
-import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
-import { CurrencyField as Field } from 'utils/types'
-import { basisPointsToPercent } from 'utils/exchange'
 import { maxAmountSpend } from 'utils/maxAmountSpend'
+import { basisPointsToPercent } from 'utils/exchange'
+import { Field } from 'state/mint/actions'
+import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
 
-import { useTranslation } from '@pancakeswap/localization'
-import TransactionConfirmationModal from 'components/TransactionConfirmationModal'
-import { Bound } from 'config/constants/types'
-import { useIsTransactionUnsupported, useIsTransactionWarning } from 'hooks/Trades'
-import useActiveWeb3React from 'hooks/useActiveWeb3React'
+import { useTransactionAdder } from 'state/transactions/hooks'
 import { useV3NFTPositionManagerContract } from 'hooks/useContract'
 import { useRouter } from 'next/router'
-import { useTransactionAdder } from 'state/transactions/hooks'
-import { styled } from 'styled-components'
-import { calculateGasMargin } from 'utils'
-import { formatCurrencyAmount, formatRawAmount } from 'utils/formatCurrencyAmount'
-import { isUserRejected } from 'utils/sentry'
-import { getViemClients } from 'utils/viem'
-import { hexToBigInt } from 'viem'
-import { V3SubmitButton } from 'views/AddLiquidityV3/components/V3SubmitButton'
-import { QUICK_ACTION_CONFIGS } from 'views/AddLiquidityV3/types'
+import { useIsTransactionUnsupported, useIsTransactionWarning } from 'hooks/Trades'
+import useActiveWeb3React from 'hooks/useActiveWeb3React'
+import { useTranslation } from '@pancakeswap/localization'
 import { useSendTransaction, useWalletClient } from 'wagmi'
+import { styled } from 'styled-components'
+import TransactionConfirmationModal from 'components/TransactionConfirmationModal'
+import { Bound } from 'config/constants/types'
+import { V3SubmitButton } from 'views/AddLiquidityV3/components/V3SubmitButton'
+import { formatCurrencyAmount, formatRawAmount } from 'utils/formatCurrencyAmount'
+import { QUICK_ACTION_CONFIGS } from 'views/AddLiquidityV3/types'
+import { isUserRejected } from 'utils/sentry'
+import { hexToBigInt } from 'viem'
+import { getViemClients } from 'utils/viem'
+import { calculateGasMargin } from 'utils'
 
-import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
 import { useDensityChartData } from 'views/AddLiquidityV3/hooks/useDensityChartData'
-import { InitDepositToken, ZapLiquidityWidget } from 'components/ZapLiquidityWidget'
-import { ZAP_V3_POOL_ADDRESSES } from 'config/constants/zapV3'
-import LockedDeposit from './components/LockedDeposit'
-import { PositionPreview } from './components/PositionPreview'
 import RangeSelector from './components/RangeSelector'
+import { PositionPreview } from './components/PositionPreview'
 import RateToggle from './components/RateToggle'
-import { useInitialRange } from './form/hooks/useInitialRange'
+import LockedDeposit from './components/LockedDeposit'
 import { useRangeHopCallbacks } from './form/hooks/useRangeHopCallbacks'
 import { useV3MintActionHandlers } from './form/hooks/useV3MintActionHandlers'
 import { useV3FormAddLiquidityCallback, useV3FormState } from './form/reducer'
@@ -84,7 +73,6 @@ const StyledInput = styled(NumericalInput)`
 `
 
 export const HideMedium = styled.div`
-  display: flex;
   ${({ theme }) => theme.mediaQueries.md} {
     display: none;
   }
@@ -93,7 +81,7 @@ export const HideMedium = styled.div`
 export const MediumOnly = styled.div`
   display: none;
   ${({ theme }) => theme.mediaQueries.md} {
-    display: flex;
+    display: initial;
   }
 `
 
@@ -110,11 +98,11 @@ export const RightContainer = styled(AutoColumn)`
 `
 
 interface V3FormViewPropsType {
-  baseCurrency?: Currency | null
-  quoteCurrency?: Currency | null
-  currencyIdA?: string
-  currencyIdB?: string
-  feeAmount?: number
+  baseCurrency: Currency
+  quoteCurrency: Currency
+  currencyIdA: string
+  currencyIdB: string
+  feeAmount: number
 }
 
 export default function V3FormView({
@@ -128,7 +116,6 @@ export default function V3FormView({
   const { data: signer } = useWalletClient()
   const { sendTransactionAsync } = useSendTransaction()
   const [attemptingTxn, setAttemptingTxn] = useState<boolean>(false) // clicked confirm
-  const [txnErrorMessage, setTxnErrorMessage] = useState<string | undefined>()
 
   const {
     t,
@@ -156,7 +143,6 @@ export default function V3FormView({
     noLiquidity,
     currencies,
     errorMessage,
-    hasInsufficentBalance,
     invalidPool,
     invalidRange,
     outOfRange,
@@ -164,7 +150,6 @@ export default function V3FormView({
     depositBDisabled,
     invertPrice,
     ticksAtLimit,
-    tickSpaceLimits,
   } = useV3DerivedInfo(
     baseCurrency ?? undefined,
     quoteCurrency ?? undefined,
@@ -173,16 +158,6 @@ export default function V3FormView({
     undefined,
     formState,
   )
-  const hasZapV3Pool = useMemo(() => {
-    if (pool) {
-      const zapV3Whitelist = ZAP_V3_POOL_ADDRESSES[pool.chainId]
-      if (zapV3Whitelist) {
-        if (zapV3Whitelist.length === 0) return true
-        return zapV3Whitelist.includes(Pool.getAddress(pool.token0, pool.token1, pool.fee))
-      }
-    }
-    return false
-  }, [pool])
   const { onFieldAInput, onFieldBInput, onLeftRangeInput, onRightRangeInput, onStartPriceInput, onBothRangeInput } =
     useV3MintActionHandlers(noLiquidity)
 
@@ -205,7 +180,7 @@ export default function V3FormView({
 
   const onRightRangePriceInput = useCallback(
     (rightRangeValue: string) => {
-      onRightRangeInput(tryParsePrice(baseCurrency?.wrapped, quoteCurrency?.wrapped, rightRangeValue))
+      onRightRangeInput(tryParsePrice(baseCurrency?.wrapped, quoteCurrency.wrapped, rightRangeValue))
     },
     [baseCurrency, quoteCurrency, onRightRangeInput],
   )
@@ -224,8 +199,8 @@ export default function V3FormView({
     if (feeAmount) {
       setActiveQuickAction(undefined)
       onBothRangeInput({
-        leftTypedValue: undefined,
-        rightTypedValue: undefined,
+        leftTypedValue: null,
+        rightTypedValue: null,
       })
     }
     // NOTE: ignore exhaustive-deps to avoid infinite re-render
@@ -235,7 +210,7 @@ export default function V3FormView({
   const onAddLiquidityCallback = useV3FormAddLiquidityCallback()
 
   // txn values
-  const [deadline] = useTransactionDeadline() // custom from users settings
+  const deadline = useTransactionDeadline() // custom from users settings
   const [txHash, setTxHash] = useState<string>('')
   // get formatted amounts
   const formattedAmounts = {
@@ -257,31 +232,21 @@ export default function V3FormView({
 
   const nftPositionManagerAddress = useV3NFTPositionManagerContract()?.address
   // check whether the user has approved the router on the tokens
-  const {
-    approvalState: approvalA,
-    approveCallback: approveACallback,
-    revokeCallback: revokeACallback,
-    currentAllowance: currentAllowanceA,
-  } = useApproveCallback(parsedAmounts[Field.CURRENCY_A], nftPositionManagerAddress)
-  const {
-    approvalState: approvalB,
-    approveCallback: approveBCallback,
-    revokeCallback: revokeBCallback,
-    currentAllowance: currentAllowanceB,
-  } = useApproveCallback(parsedAmounts[Field.CURRENCY_B], nftPositionManagerAddress)
+  const { approvalState: approvalA, approveCallback: approveACallback } = useApproveCallback(
+    parsedAmounts[Field.CURRENCY_A],
+    nftPositionManagerAddress,
+  )
+  const { approvalState: approvalB, approveCallback: approveBCallback } = useApproveCallback(
+    parsedAmounts[Field.CURRENCY_B],
+    nftPositionManagerAddress,
+  )
 
   const [allowedSlippage] = useUserSlippage() // custom from users
 
   const onAdd = useCallback(async () => {
-    logGTMClickAddLiquidityConfirmEvent()
     if (!chainId || !signer || !account || !nftPositionManagerAddress) return
 
     if (!positionManager || !baseCurrency || !quoteCurrency) {
-      return
-    }
-
-    if (position?.liquidity === 0n) {
-      setTxnErrorMessage(t('The liquidity of this position is 0. Please try increasing the amount.'))
       return
     }
 
@@ -304,14 +269,13 @@ export default function V3FormView({
         account,
       }
       getViemClients({ chainId })
-        ?.estimateGas(txn)
+        .estimateGas(txn)
         .then((gas) => {
           sendTransactionAsync({
             ...txn,
             gas: calculateGasMargin(gas),
           })
-            .then((hash) => {
-              logGTMAddLiquidityTxSentEvent()
+            .then((response) => {
               const baseAmount = formatRawAmount(
                 parsedAmounts[Field.CURRENCY_A]?.quotient?.toString() ?? '0',
                 baseCurrency.decimals,
@@ -324,23 +288,20 @@ export default function V3FormView({
               )
 
               setAttemptingTxn(false)
-              addTransaction(
-                { hash },
-                {
-                  type: 'add-liquidity-v3',
-                  summary: `Add ${baseAmount} ${baseCurrency?.symbol} and ${quoteAmount} ${quoteCurrency?.symbol}`,
-                },
-              )
-              setTxHash(hash)
-              onAddLiquidityCallback(hash)
+              addTransaction(response, {
+                type: 'add-liquidity-v3',
+                summary: `Add ${baseAmount} ${baseCurrency?.symbol} and ${quoteAmount} ${quoteCurrency?.symbol}`,
+              })
+              setTxHash(response.hash)
+              onAddLiquidityCallback(response.hash)
             })
             .catch((error) => {
               console.error('Failed to send transaction', error)
+              setAttemptingTxn(false)
               // we only care if the error is something _other_ than the user rejected the tx
               if (!isUserRejected(error)) {
-                setTxnErrorMessage(transactionErrorToUserReadableMessage(error, t))
+                console.error(error)
               }
-              setAttemptingTxn(false)
             })
         })
     }
@@ -360,7 +321,6 @@ export default function V3FormView({
     quoteCurrency,
     sendTransactionAsync,
     signer,
-    t,
   ])
 
   const handleDismissConfirmation = useCallback(() => {
@@ -369,48 +329,33 @@ export default function V3FormView({
       onFieldAInput('')
     }
     setTxHash('')
-    setTxnErrorMessage(undefined)
   }, [onFieldAInput, txHash])
   const addIsUnsupported = useIsTransactionUnsupported(currencies?.CURRENCY_A, currencies?.CURRENCY_B)
 
   // get value and prices at ticks
   const { [Bound.LOWER]: tickLower, [Bound.UPPER]: tickUpper } = ticks
   const { [Bound.LOWER]: priceLower, [Bound.UPPER]: priceUpper } = pricesAtTicks
-
-  useInitialRange(baseCurrency?.wrapped, quoteCurrency?.wrapped)
-
   const { getDecrementLower, getIncrementLower, getDecrementUpper, getIncrementUpper, getSetFullRange } =
     useRangeHopCallbacks(baseCurrency ?? undefined, quoteCurrency ?? undefined, feeAmount, tickLower, tickUpper, pool)
   // we need an existence check on parsed amounts for single-asset deposits
   const showApprovalA = approvalA !== ApprovalState.APPROVED && !!parsedAmounts[Field.CURRENCY_A]
   const showApprovalB = approvalB !== ApprovalState.APPROVED && !!parsedAmounts[Field.CURRENCY_B]
 
-  const translationData = useMemo(() => {
-    if (depositADisabled) {
-      return {
-        amount: formatCurrencyAmount(parsedAmounts[Field.CURRENCY_B], 4, locale),
-        symbol: currencies[Field.CURRENCY_B]?.symbol ? currencies[Field.CURRENCY_B].symbol : '',
-      }
-    }
-    if (depositBDisabled) {
-      return {
-        amount: formatCurrencyAmount(parsedAmounts[Field.CURRENCY_A], 4, locale),
-        symbol: currencies[Field.CURRENCY_A]?.symbol ? currencies[Field.CURRENCY_A].symbol : '',
-      }
-    }
-    return {
-      amountA: formatCurrencyAmount(parsedAmounts[Field.CURRENCY_A], 4, locale),
-      symbolA: currencies[Field.CURRENCY_A]?.symbol ? currencies[Field.CURRENCY_A].symbol : '',
-      amountB: formatCurrencyAmount(parsedAmounts[Field.CURRENCY_B], 4, locale),
-      symbolB: currencies[Field.CURRENCY_B]?.symbol ? currencies[Field.CURRENCY_B].symbol : '',
-    }
-  }, [depositADisabled, depositBDisabled, parsedAmounts, locale, currencies])
+  const translationData = useMemo(
+    () => ({
+      amountA: !depositADisabled ? formatCurrencyAmount(parsedAmounts[Field.CURRENCY_A], 4, locale) : '',
+      symbolA: !depositADisabled ? currencies[Field.CURRENCY_A]?.symbol : '',
+      amountB: !depositBDisabled ? formatCurrencyAmount(parsedAmounts[Field.CURRENCY_B], 4, locale) : '',
+      symbolB: !depositBDisabled ? currencies[Field.CURRENCY_B]?.symbol : '',
+    }),
+    [depositADisabled, depositBDisabled, parsedAmounts, locale, currencies],
+  )
 
   const pendingText = useMemo(
     () =>
       !outOfRange
         ? t('Supplying %amountA% %symbolA% and %amountB% %symbolB%', translationData)
-        : t('Supplying %amount% %symbol%', translationData),
+        : t('Supplying %amountA% %symbolA% %amountB% %symbolB%', translationData),
     [t, outOfRange, translationData],
   )
 
@@ -419,12 +364,11 @@ export default function V3FormView({
 
   const [onPresentAddLiquidityModal] = useModal(
     <TransactionConfirmationModal
-      minWidth={['100%', null, '420px']}
+      minWidth={['100%', , '420px']}
       title={t('Add Liquidity')}
       customOnDismiss={handleDismissConfirmation}
       attemptingTxn={attemptingTxn}
       hash={txHash}
-      errorMessage={txnErrorMessage}
       content={() => (
         <ConfirmationModalContent
           topContent={() =>
@@ -463,20 +407,16 @@ export default function V3FormView({
     <V3SubmitButton
       addIsUnsupported={addIsUnsupported}
       addIsWarning={addIsWarning}
-      account={account ?? undefined}
-      isWrongNetwork={Boolean(isWrongNetwork)}
+      account={account}
+      isWrongNetwork={isWrongNetwork}
       approvalA={approvalA}
       approvalB={approvalB}
       isValid={isValid}
       showApprovalA={showApprovalA}
       approveACallback={approveACallback}
-      currentAllowanceA={currentAllowanceA}
-      revokeACallback={revokeACallback}
       currencies={currencies}
-      showApprovalB={showApprovalB}
       approveBCallback={approveBCallback}
-      currentAllowanceB={currentAllowanceB}
-      revokeBCallback={revokeBCallback}
+      showApprovalB={showApprovalB}
       parsedAmounts={parsedAmounts}
       onClick={handleButtonSubmit}
       attemptingTxn={attemptingTxn}
@@ -502,18 +442,14 @@ export default function V3FormView({
       if (currentPrice) {
         onBothRangeInput({
           leftTypedValue: tryParsePrice(
-            baseCurrency?.wrapped,
-            quoteCurrency?.wrapped,
-            (
-              currentPrice * (zoomLevel?.initialMin ?? ZOOM_LEVELS[feeAmount ?? FeeAmount.MEDIUM].initialMin)
-            ).toString(),
+            baseCurrency.wrapped,
+            quoteCurrency.wrapped,
+            (currentPrice * zoomLevel?.initialMin ?? ZOOM_LEVELS[feeAmount ?? FeeAmount.MEDIUM].initialMin).toString(),
           ),
           rightTypedValue: tryParsePrice(
-            baseCurrency?.wrapped,
-            quoteCurrency?.wrapped,
-            (
-              currentPrice * (zoomLevel?.initialMax ?? ZOOM_LEVELS[feeAmount ?? FeeAmount.MEDIUM].initialMax)
-            ).toString(),
+            baseCurrency.wrapped,
+            quoteCurrency.wrapped,
+            (currentPrice * zoomLevel?.initialMax ?? ZOOM_LEVELS[feeAmount ?? FeeAmount.MEDIUM].initialMax).toString(),
           ),
         })
       }
@@ -538,12 +474,11 @@ export default function V3FormView({
           gridAutoRows: 'max-content',
           gridAutoColumns: '100%',
         }}
-        gap="8px"
         disabled={!feeAmount || invalidPool || (noLiquidity && !startPriceTypedValue) || (!priceLower && !priceUpper)}
       >
-        <PreTitle>{t('Deposit Amount')}</PreTitle>
+        <PreTitle mb="8px">{t('Deposit Amount')}</PreTitle>
 
-        <LockedDeposit locked={depositADisabled}>
+        <LockedDeposit locked={depositADisabled} mb="8px">
           <Box mb="8px">
             <CurrencyInputPanel
               showUSDPrice
@@ -553,7 +488,7 @@ export default function V3FormView({
                 onFieldAInput(maxAmounts[Field.CURRENCY_A]?.multiply(new Percent(percent, 100))?.toExact() ?? '')
               }
               disableCurrencySelect
-              value={formattedAmounts[Field.CURRENCY_A] ?? '0'}
+              value={formattedAmounts[Field.CURRENCY_A]}
               onUserInput={onFieldAInput}
               showQuickInputButton
               showMaxButton
@@ -565,7 +500,7 @@ export default function V3FormView({
           </Box>
         </LockedDeposit>
 
-        <LockedDeposit locked={depositBDisabled}>
+        <LockedDeposit locked={depositBDisabled} mb="8px">
           <CurrencyInputPanel
             showUSDPrice
             maxAmount={maxAmounts[Field.CURRENCY_B]}
@@ -574,7 +509,7 @@ export default function V3FormView({
               onFieldBInput(maxAmounts[Field.CURRENCY_B]?.multiply(new Percent(percent, 100))?.toExact() ?? '')
             }
             disableCurrencySelect
-            value={formattedAmounts[Field.CURRENCY_B] ?? '0'}
+            value={formattedAmounts[Field.CURRENCY_B]}
             onUserInput={onFieldBInput}
             showQuickInputButton
             showMaxButton
@@ -585,25 +520,7 @@ export default function V3FormView({
           />
         </LockedDeposit>
       </DynamicSection>
-      <HideMedium style={{ gap: 16, flexDirection: 'column' }}>
-        {buttons}
-        {hasZapV3Pool && hasInsufficentBalance && (
-          <ZapLiquidityWidget
-            tickLower={tickLower}
-            tickUpper={tickUpper}
-            pool={pool}
-            baseCurrency={baseCurrency}
-            quoteCurrency={quoteCurrency}
-            initDepositToken={
-              independentField === Field.CURRENCY_A ? InitDepositToken.BASE_CURRENCY : InitDepositToken.QUOTE_CURRENCY
-            }
-            initAmount={typedValue}
-            onSubmit={() => {
-              router.push('/liquidity/positions')
-            }}
-          />
-        )}
-      </HideMedium>
+      <HideMedium>{buttons}</HideMedium>
 
       <RightContainer>
         <AutoColumn gap="16px">
@@ -638,8 +555,8 @@ export default function V3FormView({
                 currencyA={baseCurrency}
                 handleRateToggle={() => {
                   if (!ticksAtLimit[Bound.LOWER] && !ticksAtLimit[Bound.UPPER]) {
-                    onLeftRangeInput((invertPrice ? priceLower : priceUpper?.invert()) ?? undefined)
-                    onRightRangeInput((invertPrice ? priceUpper : priceLower?.invert()) ?? undefined)
+                    onLeftRangeInput((invertPrice ? priceLower : priceUpper?.invert()) ?? null)
+                    onRightRangeInput((invertPrice ? priceUpper : priceLower?.invert()) ?? null)
                     onFieldAInput(formattedAmounts[Field.CURRENCY_B] ?? '')
                   }
 
@@ -648,7 +565,7 @@ export default function V3FormView({
                       pathname: router.pathname,
                       query: {
                         ...router.query,
-                        currency: [currencyIdB!, currencyIdA!, feeAmount ? feeAmount.toString() : ''],
+                        currency: [currencyIdB, currencyIdA, feeAmount ? feeAmount.toString() : ''],
                       },
                     },
                     undefined,
@@ -676,17 +593,12 @@ export default function V3FormView({
                       {invertPrice ? price.invert().toSignificant(6) : price.toSignificant(6)}
                     </Text>
                     <Text color="text2" fontSize={12}>
-                      {t('%assetA% per %assetB%', {
-                        assetA: quoteCurrency?.symbol ?? '',
-                        assetB: baseCurrency.symbol ?? '',
-                      })}
+                      {quoteCurrency?.symbol} per {baseCurrency.symbol}
                     </Text>
                   </AutoRow>
                 )}
                 <LiquidityChartRangeInput
-                  zoomLevel={
-                    activeQuickAction && feeAmount ? QUICK_ACTION_CONFIGS?.[feeAmount]?.[activeQuickAction] : undefined
-                  }
+                  zoomLevel={QUICK_ACTION_CONFIGS?.[feeAmount]?.[activeQuickAction]}
                   key={baseCurrency?.wrapped?.address}
                   currencyA={baseCurrency ?? undefined}
                   currencyB={quoteCurrency ?? undefined}
@@ -721,7 +633,6 @@ export default function V3FormView({
               currencyB={quoteCurrency}
               feeAmount={feeAmount}
               ticksAtLimit={ticksAtLimit}
-              tickSpaceLimits={tickSpaceLimits}
             />
             {showCapitalEfficiencyWarning ? (
               <Message variant="warning">
@@ -745,8 +656,7 @@ export default function V3FormView({
               </Message>
             ) : (
               <Flex justifyContent="space-between" width="100%" style={{ gap: '8px' }}>
-                {feeAmount &&
-                  QUICK_ACTION_CONFIGS[feeAmount] &&
+                {QUICK_ACTION_CONFIGS[feeAmount] &&
                   Object.entries<ZoomLevels>(QUICK_ACTION_CONFIGS[feeAmount])
                     ?.sort(([a], [b]) => +a - +b)
                     .map(([quickAction, zoomLevel]) => {
@@ -809,27 +719,7 @@ export default function V3FormView({
               </Message>
             ) : null}
           </DynamicSection>
-          <MediumOnly style={{ gap: 16, flexDirection: 'column' }}>
-            {buttons}
-            {hasZapV3Pool && hasInsufficentBalance && (
-              <ZapLiquidityWidget
-                tickLower={tickLower}
-                tickUpper={tickUpper}
-                pool={pool}
-                baseCurrency={baseCurrency}
-                quoteCurrency={quoteCurrency}
-                initDepositToken={
-                  independentField === Field.CURRENCY_A
-                    ? InitDepositToken.BASE_CURRENCY
-                    : InitDepositToken.QUOTE_CURRENCY
-                }
-                initAmount={typedValue}
-                onSubmit={() => {
-                  router.push('/liquidity/positions')
-                }}
-              />
-            )}
-          </MediumOnly>
+          <MediumOnly>{buttons}</MediumOnly>
         </AutoColumn>
       </RightContainer>
     </>

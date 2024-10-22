@@ -1,23 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createElement, memo } from "react";
-import isTouchDevice from "../../util/isTouchDevice";
 import { Flex } from "../Box";
+import isTouchDevice from "../../util/isTouchDevice";
 import DropdownMenu from "../DropdownMenu/DropdownMenu";
 import MenuItem from "../MenuItem/MenuItem";
-import { MenuItemsProps, MenuItemsType } from "./types";
-import { findMenuItemsStatusColor } from "../../util/findMenuItemsStatusColor";
+import { MenuItemsProps } from "./types";
 
 const MenuItems: React.FC<React.PropsWithChildren<MenuItemsProps>> = ({
-  items = [] as MenuItemsType[],
+  items = [],
   activeItem,
   activeSubItem,
-  activeSubItemChildItem,
   ...props
 }) => {
   return (
     <Flex {...props}>
-      {items.map(({ label, items: menuItems = [], href, icon, disabled, onClick }) => {
-        const statusColor = findMenuItemsStatusColor(menuItems);
+      {items.map(({ label, items: menuItems = [], href, icon, disabled }) => {
+        const statusColor = menuItems?.find((menuItem) => menuItem.status !== undefined)?.status?.color;
         const isActive = activeItem === href;
         const linkProps = isTouchDevice() && menuItems && menuItems.length > 0 ? {} : { href };
         const Icon = icon;
@@ -27,16 +25,9 @@ const MenuItems: React.FC<React.PropsWithChildren<MenuItemsProps>> = ({
             items={menuItems}
             py={1}
             activeItem={activeSubItem}
-            activeSubItemChildItem={activeSubItemChildItem}
             isDisabled={disabled}
           >
-            <MenuItem
-              {...linkProps}
-              isActive={isActive}
-              statusColor={statusColor}
-              isDisabled={disabled}
-              onClick={onClick}
-            >
+            <MenuItem {...linkProps} isActive={isActive} statusColor={statusColor} isDisabled={disabled}>
               {label || (icon && createElement(Icon as any, { color: isActive ? "secondary" : "textSubtle" }))}
             </MenuItem>
           </DropdownMenu>

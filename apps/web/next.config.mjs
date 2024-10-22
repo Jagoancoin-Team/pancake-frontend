@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import BundleAnalyzer from '@next/bundle-analyzer'
-import { withWebSecurityHeaders } from '@pancakeswap/next-config/withWebSecurityHeaders'
-import smartRouterPkgs from '@pancakeswap/smart-router/package.json' with { type: 'json' }
 import { withSentryConfig } from '@sentry/nextjs'
-import { createVanillaExtractPlugin } from '@vanilla-extract/next-plugin'
-import vercelToolbarPlugin from '@vercel/toolbar/plugins/next'
+import { withAxiom } from 'next-axiom'
 import path from 'path'
 import { fileURLToPath } from 'url'
-
-const withVercelToolbar = vercelToolbarPlugin()
+import BundleAnalyzer from '@next/bundle-analyzer'
+import { createVanillaExtractPlugin } from '@vanilla-extract/next-plugin'
+import smartRouterPkgs from '@pancakeswap/smart-router/package.json' assert { type: 'json' }
+import { withWebSecurityHeaders } from '@pancakeswap/next-config/withWebSecurityHeaders'
+import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -43,90 +42,47 @@ const workerDeps = Object.keys(smartRouterPkgs.dependencies)
 
 /** @type {import('next').NextConfig} */
 const config = {
-  typescript: {
-    tsconfigPath: 'tsconfig.json',
-  },
   compiler: {
     styledComponents: true,
   },
   experimental: {
     scrollRestoration: true,
-    fallbackNodePolyfills: false,
     outputFileTracingRoot: path.join(__dirname, '../../'),
     outputFileTracingExcludes: {
-      '*': [],
+      '*': ['**@swc+core*', '**/@esbuild**'],
     },
-    optimizePackageImports: ['@pancakeswap/widgets-internal', '@pancakeswap/uikit'],
   },
   transpilePackages: [
     '@pancakeswap/farms',
-    '@pancakeswap/position-managers',
     '@pancakeswap/localization',
     '@pancakeswap/hooks',
     '@pancakeswap/utils',
     '@pancakeswap/widgets-internal',
-    '@pancakeswap/ifos',
-    '@pancakeswap/uikit',
-    // https://github.com/TanStack/query/issues/6560#issuecomment-1975771676
-    '@tanstack/query-core',
   ],
   reactStrictMode: true,
-  swcMinify: false,
+  swcMinify: true,
   images: {
-    contentDispositionType: 'attachment',
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'static-nft.pancakeswap.com',
-        pathname: '/mainnet/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'assets.pancakeswap.finance',
-        pathname: '/web/**',
-      },
-    ],
+    deviceSizes: [50, 150, 200, 300, 400, 640, 750, 828, 1080, 1200],
   },
   async rewrites() {
-    return {
-      afterFiles: [
-        {
-          source: '/info/token/:address',
-          destination: '/info/tokens/:address',
-        },
-        {
-          source: '/info/pool/:address',
-          destination: '/info/pools/:address',
-        },
-        {
-          source: '/.well-known/vercel/flags',
-          destination: '/api/vercel/flags',
-        },
-      ],
-      beforeFiles: [
-        // TODO: remove rewrite once explorer is fixed
-        {
-          source: '/info/v3',
-          destination: 'https://info-v1.pancakeswap.finance/info/v3',
-        },
-        {
-          source: '/info/v3/pairs',
-          destination: 'https://info-v1.pancakeswap.finance/info/v3/pairs',
-        },
-        {
-          source: '/info/v3/tokens',
-          destination: 'https://info-v1.pancakeswap.finance/info/v3/tokens',
-        },
-        {
-          source: '/info/v3/tokens/:path*',
-          destination: 'https://info-v1.pancakeswap.finance/info/v3/tokens/:path*',
-        },
-        {
-          source: '/info/v3/pairs/:path*',
-          destination: 'https://info-v1.pancakeswap.finance/info/v3/pairs/:path*',
-        },
-      ],
-    }
+    return [
+      {
+        source: '/default.tokenlist.json',
+        destination: "/api/trpc/token.defaultList"
+      },
+      {
+        source: '/info/token/:address',
+        destination: '/info/tokens/:address',
+      },
+      {
+        source: '/info/pool/:address',
+        destination: '/info/pools/:address',
+      },
+      {
+        source: '/kyc-meta',
+        destination: '/api/kyc-meta',
+      }
+    ]
   },
   async headers() {
     return [
@@ -166,6 +122,15 @@ const config = {
           },
         ],
       },
+      {
+        source: "/api/list-tokens",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*"
+          },
+        ]
+      }
     ]
   },
   async redirects() {
@@ -173,6 +138,26 @@ const config = {
       {
         source: '/send',
         destination: '/swap',
+        permanent: true,
+      },
+      {
+        source: '/twitter',
+        destination: 'https://twitter.com/icecream_swap',
+        permanent: false,
+      },
+      {
+        source: '/discord',
+        destination: 'https://discord.gg/rx6WGBPTty',
+        permanent: false,
+      },
+      {
+        source: '/telegram',
+        destination: 'https://t.me/Icecreamswap_com',
+        permanent: false,
+      },
+      {
+        source: '/swap/:outputCurrency',
+        destination: '/swap?outputCurrency=:outputCurrency',
         permanent: true,
       },
       {
@@ -234,6 +219,7 @@ const config = {
         __SENTRY_DEBUG__: false,
         __SENTRY_TRACING__: false,
       }),
+      new PrismaPlugin(),
     )
     if (!isServer && webpackConfig.optimization.splitChunks) {
       // webpack doesn't understand worker deps on quote worker, so we need to manually add them
@@ -254,6 +240,6 @@ const config = {
   },
 }
 
-export default withVercelToolbar(
-  withBundleAnalyzer(withVanillaExtract(withSentryConfig(withWebSecurityHeaders(config)), sentryWebpackPluginOptions)),
+export default withBundleAnalyzer(
+  withVanillaExtract(withSentryConfig(withAxiom(withWebSecurityHeaders(config)), sentryWebpackPluginOptions)),
 )

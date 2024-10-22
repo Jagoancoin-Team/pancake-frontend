@@ -1,14 +1,13 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Flex, ProfileAvatar, Text } from '@pancakeswap/uikit'
-import { formatNumber } from '@pancakeswap/utils/formatBalance'
-import truncateHash from '@pancakeswap/utils/truncateHash'
-import BigNumber from 'bignumber.js'
-import { useCakePrice } from 'hooks/useCakePrice'
-import { useDomainNameForAddress } from 'hooks/useDomain'
-import { useMemo } from 'react'
-import { useProfileForAddress } from 'state/profile/hooks'
 import { styled } from 'styled-components'
+import { Box, Text, Flex, ProfileAvatar } from '@pancakeswap/uikit'
+import { useTranslation } from '@pancakeswap/localization'
 import { RankListDetail } from 'views/TradingReward/hooks/useRankList'
+import { formatNumber } from '@pancakeswap/utils/formatBalance'
+import { useDomainNameForAddress } from 'hooks/useDomain'
+import truncateHash from '@pancakeswap/utils/truncateHash'
+import { usePriceCakeUSD } from 'state/farms/hooks'
+import { useMemo } from 'react'
+import BigNumber from 'bignumber.js'
 
 export const StyledMobileRow = styled(Box)`
   background-color: ${({ theme }) => theme.card.background};
@@ -26,13 +25,15 @@ interface MobileResultProps {
 
 const MobileResult: React.FC<React.PropsWithChildren<MobileResultProps>> = ({ isMyRank, rank }) => {
   const { t } = useTranslation()
-  const cakePrice = useCakePrice()
-  const { profile, isLoading: isProfileLoading } = useProfileForAddress(rank.origin)
+  const cakePriceBusd = usePriceCakeUSD()
+  const profile = undefined
+  const isProfileLoading = false
+  // const { profile, isLoading: isProfileLoading } = useProfileForAddress(rank.origin)
   const { domainName, avatar } = useDomainNameForAddress(rank.origin, !profile && !isProfileLoading)
 
   const cakeAmount = useMemo(
-    () => new BigNumber(rank?.estimateRewardUSD).div(cakePrice).toNumber(),
-    [cakePrice, rank?.estimateRewardUSD],
+    () => new BigNumber(rank?.estimateRewardUSD).div(cakePriceBusd).toNumber(),
+    [cakePriceBusd, rank?.estimateRewardUSD],
   )
 
   return (
@@ -51,7 +52,7 @@ const MobileResult: React.FC<React.PropsWithChildren<MobileResultProps>> = ({ is
           </Flex>
         </Flex>
         <Flex width="70%" justifyContent="flex-end" alignSelf="center">
-          <Text ellipsis color="primary" fontWeight="bold" style={{ alignSelf: 'center' }} mr="8px">
+          <Text color="primary" fontWeight="bold" style={{ alignSelf: 'center' }} mr="8px">
             {profile?.username || domainName || truncateHash(rank.origin)}
           </Text>
           <ProfileAvatar width={32} height={32} src={profile?.nft?.image?.thumbnail ?? avatar} />

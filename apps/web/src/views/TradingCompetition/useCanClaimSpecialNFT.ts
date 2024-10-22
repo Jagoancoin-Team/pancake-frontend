@@ -1,10 +1,10 @@
 import { useAccount } from 'wagmi'
 import { useEffect, useState } from 'react'
-import { API_PROFILE } from 'config/constants/endpoints'
 
 export const useCanClaimSpecialNFT = () => {
   const { address: account } = useAccount()
   const [canClaimSpecialNFT, setCanClaimSpecialNFT] = useState(false)
+  /*
   useEffect(() => {
     const fetchUserTradingStats = async () => {
       const res = await fetch(`${API_PROFILE}/api/users/${account}`)
@@ -16,5 +16,6 @@ export const useCanClaimSpecialNFT = () => {
       fetchUserTradingStats()
     }
   }, [account])
+  */
   return canClaimSpecialNFT
 }

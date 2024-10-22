@@ -125,9 +125,9 @@ export const swapRouter02Abi = [
     inputs: [
       {
         components: [
+          { internalType: 'address', name: 'pool', type: 'address' },
           { internalType: 'address', name: 'tokenIn', type: 'address' },
           { internalType: 'address', name: 'tokenOut', type: 'address' },
-          { internalType: 'uint24', name: 'fee', type: 'uint24' },
           { internalType: 'address', name: 'recipient', type: 'address' },
           { internalType: 'uint256', name: 'amountIn', type: 'uint256' },
           { internalType: 'uint256', name: 'amountOutMinimum', type: 'uint256' },
@@ -179,9 +179,9 @@ export const swapRouter02Abi = [
     inputs: [
       {
         components: [
+          { internalType: 'address', name: 'pool', type: 'address' },
           { internalType: 'address', name: 'tokenIn', type: 'address' },
           { internalType: 'address', name: 'tokenOut', type: 'address' },
-          { internalType: 'uint24', name: 'fee', type: 'uint24' },
           { internalType: 'address', name: 'recipient', type: 'address' },
           { internalType: 'uint256', name: 'amountOut', type: 'uint256' },
           { internalType: 'uint256', name: 'amountInMaximum', type: 'uint256' },
@@ -429,6 +429,20 @@ export const swapRouter02Abi = [
       { internalType: 'address', name: 'to', type: 'address' },
     ],
     name: 'swapExactTokensForTokens',
+    outputs: [{ internalType: 'uint256', name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'amountIn', type: 'uint256' },
+      { internalType: 'uint256', name: 'amountOutMin', type: 'uint256' },
+      { internalType: 'address[]', name: 'pools', type: 'address[]' },
+      { internalType: 'address', name: 'tokenIn', type: 'address' },
+      { internalType: 'address', name: 'tokenOut', type: 'address' },
+      { internalType: 'address', name: 'to', type: 'address' },
+    ],
+    name: 'swapExactTokensForTokensExternal',
     outputs: [{ internalType: 'uint256', name: 'amountOut', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function',

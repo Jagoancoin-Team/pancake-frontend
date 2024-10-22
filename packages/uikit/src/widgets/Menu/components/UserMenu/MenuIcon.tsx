@@ -78,7 +78,7 @@ const MenuIcon: React.FC<React.PropsWithChildren<{ avatarSrc?: string; variant: 
     return <NoProfileMenuIcon />;
   }
 
-  return <ProfileIcon src={avatarSrc} height={32} width={32} className={className} />;
+  return <ProfileIcon src={avatarSrc} height={32} width={32} className={className} alt="" />;
 };
 
 export default MenuIcon;

@@ -1,10 +1,11 @@
 {
   "env": {
     "es6": true,
-    "browser": true
+    "browser": true,
+    "jest": true
   },
   "plugins": ["lodash"],
-  "extends": ["plugin:@next/next/recommended", "../../packages/eslint-config/lib/next-page-router.js"],
+  "extends": ["plugin:@next/next/recommended"],
   "rules": {
     "no-restricted-syntax": 0,
     "import/no-unresolved": 0,

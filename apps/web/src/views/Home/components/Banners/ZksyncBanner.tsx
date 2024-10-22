@@ -1,6 +1,4 @@
-import { Button, Flex, Text, useMatchBreakpoints, OpenNewIcon } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { Button, Flex, NextLinkFromReactRouter, Text, useMatchBreakpoints, OpenNewIcon } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
 import Image from 'next/legacy/image'
 import { styled, css } from 'styled-components'
@@ -88,7 +86,7 @@ export const ZksyncBanner = () => {
   const { t } = useTranslation()
   const { isMobile, isDesktop } = useMatchBreakpoints()
 
-  const title = isDesktop ? t('PancakeSwap Now Live on zkSync Era!') : t('Zksync is LIVE!')
+  const title = isDesktop ? t('IceCreamSwap Now Live on zkSync Era!') : t('Zksync is LIVE!')
 
   return (
     <S.Wrapper

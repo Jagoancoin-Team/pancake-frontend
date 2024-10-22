@@ -1,7 +1,7 @@
-import EasyMde from 'easymde'
-import merge from 'lodash/merge'
 import { TextareaHTMLAttributes, useEffect, useRef } from 'react'
+import EasyMde from 'easymde'
 import { styled } from 'styled-components'
+import merge from 'lodash/merge'
 
 import 'easymde/dist/easymde.min.css'
 
@@ -60,24 +60,19 @@ const defaultOptions: EasyMde.Options = {
 }
 
 const SimpleMde: React.FC<React.PropsWithChildren<SimpleMdeProps>> = ({ options, onTextChange, ...props }) => {
-  const ref = useRef<HTMLTextAreaElement>(null)
+  const ref = useRef()
   const onTextChangeHandler = useRef(onTextChange)
 
   useEffect(() => {
-    let simpleMde: EasyMde | null = new EasyMde(merge({ element: ref.current }, defaultOptions, options))
+    let simpleMde = new EasyMde(merge({ element: ref.current }, defaultOptions, options))
 
-    const handler = () => {
-      if (simpleMde) {
-        onTextChangeHandler.current(simpleMde.value())
-      }
-    }
-
-    simpleMde.codemirror.on('change', handler)
+    simpleMde.codemirror.on('change', () => {
+      onTextChangeHandler.current(simpleMde.value())
+    })
 
     return () => {
       if (simpleMde) {
         simpleMde.toTextArea()
-        simpleMde.codemirror.off('change', handler)
         simpleMde = null
       }
     }

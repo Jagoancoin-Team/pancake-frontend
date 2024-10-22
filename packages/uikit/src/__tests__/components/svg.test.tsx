@@ -1,6 +1,5 @@
-import { expect, it } from "vitest";
-import { Svg } from "../../components/Svg";
 import { renderWithProvider } from "../../testHelpers";
+import { Svg } from "../../components/Svg";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(

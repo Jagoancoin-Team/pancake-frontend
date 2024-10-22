@@ -1,9 +1,8 @@
 import { Trans } from '@pancakeswap/localization'
-import { ReactNode } from 'react'
 
 interface CommissionType {
   id: string
-  title: ReactNode
+  title: JSX.Element
   percentage: string
   image: {
     width: number

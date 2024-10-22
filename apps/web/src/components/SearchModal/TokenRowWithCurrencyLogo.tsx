@@ -1,4 +1,4 @@
-import { withCurrencyLogo } from '@pancakeswap/widgets-internal'
+import { withCurrencyLogo } from '@pancakeswap/uikit'
 import { Currency } from '@pancakeswap/sdk'
 import { CurrencyLogo } from '../Logo'
 

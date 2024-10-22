@@ -2,28 +2,19 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable import/no-unresolved */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render as rtlRender } from '@testing-library/react'
-import Provider from 'Providers'
-import { Provider as JotaiProvider } from 'jotai'
-import { useHydrateAtoms } from 'jotai/utils'
 import noop from 'lodash/noop'
 import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime'
-import { NextRouter } from 'next/router'
+import Provider from 'Providers'
+import { Provider as JotaiProvider } from 'jotai'
 import { initializeStore, makeStore } from 'state'
+import { SWRConfig } from 'swr'
 import { vi } from 'vitest'
-import { WagmiProvider, createConfig } from 'wagmi'
+import { WagmiConfig } from 'wagmi'
+import { useHydrateAtoms } from 'jotai/utils'
+import { wagmiConfig } from './utils/wagmi'
 
-import { CHAINS } from 'config/chains'
-import { transports } from 'utils/wagmi'
-
-const wagmiConfig = createConfig({
-  chains: CHAINS,
-  syncConnectedChain: true,
-  transports,
-})
-
-const mockRouter: NextRouter = {
+const mockRouter: any = {
   basePath: '',
   pathname: '/',
   route: '/',
@@ -54,9 +45,7 @@ export function renderWithProvider(
   function Wrapper({ children }) {
     return (
       <RouterContext.Provider value={{ ...mockRouter, ...router }}>
-        <Provider store={store} dehydratedState={{}}>
-          {children}
-        </Provider>
+        <Provider store={store}>{children}</Provider>
       </RouterContext.Provider>
     )
   }
@@ -73,7 +62,7 @@ export const createJotaiWrapper =
   (reduxState = undefined, testAtom, initState = undefined) =>
   ({ children }) =>
     (
-      <Provider store={makeStore(reduxState)} dehydratedState={{}}>
+      <Provider store={makeStore(reduxState)}>
         <JotaiProvider>
           {initState ? <HydrateAtoms initialValues={[[testAtom, initState]]}>{children}</HydrateAtoms> : children}
         </JotaiProvider>
@@ -83,29 +72,21 @@ export const createJotaiWrapper =
 export const createReduxWrapper =
   (initState = undefined) =>
   ({ children }) =>
-    (
-      <Provider store={makeStore(initState)} dehydratedState={{}}>
-        {children}
-      </Provider>
-    )
+    <Provider store={makeStore(initState)}>{children}</Provider>
 
-export const createQueryClientWrapper =
-  (queryClient) =>
-  ({ children }) => {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  }
+export const createSWRWrapper =
+  (fallbackData = undefined) =>
+  ({ children }) =>
+    (
+      <WagmiConfig config={wagmiConfig}>
+        <SWRConfig value={{ fallback: fallbackData }}>{children}</SWRConfig>
+      </WagmiConfig>
+    )
 
 export const createWagmiWrapper =
   () =>
-  ({ children }) => {
-    const queryClient = new QueryClient()
-
-    return (
-      <WagmiProvider reconnectOnMount config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      </WagmiProvider>
-    )
-  }
+  ({ children }) =>
+    <WagmiConfig config={wagmiConfig}>{children}</WagmiConfig>
 
 // re-export everything
 export * from '@testing-library/react'

@@ -1,4 +1,4 @@
-import { ElementType, useCallback, useEffect, useState } from "react";
+import { ElementType, useState } from "react";
 import { copyText } from "./copyText";
 import { CopyIcon, SvgProps } from "../Svg";
 import { useTooltip } from "../../hooks";
@@ -27,29 +27,21 @@ export const CopyButton: React.FC<React.PropsWithChildren<CopyButtonProps>> = ({
     trigger: "hover",
   });
 
-  const displayTooltip = useCallback(() => {
+  const displayTooltip = () => {
     setIsTooltipDisplayed(true);
-  }, []);
-
-  const handleOnClick = useCallback(() => {
-    copyText(text, displayTooltip);
-  }, [text, displayTooltip]);
-
-  useEffect(() => {
-    if (isTooltipDisplayed) {
-      const tooltipTimeout = setTimeout(() => {
-        setIsTooltipDisplayed(false);
-      }, 1000);
-      return () => clearTimeout(tooltipTimeout);
-    }
-
-    return undefined;
-  }, [isTooltipDisplayed]);
-
+    setTimeout(() => {
+      setIsTooltipDisplayed(false);
+    }, 1000);
+  };
   return (
     <>
       <div ref={targetRef}>
-        <IconButton onClick={handleOnClick} scale="sm" variant="text" style={{ width: "auto", position: "relative" }}>
+        <IconButton
+          onClick={() => copyText(text, displayTooltip)}
+          scale="sm"
+          variant="text"
+          style={{ width: "auto", position: "relative" }}
+        >
           <Icon color={buttonColor} width={width} {...props} />
         </IconButton>
       </div>

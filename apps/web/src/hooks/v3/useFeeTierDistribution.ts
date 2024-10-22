@@ -1,16 +1,17 @@
 import { Currency, Token } from '@pancakeswap/sdk'
 import { FeeAmount } from '@pancakeswap/v3-sdk'
 import { useMemo } from 'react'
+import { useCurrentBlock } from 'state/block/hooks'
 import { PoolState } from './types'
-import { useFeeTierDistributionQuery } from './useFeeTierDistributionQuery'
+import useFeeTierDistributionQuery from './useFeeTierDistributionQuery'
 
 import { usePool } from './usePools'
 
 // maximum number of blocks past which we consider the data stale
-// const MAX_DATA_BLOCK_AGE = 20
+const MAX_DATA_BLOCK_AGE = 20
 
 interface FeeTierDistribution {
-  isPending: boolean
+  isLoading: boolean
   isError: boolean
   largestUsageFeeTier?: FeeAmount | undefined
   largestUsageFeeTierTvl?: [number, number]
@@ -20,10 +21,10 @@ interface FeeTierDistribution {
 }
 
 export function useFeeTierDistribution(
-  currencyA: Currency | undefined | null,
-  currencyB: Currency | undefined | null,
+  currencyA: Currency | undefined,
+  currencyB: Currency | undefined,
 ): FeeTierDistribution {
-  const { isPending, error, distributions, tvlByFeeTier } = usePoolTVL(currencyA?.wrapped, currencyB?.wrapped)
+  const { isLoading, error, distributions, tvlByFeeTier } = usePoolTVL(currencyA?.wrapped, currencyB?.wrapped)
 
   // fetch all pool states to determine pool state
   const [poolStateVeryLow] = usePool(currencyA, currencyB, FeeAmount.LOWEST)
@@ -32,9 +33,9 @@ export function useFeeTierDistribution(
   const [poolStateHigh] = usePool(currencyA, currencyB, FeeAmount.HIGH)
 
   return useMemo(() => {
-    if (isPending || error || !distributions) {
+    if (isLoading || error || !distributions) {
       return {
-        isPending,
+        isLoading,
         isError: Boolean(error),
         distributions,
       }
@@ -46,7 +47,7 @@ export function useFeeTierDistribution(
       .reduce((a: FeeAmount, b: FeeAmount) => ((distributions[a] ?? 0) > (distributions[b] ?? 0) ? a : b), -1)
 
     const percentages =
-      !isPending &&
+      !isLoading &&
       !error &&
       distributions &&
       poolStateVeryLow !== PoolState.LOADING &&
@@ -65,25 +66,37 @@ export function useFeeTierDistribution(
         : undefined
 
     return {
-      isPending,
+      isLoading,
       isError: Boolean(error),
       distributions: percentages,
       largestUsageFeeTier: largestUsageFeeTier === -1 ? undefined : largestUsageFeeTier,
       largestUsageFeeTierTvl: tvlByFeeTier[largestUsageFeeTier],
     }
-  }, [isPending, error, distributions, tvlByFeeTier, poolStateVeryLow, poolStateLow, poolStateMedium, poolStateHigh])
+  }, [isLoading, error, distributions, tvlByFeeTier, poolStateVeryLow, poolStateLow, poolStateMedium, poolStateHigh])
 }
 
 function usePoolTVL(token0: Token | undefined, token1: Token | undefined) {
-  const { isPending, error, data } = useFeeTierDistributionQuery(token0?.address, token1?.address, 30000)
+  const latestBlock = useCurrentBlock()
+  const { isLoading, error, data } = useFeeTierDistributionQuery(token0?.address, token1?.address, 30000)
+
+  const { asToken0, asToken1, _meta } = data ?? {}
 
   return useMemo(() => {
-    const all =
-      data?.map((t) => ({
-        feeTier: t.feeTier,
-        totalValueLockedToken0: +t.tvlToken0,
-        totalValueLockedToken1: +t.tvlToken1,
-      })) ?? []
+    if (!latestBlock || !_meta || !asToken0 || !asToken1) {
+      return {
+        isLoading,
+        error,
+      }
+    }
+
+    if (latestBlock - (_meta?.block?.number ?? 0) > MAX_DATA_BLOCK_AGE) {
+      return {
+        isLoading,
+        error,
+      }
+    }
+
+    const all = asToken0.concat(asToken1)
 
     // sum tvl for token0 and token1 by fee tier
     const tvlByFeeTier = all.reduce(
@@ -106,7 +119,7 @@ function usePoolTVL(token0: Token | undefined, token1: Token | undefined) {
 
     // sum total tvl for token0 and token1
     const [sumToken0Tvl, sumToken1Tvl] = Object.values(tvlByFeeTier).reduce(
-      (acc: [number, number], value: any) => {
+      (acc: [number, number], value) => {
         const result = acc
 
         result[0] += value[0] ?? 0
@@ -143,10 +156,10 @@ function usePoolTVL(token0: Token | undefined, token1: Token | undefined) {
     }
 
     return {
-      isPending,
+      isLoading,
       error,
       distributions,
       tvlByFeeTier,
     }
-  }, [data, isPending, error])
+  }, [_meta, asToken0, asToken1, isLoading, error, latestBlock])
 }

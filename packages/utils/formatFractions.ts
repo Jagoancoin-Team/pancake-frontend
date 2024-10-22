@@ -1,21 +1,17 @@
-import { Currency, CurrencyAmount, Fraction, Percent, Price, Rounding } from '@pancakeswap/swap-sdk-core'
+import { Percent, Fraction, Price, Currency, CurrencyAmount } from '@pancakeswap/swap-sdk-core'
 
 export function formatPercent(percent?: Percent, precision?: number) {
   return percent ? formatFraction(percent.asFraction.multiply(100), precision) : undefined
 }
 
-export function formatFraction(
-  fraction?: Fraction | null | undefined,
-  precision: number | undefined = 6,
-  rounding: Rounding | undefined = undefined,
-) {
+export function formatFraction(fraction?: Fraction | null | undefined, precision: number | undefined = 6) {
   if (!fraction || fraction.denominator === 0n) {
     return undefined
   }
   if (fraction.greaterThan(10n ** BigInt(precision))) {
     return fraction.toFixed(0)
   }
-  return fraction.toSignificant(precision, undefined, rounding)
+  return fraction.toSignificant(precision)
 }
 
 export function formatPrice(price?: Price<Currency, Currency> | null | undefined, precision?: number | undefined) {
@@ -29,11 +25,7 @@ export function formatAmount(amount?: CurrencyAmount<Currency> | null | undefine
   if (!amount) {
     return undefined
   }
-  return formatFraction(
-    amount?.asFraction.divide(10n ** BigInt(amount?.currency.decimals)),
-    precision,
-    Rounding.ROUND_DOWN,
-  )
+  return formatFraction(amount?.asFraction.divide(10n ** BigInt(amount?.currency.decimals)), precision)
 }
 
 export function parseNumberToFraction(num: number, precision = 6) {

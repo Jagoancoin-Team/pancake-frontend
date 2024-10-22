@@ -1,10 +1,10 @@
-import { Currency, Percent, Router, SwapParameters, Trade, TradeType } from '@pancakeswap/sdk'
-import { INITIAL_ALLOWED_SLIPPAGE } from 'config/constants'
-import { BIPS_BASE } from 'config/constants/exchange'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import { Percent, Router, SwapParameters, Trade, TradeType, Currency } from '@pancakeswap/sdk'
 import { useMemo } from 'react'
+import { BIPS_BASE } from 'config/constants/exchange'
+import { INITIAL_ALLOWED_SLIPPAGE } from 'config/constants'
 import { useRouterContract } from 'utils/exchange'
-import { useTransactionDeadline } from './useTransactionDeadline'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import useTransactionDeadline from './useTransactionDeadline'
 
 export interface SwapCall {
   contract: ReturnType<typeof useRouterContract>
@@ -18,14 +18,14 @@ export interface SwapCall {
  * @param recipientAddressOrName
  */
 export function useSwapCallArguments(
-  trade: Trade<Currency, Currency, TradeType> | undefined | null, // trade to execute, required
+  trade: Trade<Currency, Currency, TradeType> | undefined, // trade to execute, required
   allowedSlippage: number = INITIAL_ALLOWED_SLIPPAGE, // in bips
   recipientAddress: string | null, // the address of the recipient of the trade, or null if swap should be returned to sender
 ): SwapCall[] {
   const { account, chainId } = useAccountActiveChain()
 
   const recipient = recipientAddress === null ? account : recipientAddress
-  const [deadline] = useTransactionDeadline()
+  const deadline = useTransactionDeadline()
   const contract = useRouterContract()
 
   return useMemo(() => {
@@ -35,7 +35,7 @@ export function useSwapCallArguments(
       return []
     }
 
-    const swapMethods: SwapParameters[] = []
+    const swapMethods = []
 
     swapMethods.push(
       Router.swapCallParameters(trade, {
@@ -56,7 +56,7 @@ export function useSwapCallArguments(
         }),
       )
     }
-
+    
     return swapMethods.map((parameters) => ({ parameters, contract }))
   }, [account, allowedSlippage, chainId, contract, deadline, recipient, trade])
 }

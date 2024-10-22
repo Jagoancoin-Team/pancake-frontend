@@ -1,8 +1,8 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { FAST_INTERVAL } from 'config/constants'
+import useSWR from 'swr'
+import { useAccount } from 'wagmi'
 import qs from 'qs'
 import useUserExist from 'views/AffiliatesProgram/hooks/useUserExist'
-import { useAccount } from 'wagmi'
+import { FAST_INTERVAL } from 'config/constants'
 
 export type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -11,7 +11,7 @@ export interface ClaimDetail {
   amountUSD: string
   amountCakeSmallUnit: string
   totalCakeSmallUnit: string
-  expiryTime: string | undefined
+  expiryTime: null
   signature: null
   process: boolean
   approveStatus: ClaimStatus
@@ -29,10 +29,9 @@ const useUserClaimList = ({ currentPage }) => {
   const { address } = useAccount()
   const { isUserExist } = useUserExist()
 
-  const { data, isPending, refetch } = useQuery({
-    queryKey: ['affiliates-program', 'user-claim-list', isUserExist, address, currentPage],
-
-    queryFn: async () => {
+  const { data, isLoading, mutate } = useSWR(
+    address && isUserExist && ['/user-claim-list', isUserExist, address, currentPage],
+    async () => {
       try {
         const skip = currentPage === 1 ? 0 : (currentPage - 1) * MAX_PER_PAGE
         const urlParamsObject = { address, skip, take: MAX_PER_PAGE }
@@ -51,16 +50,16 @@ const useUserClaimList = ({ currentPage }) => {
         }
       }
     },
-
-    enabled: Boolean(address),
-    refetchInterval: FAST_INTERVAL * 3,
-    placeholderData: keepPreviousData,
-  })
+    {
+      refreshInterval: FAST_INTERVAL * 3,
+      keepPreviousData: true,
+    },
+  )
 
   return {
     data,
-    isFetching: isPending,
-    mutate: refetch,
+    isFetching: isLoading,
+    mutate,
   }
 }
 

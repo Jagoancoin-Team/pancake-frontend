@@ -7,140 +7,87 @@ import {
   Card,
   CardBody,
   Flex,
+  NextLinkFromReactRouter,
   Skeleton,
   Text,
-  TextProps,
-  useMatchBreakpoints,
   useToast,
 } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
 import BigNumber from 'bignumber.js'
 import { ToastDescriptionWithTx } from 'components/Toast'
 import { BOOSTED_FARM_GAS_LIMIT } from 'config'
-import { useCakePrice } from 'hooks/useCakePrice'
 import useCatchTxError from 'hooks/useCatchTxError'
 import { useCallback } from 'react'
+import { usePriceCakeUSD } from 'state/farms/hooks'
 import { useGasPrice } from 'state/user/hooks'
 import { styled } from 'styled-components'
-import { bCakeHarvestFarm, harvestFarm } from 'utils/calls'
+import { getMasterChefV2Address } from 'utils/addressHelpers'
+import { harvestFarm } from 'utils/calls'
 import { useFarmsV3BatchHarvest } from 'views/Farms/hooks/v3/useFarmV3Actions'
 import useFarmsWithBalance, { FarmWithBalance } from 'views/Home/hooks/useFarmsWithBalance'
-import { useMasterchef } from 'hooks/useContract'
 import { getEarningsText } from './EarningsText'
 
 const StyledCard = styled(Card)`
   width: 100%;
   height: fit-content;
 `
-const StyledCardBody = styled(CardBody)`
-  padding: 4px 8px;
-  ${({ theme }) => theme.mediaQueries.sm} {
-    padding: 24px;
-  }
-`
 
-interface HarvestCardProps extends TextProps {
-  onHarvestStart: () => void | undefined
-  onHarvestEnd: () => void | undefined
-}
+const masterChefAddress = getMasterChefV2Address()
 
-const HarvestCard: React.FC<React.PropsWithChildren<HarvestCardProps>> = ({ onHarvestStart, onHarvestEnd }) => {
+const HarvestCard = () => {
   const { t } = useTranslation()
   const { toastSuccess } = useToast()
-  const { fetchWithCatchTxError, loading: v2PendingTx } = useCatchTxError()
+  const { fetchWithCatchTxError, loading: pendingTx } = useCatchTxError()
   const { farmsWithStakedBalance, earningsSum: farmEarningsSum } = useFarmsWithBalance()
 
-  const cakePrice = useCakePrice()
-  const masterChefAddress = useMasterchef()
-  const { isMobile } = useMatchBreakpoints()
+  const cakePriceBusd = usePriceCakeUSD()
   const gasPrice = useGasPrice()
-  const earningsBusd = new BigNumber(farmEarningsSum).multipliedBy(cakePrice)
+  const earningsBusd = new BigNumber(farmEarningsSum).multipliedBy(cakePriceBusd)
   const numTotalToCollect = farmsWithStakedBalance.length
   const numFarmsToCollect = farmsWithStakedBalance.filter(
-    (value) => (value && 'pid' in value && value.pid !== 0) || (value && 'sendTx' in value && value.sendTx !== null),
+    (value) => ('pid' in value && value.pid !== 0) || ('sendTx' in value && value.sendTx !== null),
   ).length
   const hasCakePoolToCollect = numTotalToCollect - numFarmsToCollect > 0
 
   const earningsText = getEarningsText(numFarmsToCollect, hasCakePoolToCollect, earningsBusd, t)
   const [preText, toCollectText] = earningsText.split(earningsBusd.toString())
-  const { onHarvestAll, harvesting: v3PendingTx } = useFarmsV3BatchHarvest()
-
-  const pendingTx = v2PendingTx || v3PendingTx
+  const { onHarvestAll } = useFarmsV3BatchHarvest()
 
   const harvestAllFarms = useCallback(async () => {
-    onHarvestStart?.()
-    const v2Farms = farmsWithStakedBalance.filter((value) => value && 'pid' in value) as FarmWithBalance[]
+    const v2Farms = farmsWithStakedBalance.filter((value) => 'pid' in value) as FarmWithBalance[]
+    const v3Farms = farmsWithStakedBalance.filter((value) => 'sendTx' in value) as {
+      sendTx: {
+        to: string
+        tokenId: string
+      }
+    }[]
     for (let i = 0; i < v2Farms.length; i++) {
       const farmWithBalance = v2Farms[i]
-      if (farmWithBalance.balance.gt(0)) {
-        // eslint-disable-next-line no-await-in-loop
-        const receipt = await fetchWithCatchTxError(() => {
-          return harvestFarm(
-            // @ts-ignore
-            farmWithBalance.contract,
-            farmWithBalance.pid,
-            gasPrice,
-            farmWithBalance.contract.address !== masterChefAddress ? BOOSTED_FARM_GAS_LIMIT : undefined,
-          )
-        })
-        if (receipt?.status) {
-          toastSuccess(
-            `${t('Harvested')}!`,
-            <ToastDescriptionWithTx txHash={receipt.transactionHash}>
-              {t('Your %symbol% earnings have been sent to your wallet!', { symbol: 'CAKE' })}
-            </ToastDescriptionWithTx>,
-          )
-        }
-      }
-      if (farmWithBalance.bCakeBalance.gt(0)) {
-        // eslint-disable-next-line no-await-in-loop
-        const receipt = await fetchWithCatchTxError(() => {
-          return bCakeHarvestFarm(
-            // @ts-ignore
-            farmWithBalance.bCakeContract,
-            gasPrice,
-            BOOSTED_FARM_GAS_LIMIT,
-          )
-        })
-        if (receipt?.status) {
-          toastSuccess(
-            `${t('Harvested')}!`,
-            <ToastDescriptionWithTx txHash={receipt.transactionHash}>
-              {t('Your %symbol% earnings have been sent to your wallet!', { symbol: 'CAKE' })}
-            </ToastDescriptionWithTx>,
-          )
-        }
+      // eslint-disable-next-line no-await-in-loop
+      const receipt = await fetchWithCatchTxError(() => {
+        return harvestFarm(
+          // @ts-ignore
+          farmWithBalance.contract,
+          farmWithBalance.pid,
+          gasPrice,
+          farmWithBalance.contract.address !== masterChefAddress ? BOOSTED_FARM_GAS_LIMIT : undefined,
+        )
+      })
+      if (receipt?.status) {
+        toastSuccess(
+          `${t('Harvested')}!`,
+          <ToastDescriptionWithTx txHash={receipt.transactionHash}>
+            {t('Your %symbol% earnings have been sent to your wallet!', { symbol: 'CAKE' })}
+          </ToastDescriptionWithTx>,
+        )
       }
     }
 
-    const v3Farms = (
-      farmsWithStakedBalance.filter((value) => value && 'sendTx' in value) as {
-        sendTx: {
-          to: string
-          tokenId: string
-        }
-      }[]
-    ).map((farm) => farm.sendTx.tokenId)
-    if (v3Farms.length > 0) {
-      await onHarvestAll(v3Farms)
-    }
-    onHarvestEnd?.()
-  }, [
-    farmsWithStakedBalance,
-    onHarvestAll,
-    fetchWithCatchTxError,
-    gasPrice,
-    toastSuccess,
-    t,
-    onHarvestStart,
-    onHarvestEnd,
-    masterChefAddress,
-  ])
+    onHarvestAll(v3Farms.map((farm) => farm.sendTx.tokenId))
+  }, [farmsWithStakedBalance, onHarvestAll, fetchWithCatchTxError, gasPrice, toastSuccess, t])
 
   return (
     <StyledCard>
-      <StyledCardBody>
+      <CardBody>
         <Flex flexDirection={['column', null, null, 'row']} justifyContent="space-between" alignItems="center">
           <Flex flexDirection="column" alignItems={['center', null, null, 'flex-start']}>
             {preText && (
@@ -151,7 +98,7 @@ const HarvestCard: React.FC<React.PropsWithChildren<HarvestCardProps>> = ({ onHa
             {!earningsBusd.isNaN() ? (
               <Balance
                 decimals={earningsBusd.gt(0) ? 2 : 0}
-                fontSize="20px"
+                fontSize="24px"
                 bold
                 prefix={earningsBusd.gt(0) ? '~$' : '$'}
                 lineHeight="1.1"
@@ -160,7 +107,7 @@ const HarvestCard: React.FC<React.PropsWithChildren<HarvestCardProps>> = ({ onHa
             ) : (
               <Skeleton width={96} height={24} my="2px" />
             )}
-            <Text mb={['8px', null, null, '0']} color="textSubtle">
+            <Text mb={['16px', null, null, '0']} color="textSubtle">
               {toCollectText}
             </Text>
           </Flex>
@@ -181,7 +128,6 @@ const HarvestCard: React.FC<React.PropsWithChildren<HarvestCardProps>> = ({ onHa
               endIcon={pendingTx ? <AutoRenewIcon spin color="currentColor" /> : null}
               disabled={pendingTx}
               onClick={harvestAllFarms}
-              scale={isMobile ? 'sm' : 'md'}
             >
               <Text color="invertedContrast" bold>
                 {pendingTx ? t('Harvesting') : t('Harvest all')}
@@ -189,7 +135,7 @@ const HarvestCard: React.FC<React.PropsWithChildren<HarvestCardProps>> = ({ onHa
             </Button>
           )}
         </Flex>
-      </StyledCardBody>
+      </CardBody>
     </StyledCard>
   )
 }

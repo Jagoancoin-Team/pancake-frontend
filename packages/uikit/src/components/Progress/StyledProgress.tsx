@@ -3,7 +3,7 @@ import { styled } from "styled-components";
 import { space, variant as StyledSystemVariant } from "styled-system";
 import { styleVariants, styleScales } from "./themes";
 import { ProgressProps, variants } from "./types";
-import { lightColors } from "../../tokens";
+import { lightColors } from "../..";
 
 interface ProgressBarProps {
   primary?: boolean;
@@ -17,8 +17,8 @@ export const Bar = styled.div.withConfig({ shouldForwardProp })<ProgressBarProps
   left: 0;
   background: ${({ theme, $useDark, primary, $background }) => {
     if ($background) return $background;
-    if ($useDark) return primary ? theme.colors.secondary : `${theme.colors.secondary80}`;
-    return primary ? lightColors.secondary : `${lightColors.secondary80}`;
+    if ($useDark) return primary ? theme.colors.secondary : `${theme.colors.success}`;
+    return primary ? lightColors.secondary : `${lightColors.success}`;
   }};
   height: 100%;
   transition: width 200ms ease;

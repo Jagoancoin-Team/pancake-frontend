@@ -1,16 +1,16 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
 import { Flex, useToast } from '@pancakeswap/uikit'
-import { ToastDescriptionWithTx } from 'components/Toast'
+import { useState } from 'react'
+import { useAccount } from 'wagmi'
+import { ChainId } from '@pancakeswap/sdk'
 import { useActiveChainId } from 'hooks/useActiveChainId'
 import useCatchTxError from 'hooks/useCatchTxError'
+import { ToastDescriptionWithTx } from 'components/Toast'
 import { useAffiliateProgramContract } from 'hooks/useContract'
-import { useState } from 'react'
-import SingleHistoricalReward from 'views/AffiliatesProgram/components/Dashboard/Reward/SingleHistoricalReward'
-import WrongNetworkWarning from 'views/AffiliatesProgram/components/Dashboard/Reward/WrongNetworkWarning'
 import useAffiliateClaimList from 'views/AffiliatesProgram/hooks/useAffiliateClaimList'
 import useUserClaimList, { ClaimDetail } from 'views/AffiliatesProgram/hooks/useUserClaimList'
-import { useAccount } from 'wagmi'
+import SingleHistoricalReward from 'views/AffiliatesProgram/components/Dashboard/Reward/SingleHistoricalReward'
+import WrongNetworkWarning from 'views/AffiliatesProgram/components/Dashboard/Reward/WrongNetworkWarning'
 
 interface HistoricalRewardProps {
   isAffiliate: boolean
@@ -42,7 +42,7 @@ const HistoricalReward: React.FC<React.PropsWithChildren<HistoricalRewardProps>>
   const handleClickClaim = async (isAffiliateClaim: boolean, reward: ClaimDetail) => {
     try {
       const currentTime = new Date().getTime()
-      if (currentTime > new Date(reward.expiryTime ?? 0).getTime()) {
+      if (currentTime > new Date(reward.expiryTime).getTime()) {
         const url = isAffiliateClaim ? 'affiliate-regenerate-signature' : 'user-regenerate-signature'
         const response = await fetch(`/api/affiliates-program/${url}`, {
           method: 'POST',
@@ -72,10 +72,7 @@ const HistoricalReward: React.FC<React.PropsWithChildren<HistoricalRewardProps>>
     try {
       const { nonce, totalCakeSmallUnit, signature } = reward as any
       const claimType = isAffiliateClaim ? 0 : 1
-      const expiryTime = Math.floor(new Date(reward.expiryTime ?? 0).getTime() / 1000)
-
-      if (!contract || !contract.account || !address) return
-
+      const expiryTime = Math.floor(new Date(reward.expiryTime).getTime() / 1000)
       const receipt = await fetchWithCatchTxError(() =>
         contract.write.claim(
           [
@@ -89,7 +86,7 @@ const HistoricalReward: React.FC<React.PropsWithChildren<HistoricalRewardProps>>
             signature,
           ],
           {
-            account: contract.account!,
+            account: contract.account,
             chain: contract.chain,
           },
         ),

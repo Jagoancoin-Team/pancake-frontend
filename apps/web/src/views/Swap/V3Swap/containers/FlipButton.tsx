@@ -1,6 +1,4 @@
-import { AutoColumn, Button } from '@pancakeswap/uikit'
-import { Swap as SwapUI } from '@pancakeswap/widgets-internal'
-
+import { AutoColumn, Swap as SwapUI, Button } from '@pancakeswap/uikit'
 import { useCallback, memo } from 'react'
 import replaceBrowserHistory from '@pancakeswap/utils/replaceBrowserHistory'
 import { useTranslation } from '@pancakeswap/localization'
@@ -35,12 +33,7 @@ export const FlipButton = memo(function FlipButton() {
       <AutoRow justify={isExpertMode ? 'space-between' : 'center'} style={{ padding: '0 1rem', marginTop: '1em' }}>
         <SwapUI.SwitchButton onClick={onFlip} />
         {allowRecipient && recipient === null ? (
-          <Button
-            variant="text"
-            id="add-recipient-button"
-            onClick={() => onChangeRecipient('')}
-            data-dd-action-name="Swap flip button"
-          >
+          <Button variant="text" id="add-recipient-button" onClick={() => onChangeRecipient('')}>
             {t('+ Add a send (optional)')}
           </Button>
         ) : null}

@@ -1,5 +1,5 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import qs from 'qs'
+import { NextApiRequest, NextApiResponse } from 'next'
 
 import { z } from 'zod'
 
@@ -35,12 +35,12 @@ export const articles = async (req: NextApiRequest, res: NextApiResponse) => {
   const response = await fetch(requestUrl, mergedOptions)
 
   if (!response.ok) {
-    return res.status(400).json({ message: 'An error occurred please try again' })
+    return res.status(400).json({ message: 'An error occured please try again' })
   }
 
   const data = await response.json()
 
-  res.setHeader('Cache-Control', 'max-age=30, s-maxage=60, stale-while-revalidate=300')
+  res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=59')
 
   return res.status(200).json(data)
 }

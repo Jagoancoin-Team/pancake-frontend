@@ -1,9 +1,8 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Box, Flex, LightBulbIcon, StyledLink, Text, useTooltip } from '@pancakeswap/uikit'
-import { FarmTransactionStatus, CrossChainFarmStepType } from 'state/transactions/actions'
-import { TransactionDetails } from 'state/transactions/reducer'
 import { styled } from 'styled-components'
-import NextLink from 'next/link'
+import { Box, Text, Flex, Link, useTooltip, LightBulbIcon } from '@pancakeswap/uikit'
+import { useTranslation } from '@pancakeswap/localization'
+import { TransactionDetails } from 'state/transactions/reducer'
+import { FarmTransactionStatus, NonBscFarmStepType } from '../../../state/transactions/actions'
 
 const ListStyle = styled.div`
   position: relative;
@@ -24,7 +23,7 @@ const ListStyle = styled.div`
   }
 `
 
-const LinkStyle = styled(StyledLink)`
+const LinkStyle = styled(Link)`
   display: inline-block;
   margin: 0 4px;
   color: ${({ theme }) => theme.colors.text};
@@ -37,13 +36,8 @@ interface FarmInfoProps {
 
 const FarmPending: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedData }) => {
   const { t } = useTranslation()
-
-  if (!pickedData?.crossChainFarm) {
-    return null
-  }
-
-  const { amount, lpSymbol, type } = pickedData.crossChainFarm
-  const title = type === CrossChainFarmStepType.STAKE ? t('Staking') : t('Unstaking')
+  const { amount, lpSymbol, type } = pickedData.nonBscFarm
+  const title = type === NonBscFarmStepType.STAKE ? t('Staking') : t('Unstaking')
 
   return (
     <Box mb="24px">
@@ -61,38 +55,28 @@ const FarmPending: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedD
 
 const FarmResult: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedData }) => {
   const { t } = useTranslation()
-  const { amount, lpSymbol, type, steps } = pickedData?.crossChainFarm ?? {}
-  const firstStep = steps?.find((step) => step.step === 1)
+  const { amount, lpSymbol, type, steps } = pickedData.nonBscFarm
+  const firstStep = steps.find((step) => step.step === 1)
   const text =
-    type === CrossChainFarmStepType.STAKE ? t('token have been staked in the Farm!') : t('token have been unstaked!')
+    type === NonBscFarmStepType.STAKE ? t('token have been staked in the Farm!') : t('token have been unstaked!')
 
   const { targetRef, tooltip, tooltipVisible } = useTooltip(
     <Flex flexDirection="column">
       <ListStyle>{t('You have received 0.0005 BNB as a first-time BNB Smart Chain user')}</ListStyle>
       <ListStyle>
         {t('You can swap more BNB on')}
-        <NextLink href="/swap">
-          <LinkStyle>{t('Swap.')}</LinkStyle>
-        </NextLink>
+        <LinkStyle href="/swap">{t('Swap.')}</LinkStyle>
       </ListStyle>
       <ListStyle>
         {t('Explore more features like')}
-        <NextLink href="/pools?chain=bsc">
-          <LinkStyle>{t('Pools')}</LinkStyle>
-        </NextLink>
+        <LinkStyle href="/pools?chain=bsc">{t('Pools')}</LinkStyle>
         {t('and')}
-        <NextLink href="/prediction?chain=bsc">
-          <LinkStyle>{t('Win')}</LinkStyle>
-        </NextLink>
-        {t('with your CAKE earned.')}
+        <LinkStyle href="/prediction?chain=bsc">{t('Win')}</LinkStyle>
+        {t('with your ICE earned.')}
       </ListStyle>
     </Flex>,
     { placement: 'top' },
   )
-
-  if (!pickedData?.crossChainFarm) {
-    return null
-  }
 
   return (
     <Box mb="24px">
@@ -104,7 +88,7 @@ const FarmResult: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedDa
           {text}
         </Text>
       </Box>
-      {firstStep?.isFirstTime && (
+      {firstStep.isFirstTime && (
         <Box mt="24px">
           <Flex>
             <Box display="inline-flex">
@@ -127,14 +111,9 @@ const FarmResult: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedDa
 
 const FarmError: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedData }) => {
   const { t } = useTranslation()
-
-  if (!pickedData?.crossChainFarm) {
-    return null
-  }
-
-  const { amount, lpSymbol, type, steps } = pickedData.crossChainFarm
-  const text = type === CrossChainFarmStepType.STAKE ? t('The attempt to stake') : t('The attempt to unstake')
-  const errorText = type === CrossChainFarmStepType.STAKE ? t('Token fail to stake.') : t('Token fail to unstake.')
+  const { amount, lpSymbol, type, steps } = pickedData.nonBscFarm
+  const text = type === NonBscFarmStepType.STAKE ? t('The attempt to stake') : t('The attempt to unstake')
+  const errorText = type === NonBscFarmStepType.STAKE ? t('Token fail to stake.') : t('Token fail to unstake.')
   const isFirstStepError = steps.find((step) => step.step === 1 && step.status === FarmTransactionStatus.FAIL)
 
   return (
@@ -166,7 +145,7 @@ const FarmError: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedDat
 }
 
 const FarmInfo: React.FC<React.PropsWithChildren<FarmInfoProps>> = ({ pickedData }) => {
-  const { status } = pickedData?.crossChainFarm ?? {}
+  const { status } = pickedData.nonBscFarm
   if (status === FarmTransactionStatus.FAIL) {
     return <FarmError pickedData={pickedData} />
   }

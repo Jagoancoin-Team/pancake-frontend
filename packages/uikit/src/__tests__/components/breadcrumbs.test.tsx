@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
-import Breadcrumbs from "../../components/Breadcrumbs/Breadcrumbs";
+import {} from "vitest/globals";
 import { renderWithProvider } from "../../testHelpers";
+import Breadcrumbs from "../../components/Breadcrumbs/Breadcrumbs";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(<Breadcrumbs>Link</Breadcrumbs>);

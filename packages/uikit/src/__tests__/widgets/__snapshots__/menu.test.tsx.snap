@@ -1,4 +1,4 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Vitest Snapshot v1
 
 exports[`renders correctly 1`] = `
 <DocumentFragment>
@@ -9,14 +9,14 @@ exports[`renders correctly 1`] = `
   flex-shrink: 0;
 }
 
-.c20 {
+.c19 {
   align-self: center;
   fill: var(--colors-textSubtle);
   color: var(--colors-textSubtle);
   flex-shrink: 0;
 }
 
-.c28 {
+.c27 {
   align-self: center;
   fill: var(--colors-text);
   color: var(--colors-text);
@@ -24,7 +24,7 @@ exports[`renders correctly 1`] = `
   margin-right: 8px;
 }
 
-.c33 {
+.c32 {
   align-self: center;
   fill: var(--colors-textSubtle);
   color: var(--colors-textSubtle);
@@ -32,7 +32,7 @@ exports[`renders correctly 1`] = `
   margin-right: 0.5rem;
 }
 
-.c17 {
+.c16 {
   color: var(--colors-failure);
   font-weight: 400;
   line-height: 1.5;
@@ -40,7 +40,7 @@ exports[`renders correctly 1`] = `
   font-size: 14px;
 }
 
-.c21 {
+.c20 {
   color: var(--colors-warning);
   font-weight: 400;
   line-height: 1.5;
@@ -48,14 +48,14 @@ exports[`renders correctly 1`] = `
   font-size: 14px;
 }
 
-.c29 {
+.c28 {
   color: var(--colors-textSubtle);
   font-weight: 600;
   line-height: 1.5;
   font-size: 16px;
 }
 
-.c32 {
+.c31 {
   position: relative;
   align-items: center;
   border: 0;
@@ -80,19 +80,19 @@ exports[`renders correctly 1`] = `
   box-shadow: none;
 }
 
-.c32:focus-visible {
+.c31:focus-visible {
   outline: none;
   box-shadow: var(--shadows-focus);
 }
 
-.c32:active:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled) {
+.c31:active:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled) {
   opacity: 0.85;
   transform: translateY(1px);
   box-shadow: none;
 }
 
-.c32:disabled,
-.c32.pancake-button--disabled {
+.c31:disabled,
+.c31.pancake-button--disabled {
   background-color: var(--colors-backgroundDisabled);
   border-color: var(--colors-backgroundDisabled);
   box-shadow: none;
@@ -100,7 +100,7 @@ exports[`renders correctly 1`] = `
   cursor: not-allowed;
 }
 
-.c36 {
+.c35 {
   position: relative;
   align-items: center;
   border: 0;
@@ -126,19 +126,19 @@ exports[`renders correctly 1`] = `
   height: sm;
 }
 
-.c36:focus-visible {
+.c35:focus-visible {
   outline: none;
   box-shadow: var(--shadows-focus);
 }
 
-.c36:active:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled) {
+.c35:active:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled) {
   opacity: 0.85;
   transform: translateY(1px);
   box-shadow: none;
 }
 
-.c36:disabled,
-.c36.pancake-button--disabled {
+.c35:disabled,
+.c35.pancake-button--disabled {
   background-color: var(--colors-backgroundDisabled);
   border-color: var(--colors-backgroundDisabled);
   box-shadow: none;
@@ -155,35 +155,31 @@ exports[`renders correctly 1`] = `
   padding-bottom: 4px;
 }
 
-.c15 {
-  margin-left: 0px;
-}
-
-.c24 {
+.c23 {
   width: 100%;
 }
 
-.c26 {
+.c25 {
   height: 100%;
 }
 
-.c30 {
+.c29 {
   margin-top: 4px;
 }
 
-.c38 {
+.c37 {
   overflow: hidden;
 }
 
-.c40 {
+.c39 {
   margin-top: 57px;
 }
 
-.c44 {
-  padding-left: 0px;
+.c43 {
+  padding-left: 12px;
 }
 
-.c47 {
+.c46 {
   margin-right: 20px;
 }
 
@@ -200,24 +196,25 @@ exports[`renders correctly 1`] = `
   align-items: center;
 }
 
-.c25 {
+.c24 {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.c39 {
+.c38 {
   display: flex;
   justify-content: space-around;
 }
 
-.c45 {
+.c44 {
   display: flex;
-  justify-content: center;
+  justify-content: start;
 }
 
-.c50 {
-  gap: 10px;
+.c51 {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .c14 {
@@ -261,7 +258,7 @@ exports[`renders correctly 1`] = `
   border-bottom-right-radius: 8px;
 }
 
-.c23 {
+.c22 {
   border-color: var(--colors-cardBorder);
   border-style: solid;
   border-width: 1px 0 0;
@@ -283,7 +280,7 @@ exports[`renders correctly 1`] = `
   visibility: hidden;
 }
 
-.c18 {
+.c17 {
   border-radius: var(--radii-default);
   padding: 0 8px;
   border: 2px solid;
@@ -293,7 +290,7 @@ exports[`renders correctly 1`] = `
   margin-left: 8px;
 }
 
-.c22 {
+.c21 {
   border-radius: var(--radii-default);
   padding: 0 8px;
   border: 2px solid;
@@ -303,20 +300,20 @@ exports[`renders correctly 1`] = `
   margin-left: 8px;
 }
 
-.c27 {
+.c26 {
   display: flex;
   align-items: center;
 }
 
-.c27 svg {
+.c26 svg {
   transition: transform 0.3s;
 }
 
-.c27:hover svg {
+.c26:hover svg {
   transform: scale(1.2);
 }
 
-.c35 {
+.c34 {
   width: max-content;
   display: flex;
   flex-direction: column;
@@ -337,12 +334,12 @@ exports[`renders correctly 1`] = `
   pointer-events: none;
 }
 
-.c31 {
+.c30 {
   position: relative;
 }
 
-.c31:hover .c34,
-.c31:focus-within .c34 {
+.c30:hover .c33,
+.c30:focus-within .c33 {
   opacity: 1;
   max-height: 400px;
   overflow-y: auto;
@@ -350,7 +347,7 @@ exports[`renders correctly 1`] = `
   pointer-events: auto;
 }
 
-.c37 {
+.c36 {
   color: var(--colors-text);
   padding: 0 8px;
   border-radius: 8px;
@@ -378,7 +375,7 @@ exports[`renders correctly 1`] = `
   border-radius: 16px;
 }
 
-.c16 {
+.c15 {
   position: relative;
   display: flex;
   align-items: center;
@@ -391,7 +388,7 @@ exports[`renders correctly 1`] = `
   height: 48px;
 }
 
-.c16:after {
+.c15:after {
   content: "";
   border-radius: 100%;
   background: var(--colors-failure);
@@ -400,12 +397,12 @@ exports[`renders correctly 1`] = `
   margin-left: 12px;
 }
 
-.c16:hover {
+.c15:hover {
   background: var(--colors-tertiary);
   border-radius: 16px;
 }
 
-.c19 {
+.c18 {
   position: relative;
   display: flex;
   align-items: center;
@@ -418,7 +415,7 @@ exports[`renders correctly 1`] = `
   height: 48px;
 }
 
-.c19:after {
+.c18:after {
   content: "";
   border-radius: 100%;
   background: var(--colors-warning);
@@ -427,12 +424,12 @@ exports[`renders correctly 1`] = `
   margin-left: 12px;
 }
 
-.c19:hover {
+.c18:hover {
   background: var(--colors-tertiary);
   border-radius: 16px;
 }
 
-.c49 {
+.c48 {
   position: relative;
   display: flex;
   align-items: center;
@@ -446,27 +443,27 @@ exports[`renders correctly 1`] = `
   height: 42px;
 }
 
-.c49:hover {
+.c48:hover {
   background: var(--colors-tertiary);
 }
 
-.c41 {
+.c40 {
   width: 100%;
   overflow: hidden;
   position: relative;
 }
 
-.c51 {
+.c50 {
   width: 100%;
   overflow: hidden;
   position: relative;
 }
 
-.c46 {
+.c45 {
   position: relative;
   z-index: 1;
   width: 100%;
-  display: flex;
+  display: block;
   white-space: nowrap;
   scroll-behavior: smooth;
   flex-grow: 1;
@@ -477,11 +474,11 @@ exports[`renders correctly 1`] = `
   -ms-overflow-style: none;
 }
 
-.c46::-webkit-scrollbar {
+.c45::-webkit-scrollbar {
   display: none;
 }
 
-.c42 {
+.c41 {
   position: absolute;
   z-index: 2;
   width: 48px;
@@ -497,13 +494,13 @@ exports[`renders correctly 1`] = `
   background: linear-gradient(90deg, #ffffff 29.76%, rgba(255, 255, 255, 0) 100%);
 }
 
-.c42.show {
+.c41.show {
   pointer-events: auto;
   opacity: 1;
   transition: 0.25s ease-in opacity;
 }
 
-.c43 {
+.c42 {
   position: absolute;
   z-index: 2;
   width: 48px;
@@ -519,16 +516,20 @@ exports[`renders correctly 1`] = `
   background: linear-gradient(270deg, #ffffff 0%, rgba(255, 255, 255, 0) 87.5%);
 }
 
-.c43.show {
+.c42.show {
   pointer-events: auto;
   opacity: 1;
   transition: 0.25s ease-in opacity;
 }
 
-.c48 {
+.c47 {
   display: inline-block;
   vertical-align: top;
   scroll-snap-align: start;
+}
+
+.c49 {
+  gap: 10px;
 }
 
 .c5 {
@@ -605,19 +606,19 @@ exports[`renders correctly 1`] = `
 }
 
 @supports (-webkit-text-size-adjust: none) and (not (-ms-accelerator: true)) and (not (-moz-appearance: none)) {
-  .c20 {
+  .c19 {
     filter: none!important;
   }
 }
 
 @supports (-webkit-text-size-adjust: none) and (not (-ms-accelerator: true)) and (not (-moz-appearance: none)) {
-  .c28 {
+  .c27 {
     filter: none!important;
   }
 }
 
 @supports (-webkit-text-size-adjust: none) and (not (-ms-accelerator: true)) and (not (-moz-appearance: none)) {
-  .c33 {
+  .c32 {
     filter: none!important;
   }
 }
@@ -643,13 +644,13 @@ exports[`renders correctly 1`] = `
 }
 
 @media (hover: hover) {
-  .c32:hover:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled):not(:active) {
+  .c31:hover:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled):not(:active) {
     opacity: 0.65;
   }
 }
 
 @media (hover: hover) {
-  .c36:hover:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled):not(:active) {
+  .c35:hover:not(:disabled):not(.pancake-button--disabled):not(.pancake-button--disabled):not(:active) {
     opacity: 0.65;
   }
 }
@@ -663,7 +664,9 @@ exports[`renders correctly 1`] = `
 }
 
 @media screen and (min-width: 576px) {
-
+  .c43 {
+    padding-left: 0px;
+  }
 }
 
 @media screen and (min-width: 576px) {
@@ -690,7 +693,31 @@ exports[`renders correctly 1`] = `
 
 }
 
-@media screen and (min-width: 370px) {
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+  .c44 {
+    justify-content: center;
+  }
+}
+
+@media screen and (min-width: 576px) {
+  .c51 {
+    justify-content: center;
+  }
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
 
 }
 
@@ -702,47 +729,30 @@ exports[`renders correctly 1`] = `
 
 }
 
-@media screen and (min-width: 968px) {
-
-}
-
-@media screen and (min-width: 1080px) {
-
-}
-
 @media screen and (min-width: 576px) {
 
 }
 
 @media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 968px) {
-
-}
-
-@media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 576px) {
-  .c51 {
+  .c50 {
     display: none;
   }
 }
 
-@media screen and (min-width: 1080px) {
+@media screen and (min-width: 852px) {
+  .c45 {
+    width: auto;
+    display: flex;
+  }
+}
+
+@media screen and (min-width: 968px) {
   .c5 .mobile-icon {
     display: none;
   }
 }
 
-@media screen and (min-width: 1080px) {
+@media screen and (min-width: 968px) {
   .c5 .desktop-icon {
     display: block;
   }
@@ -830,7 +840,7 @@ exports[`renders correctly 1`] = `
             </a>
           </div>
           <div
-            class="reset_base__14t2dq60 sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_lg__15lkarx3"
+            class="reset_base__14t2dq60 sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_md__15lkarx2"
           >
             <div
               class="c7 c3"
@@ -863,11 +873,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/swap"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Exchange
-                      </div>
+                      Exchange
                     </a>
                   </div>
                   <div
@@ -877,11 +883,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/liquidity"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Liquidity
-                      </div>
+                      Liquidity
                     </a>
                   </div>
                 </div>
@@ -914,11 +916,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/earn"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Earn
-                      </div>
+                      Earn
                     </a>
                   </div>
                   <div
@@ -928,11 +926,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/farms"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Yield Farms
-                      </div>
+                      Yield Farms
                     </a>
                   </div>
                   <div
@@ -942,11 +936,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/pools"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Syrup pools
-                      </div>
+                      Syrup pools
                     </a>
                   </div>
                 </div>
@@ -961,7 +951,7 @@ exports[`renders correctly 1`] = `
                     class="c9"
                   >
                     <a
-                      class="c16"
+                      class="c15"
                       href="/"
                     >
                       Win
@@ -979,10 +969,21 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
+                      Win
+                    </a>
+                  </div>
+                  <div
+                    class="c12"
+                  >
+                    <a
+                      class="c13 c14"
+                      href="/"
+                    >
+                      Predictions
                       <div
-                        class="c15 c4"
+                        class="c16 c17"
                       >
-                        Win
+                        LIVE
                       </div>
                     </a>
                   </div>
@@ -993,30 +994,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Predictions
-                        <div
-                          class="c17 c18"
-                        >
-                          LIVE
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                  <div
-                    class="c12"
-                  >
-                    <a
-                      class="c13 c14"
-                      href="/"
-                    >
-                      <div
-                        class="c15 c4"
-                      >
-                        Lottery
-                      </div>
+                      Lottery
                     </a>
                   </div>
                 </div>
@@ -1031,11 +1009,11 @@ exports[`renders correctly 1`] = `
                     class="c9"
                   >
                     <a
-                      class="c19"
+                      class="c18"
                       href="/"
                     >
                       <svg
-                        class="c20"
+                        class="c19"
                         color="textSubtle"
                         viewBox="0 0 24 24"
                         width="20px"
@@ -1059,11 +1037,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Info & Analytics
-                      </div>
+                      Info & Analytics
                     </a>
                   </div>
                   <div
@@ -1073,15 +1047,11 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
+                      IFO Token Sales
                       <div
-                        class="c15 c4"
+                        class="c20 c21"
                       >
-                        IFO Token Sales
-                        <div
-                          class="c21 c22"
-                        >
-                          SOON
-                        </div>
+                        SOON
                       </div>
                     </a>
                   </div>
@@ -1089,7 +1059,7 @@ exports[`renders correctly 1`] = `
                     class="c12"
                   >
                     <hr
-                      class="c23"
+                      class="c22"
                     />
                   </div>
                   <div
@@ -1099,11 +1069,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        NFT Collectibles
-                      </div>
+                      NFT Collectibles
                     </a>
                   </div>
                   <div
@@ -1113,18 +1079,14 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Team Leaderboard
-                      </div>
+                      Team Leaderboard
                     </a>
                   </div>
                   <div
                     class="c12"
                   >
                     <hr
-                      class="c23"
+                      class="c22"
                     />
                   </div>
                   <div
@@ -1134,11 +1096,7 @@ exports[`renders correctly 1`] = `
                       class="c13 c14"
                       href="/"
                     >
-                      <div
-                        class="c15 c4"
-                      >
-                        Blog
-                      </div>
+                      Blog
                     </a>
                   </div>
                   <div
@@ -1150,22 +1108,18 @@ exports[`renders correctly 1`] = `
                       target="_blank"
                     >
                       <div
-                        class="c24 c25"
+                        class="c23 c24"
                       >
-                        <div
-                          class="c15 c4"
-                        >
-                          Docs & Guides
-                        </div>
+                        Docs & Guides
                         <svg
-                          class="c20"
+                          class="c19"
                           color="textSubtle"
                           viewBox="0 0 24 24"
                           width="20px"
                           xmlns="http://www.w3.org/2000/svg"
                         >
                           <path
-                            d="M18 19H6C5.45 19 5 18.55 5 18V6C5 5.45 5.45 5 6 5H11C11.55 5 12 4.55 12 4C12 3.45 11.55 3 11 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V13C21 12.45 20.55 12 20 12C19.45 12 19 12.45 19 13V18C19 18.55 18.55 19 18 19ZM14 4C14 4.55 14.45 5 15 5H17.59L8.46 14.13C8.07 14.52 8.07 15.15 8.46 15.54C8.85 15.93 9.48 15.93 9.87 15.54L19 6.41V9C19 9.55 19.45 10 20 10C20.55 10 21 9.55 21 9V4C21 3.45 20.55 3 20 3H15C14.45 3 14 3.45 14 4Z"
+                            d="M16.3 8.09014C15.91 8.48014 15.91 9.10014 16.3 9.49014L18.2 11.3901H9C8.45 11.3901 8 11.8401 8 12.3901C8 12.9401 8.45 13.3901 9 13.3901H18.2L16.3 15.2901C15.91 15.6801 15.91 16.3001 16.3 16.6901C16.69 17.0801 17.31 17.0801 17.7 16.6901L21.29 13.1001C21.68 12.7101 21.68 12.0801 21.29 11.6901L17.7 8.09014C17.31 7.70014 16.69 7.70014 16.3 8.09014ZM4 19.3901H11C11.55 19.3901 12 19.8401 12 20.3901C12 20.9401 11.55 21.3901 11 21.3901H4C2.9 21.3901 2 20.4901 2 19.3901V5.39014C2 4.29014 2.9 3.39014 4 3.39014H11C11.55 3.39014 12 3.84014 12 4.39014C12 4.94014 11.55 5.39014 11 5.39014H4V19.3901Z"
                           />
                         </svg>
                       </div>
@@ -1177,18 +1131,18 @@ exports[`renders correctly 1`] = `
           </div>
         </div>
         <div
-          class="c26 c4"
+          class="c25 c4"
         >
           <div
-            class="reset_base__14t2dq60 sprinkles_marginRight_12px_xs__15lkarxlo sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_xxl__15lkarx5"
+            class="reset_base__14t2dq60 sprinkles_marginRight_12px_xs__15lkarxlo sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_lg__15lkarx3"
           >
             <a
-              class="c27"
+              class="c26"
               href="https://pancakeswap.finance/swap?outputCurrency=0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82&chainId=56"
               target="_blank"
             >
               <svg
-                class="c28"
+                class="c27"
                 color="text"
                 mr="8px"
                 viewBox="0 0 96 96"
@@ -1239,25 +1193,25 @@ exports[`renders correctly 1`] = `
                 </defs>
               </svg>
               <div
-                class="c29"
+                class="c28"
               >
                 $0.232
               </div>
             </a>
           </div>
           <div
-            class="c30"
+            class="c29"
           >
             <div
-              class="c31"
+              class="c30"
             >
               <button
-                class="c32"
+                class="c31"
                 scale="xs"
                 variant="text"
               >
                 <svg
-                  class="c33"
+                  class="c32"
                   color="textSubtle"
                   mr="0.5rem"
                   viewBox="0 0 24 24"
@@ -1270,10 +1224,10 @@ exports[`renders correctly 1`] = `
                 </svg>
               </button>
               <div
-                class="c34 c35"
+                class="c33 c34"
               >
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1281,7 +1235,7 @@ exports[`renders correctly 1`] = `
                   English0
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1289,7 +1243,7 @@ exports[`renders correctly 1`] = `
                   English1
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1297,7 +1251,7 @@ exports[`renders correctly 1`] = `
                   English2
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1305,7 +1259,7 @@ exports[`renders correctly 1`] = `
                   English3
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1313,7 +1267,7 @@ exports[`renders correctly 1`] = `
                   English4
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1321,7 +1275,7 @@ exports[`renders correctly 1`] = `
                   English5
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1329,7 +1283,7 @@ exports[`renders correctly 1`] = `
                   English6
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1337,7 +1291,7 @@ exports[`renders correctly 1`] = `
                   English7
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1345,7 +1299,7 @@ exports[`renders correctly 1`] = `
                   English8
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1353,7 +1307,7 @@ exports[`renders correctly 1`] = `
                   English9
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1361,7 +1315,7 @@ exports[`renders correctly 1`] = `
                   English10
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1369,7 +1323,7 @@ exports[`renders correctly 1`] = `
                   English11
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1377,7 +1331,7 @@ exports[`renders correctly 1`] = `
                   English12
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1385,7 +1339,7 @@ exports[`renders correctly 1`] = `
                   English13
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1393,7 +1347,7 @@ exports[`renders correctly 1`] = `
                   English14
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1401,7 +1355,7 @@ exports[`renders correctly 1`] = `
                   English15
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1409,7 +1363,7 @@ exports[`renders correctly 1`] = `
                   English16
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1417,7 +1371,7 @@ exports[`renders correctly 1`] = `
                   English17
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1425,7 +1379,7 @@ exports[`renders correctly 1`] = `
                   English18
                 </button>
                 <button
-                  class="c36 c37"
+                  class="c35 c36"
                   scale="md"
                   style="min-height: 32px; height: auto;"
                   variant="text"
@@ -1439,13 +1393,13 @@ exports[`renders correctly 1`] = `
       </nav>
     </div>
     <div
-      class="c38 c39"
+      class="c37 c38"
     >
       <div
-        class="c40 c3 c41 reset_base__14t2dq60 sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_sm__15lkarx1"
+        class="c39 c3 c40 reset_base__14t2dq60 sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_sm__15lkarx1"
       >
         <div
-          class="c42 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
+          class="c41 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
         >
           <svg
             class="c6"
@@ -1460,23 +1414,23 @@ exports[`renders correctly 1`] = `
           </svg>
         </div>
         <div
-          class="c43 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
+          class="c42 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
         />
         <div
-          class="c44 c45 c46"
+          class="c43 c44 c45"
         >
           <div
-            class="c47 c48"
+            class="c46 c47"
           >
             <div
               class="c9"
             >
               <a
-                class="c49"
+                class="c48"
                 href="/swap"
               >
                 <div
-                  class="c4 c50"
+                  class="c4 c49"
                 >
                   Exchange
                 </div>
@@ -1484,17 +1438,17 @@ exports[`renders correctly 1`] = `
             </div>
           </div>
           <div
-            class="c47 c48"
+            class="c46 c47"
           >
             <div
               class="c9"
             >
               <a
-                class="c49"
+                class="c48"
                 href="/liquidity"
               >
                 <div
-                  class="c4 c50"
+                  class="c4 c49"
                 >
                   Liquidity
                 </div>
@@ -1504,10 +1458,10 @@ exports[`renders correctly 1`] = `
         </div>
       </div>
       <div
-        class="c40 c3 c51 reset_base__14t2dq60 sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_sm__15lkarx1"
+        class="c39 c3 c50 reset_base__14t2dq60 sprinkles_display_none_xs__15lkarx10 sprinkles_display_block_sm__15lkarx1"
       >
         <div
-          class="c42 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
+          class="c41 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
         >
           <svg
             class="c6"
@@ -1522,23 +1476,23 @@ exports[`renders correctly 1`] = `
           </svg>
         </div>
         <div
-          class="c43 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
+          class="c42 reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
         />
         <div
-          class="c44 c45 c46"
+          class="c43 c51 c45"
         >
           <div
-            class="c47 c48"
+            class="c46 c47"
           >
             <div
               class="c9"
             >
               <a
-                class="c49"
+                class="c48"
                 href="/charts"
               >
                 <div
-                  class="c4 c50"
+                  class="c4 c49"
                 >
                   Charts
                 </div>
@@ -2143,6 +2097,10 @@ exports[`renders correctly 1`] = `
 }
 
 @media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
   .c0 {
     padding: 56px 40px 32px 40px;
     margin-bottom: 0px;
@@ -2186,33 +2144,17 @@ exports[`renders correctly 1`] = `
   }
 }
 
-@media screen and (min-width: 370px) {
-  .c9 {
-    flex-direction: column;
-  }
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
 }
 
 @media screen and (min-width: 576px) {
   .c9 {
     order: 1;
-    flex-direction: column;
-  }
-}
-
-@media screen and (min-width: 852px) {
-  .c9 {
-    flex-direction: column;
-  }
-}
-
-@media screen and (min-width: 968px) {
-  .c9 {
-    flex-direction: row;
-  }
-}
-
-@media screen and (min-width: 1080px) {
-  .c9 {
     flex-direction: row;
   }
 }
@@ -2236,7 +2178,7 @@ exports[`renders correctly 1`] = `
   }
 }
 
-@media screen and (min-width: 968px) {
+@media screen and (min-width: 852px) {
   .c10 {
     margin-bottom: 0px;
   }
@@ -2255,11 +2197,15 @@ exports[`renders correctly 1`] = `
 
 }
 
-@media screen and (min-width: 1080px) {
+@media screen and (min-width: 852px) {
 
 }
 
-@media screen and (min-width: 1080px) {
+@media screen and (min-width: 968px) {
+
+}
+
+@media screen and (min-width: 968px) {
 
 }
 
@@ -2324,7 +2270,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/contact-us"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Contact
@@ -2338,7 +2283,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://blog.pancakeswap.finance/"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Blog
@@ -2352,7 +2296,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/contact-us/telegram"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Community
@@ -2366,7 +2309,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/tokenomics/cake"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               CAKE
@@ -2389,7 +2331,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://pancakeswap.creator-spring.com/"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Online Store
@@ -2412,7 +2353,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="Support https://docs.pancakeswap.finance/contact-us/customer-support"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Customer
@@ -2426,7 +2366,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/help/troubleshooting"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Troubleshooting
@@ -2440,7 +2379,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/get-started"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Guides
@@ -2463,7 +2401,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://github.com/pancakeswap"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Github
@@ -2477,7 +2414,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Documentation
@@ -2491,7 +2427,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://app.gitbook.com/@pancakeswap-1/s/pancakeswap/code/bug-bounty"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Bug Bounty
@@ -2505,7 +2440,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/help/faq#is-pancakeswap-safe-has-pancakeswap-been-audited"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Audits
@@ -2519,7 +2453,6 @@ exports[`renders correctly 1`] = `
               data-theme="dark"
               href="https://docs.pancakeswap.finance/hiring/become-a-chef"
               rel="noreferrer noopener"
-              style="text-transform: none;"
               target="_blank"
             >
               Careers
@@ -2577,26 +2510,13 @@ exports[`renders correctly 1`] = `
             class="c21"
             color="textSubtle"
             style="cursor: pointer;"
-            viewBox="0 0 20 20"
+            viewBox="0 0 18 15"
             width="20px"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <g>
-              <path
-                clip-rule="evenodd"
-                d="M8.28064 10.6416L2.20837 2.9165H7.01804L10.7664 7.69116L14.7709 2.938H17.4198L12.0472 9.3226L18.4177 17.4373H13.6224L9.56365 12.2738L5.23057 17.423H2.5673L8.28064 10.6416ZM14.3213 16.006L5.1575 4.34783H6.31855L15.4708 16.006H14.3213Z"
-                fill-rule="evenodd"
-              />
-            </g>
-            <defs>
-              <clippath>
-                <rect
-                  height="17"
-                  transform="translate(1.5 1.5)"
-                  width="17"
-                />
-              </clippath>
-            </defs>
+            <path
+              d="M5.659 15c6.79 0 10.507-5.766 10.507-10.763 0-.16 0-.32-.01-.49A7.578 7.578 0 0018 1.79c-.663.3-1.376.5-2.127.6a3.824 3.824 0 001.63-2.1c-.713.44-1.503.75-2.352.92A3.6 3.6 0 0012.46 0C10.419 0 8.76 1.699 8.76 3.787c0 .3.039.58.098.86-3.064-.15-5.786-1.669-7.61-3.957A3.858 3.858 0 00.75 2.598c0 1.31.654 2.469 1.64 3.148a3.638 3.638 0 01-1.669-.47v.05c0 1.83 1.278 3.368 2.956 3.708-.312.09-.634.13-.976.13-.234 0-.468-.02-.692-.07.468 1.509 1.834 2.598 3.453 2.628a7.284 7.284 0 01-4.585 1.62c-.293 0-.595-.01-.878-.05A10.206 10.206 0 005.659 15z"
+            />
           </svg>
         </a>
         <div
@@ -3257,7 +3177,7 @@ exports[`renders correctly 1`] = `
           </div>
           <a
             class="c52"
-            data-theme="dark"
+            data-theme="light"
             href="https://pancakeswap.finance/swap?outputCurrency=0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82&chainId=56"
             scale="sm"
             target="_blank"
@@ -3295,7 +3215,7 @@ exports[`renders correctly 1`] = `
   flex-shrink: 0;
 }
 
-.c20 {
+.c18 {
   color: var(--colors-failure);
   font-weight: 400;
   line-height: 1.5;
@@ -3303,7 +3223,7 @@ exports[`renders correctly 1`] = `
   font-size: 14px;
 }
 
-.c24 {
+.c22 {
   color: var(--colors-warning);
   font-weight: 400;
   line-height: 1.5;
@@ -3319,11 +3239,7 @@ exports[`renders correctly 1`] = `
   font-size: 10px;
 }
 
-.c17 {
-  margin-left: 0px;
-}
-
-.c27 {
+.c25 {
   width: 100%;
 }
 
@@ -3331,12 +3247,7 @@ exports[`renders correctly 1`] = `
   height: 100%;
 }
 
-.c18 {
-  display: flex;
-  align-items: center;
-}
-
-.c28 {
+.c26 {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3384,13 +3295,13 @@ exports[`renders correctly 1`] = `
   transition: height 0.25s ease;
 }
 
-.c22 {
+.c20 {
   position: relative;
   height: 22px;
   width: 21px;
 }
 
-.c22 div:first-child {
+.c20 div:first-child {
   height: 22px;
   width: 21px;
   z-index: 0;
@@ -3480,7 +3391,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
   border-bottom-right-radius: 8px;
 }
 
-.c26 {
+.c24 {
   border-color: var(--colors-cardBorder);
   border-style: solid;
   border-width: 1px 0 0;
@@ -3502,7 +3413,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
   visibility: hidden;
 }
 
-.c21 {
+.c19 {
   border-radius: var(--radii-default);
   padding: 0 8px;
   border: 2px solid;
@@ -3512,7 +3423,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
   margin-left: 8px;
 }
 
-.c25 {
+.c23 {
   border-radius: var(--radii-default);
   padding: 0 8px;
   border: 2px solid;
@@ -3541,7 +3452,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
   background-color: var(--colors-failure);
 }
 
-.c19 {
+.c17 {
   display: inline-flex;
   position: absolute;
   top: 0;
@@ -3554,7 +3465,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
   background-color: var(--colors-failure);
 }
 
-.c23 {
+.c21 {
   display: inline-flex;
   position: absolute;
   top: 0;
@@ -3651,7 +3562,39 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
 
 }
 
-@media screen and (min-width: 370px) {
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 576px) {
+
+}
+
+@media screen and (min-width: 852px) {
+
+}
+
+@media screen and (min-width: 576px) {
 
 }
 
@@ -3667,44 +3610,12 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
 
 }
 
-@media screen and (min-width: 1080px) {
-
-}
-
-@media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 576px) {
-
-}
-
 @media screen and (min-width: 968px) {
 
 }
 
-@media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 576px) {
-
-}
-
-@media screen and (min-width: 1080px) {
-
-}
-
-@media screen and (min-width: 1080px) {
-
-}
-
 <div
-    class="reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_lg__15lkarx13"
+    class="reset_base__14t2dq60 sprinkles_display_block_xs__15lkarx0 sprinkles_display_none_md__15lkarx12"
   >
     <div
       class="c0 c1"
@@ -3801,11 +3712,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/swap"
             >
-              <div
-                class="c17 c18"
-              >
-                Exchange
-              </div>
+              Exchange
             </a>
           </div>
           <div
@@ -3815,11 +3722,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/liquidity"
             >
-              <div
-                class="c17 c18"
-              >
-                Liquidity
-              </div>
+              Liquidity
             </a>
           </div>
         </div>
@@ -3924,11 +3827,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/earn"
             >
-              <div
-                class="c17 c18"
-              >
-                Earn
-              </div>
+              Earn
             </a>
           </div>
           <div
@@ -3938,11 +3837,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/farms"
             >
-              <div
-                class="c17 c18"
-              >
-                Yield Farms
-              </div>
+              Yield Farms
             </a>
           </div>
           <div
@@ -3952,11 +3847,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/pools"
             >
-              <div
-                class="c17 c18"
-              >
-                Syrup pools
-              </div>
+              Syrup pools
             </a>
           </div>
         </div>
@@ -4027,7 +3918,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
                 </div>
               </button>
               <span
-                class="c19"
+                class="c17"
                 color="failure"
               />
             </span>
@@ -4044,10 +3935,21 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
+              Win
+            </a>
+          </div>
+          <div
+            class="c14"
+          >
+            <a
+              class="c15 c16"
+              href="/"
+            >
+              Predictions
               <div
-                class="c17 c18"
+                class="c18 c19"
               >
-                Win
+                LIVE
               </div>
             </a>
           </div>
@@ -4058,30 +3960,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
-              <div
-                class="c17 c18"
-              >
-                Predictions
-                <div
-                  class="c20 c21"
-                >
-                  LIVE
-                </div>
-              </div>
-            </a>
-          </div>
-          <div
-            class="c14"
-          >
-            <a
-              class="c15 c16"
-              href="/"
-            >
-              <div
-                class="c17 c18"
-              >
-                Lottery
-              </div>
+              Lottery
             </a>
           </div>
         </div>
@@ -4107,7 +3986,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
                   class="c4 c5"
                 >
                   <div
-                    class="c22"
+                    class="c20"
                     height="22px"
                     width="21px"
                   >
@@ -4133,7 +4012,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
                 </div>
               </button>
               <span
-                class="c23"
+                class="c21"
                 color="warning"
               />
             </span>
@@ -4150,11 +4029,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
-              <div
-                class="c17 c18"
-              >
-                Info & Analytics
-              </div>
+              Info & Analytics
             </a>
           </div>
           <div
@@ -4164,15 +4039,11 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
+              IFO Token Sales
               <div
-                class="c17 c18"
+                class="c22 c23"
               >
-                IFO Token Sales
-                <div
-                  class="c24 c25"
-                >
-                  SOON
-                </div>
+                SOON
               </div>
             </a>
           </div>
@@ -4180,7 +4051,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
             class="c14"
           >
             <hr
-              class="c26"
+              class="c24"
             />
           </div>
           <div
@@ -4190,11 +4061,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
-              <div
-                class="c17 c18"
-              >
-                NFT Collectibles
-              </div>
+              NFT Collectibles
             </a>
           </div>
           <div
@@ -4204,18 +4071,14 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
-              <div
-                class="c17 c18"
-              >
-                Team Leaderboard
-              </div>
+              Team Leaderboard
             </a>
           </div>
           <div
             class="c14"
           >
             <hr
-              class="c26"
+              class="c24"
             />
           </div>
           <div
@@ -4225,11 +4088,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               class="c15 c16"
               href="/"
             >
-              <div
-                class="c17 c18"
-              >
-                Blog
-              </div>
+              Blog
             </a>
           </div>
           <div
@@ -4241,13 +4100,9 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
               target="_blank"
             >
               <div
-                class="c27 c28"
+                class="c25 c26"
               >
-                <div
-                  class="c17 c18"
-                >
-                  Docs & Guides
-                </div>
+                Docs & Guides
                 <svg
                   class="c8"
                   color="textSubtle"
@@ -4256,7 +4111,7 @@ html[data-useragent*="TokenPocket_iOS"] .c1 {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M18 19H6C5.45 19 5 18.55 5 18V6C5 5.45 5.45 5 6 5H11C11.55 5 12 4.55 12 4C12 3.45 11.55 3 11 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V13C21 12.45 20.55 12 20 12C19.45 12 19 12.45 19 13V18C19 18.55 18.55 19 18 19ZM14 4C14 4.55 14.45 5 15 5H17.59L8.46 14.13C8.07 14.52 8.07 15.15 8.46 15.54C8.85 15.93 9.48 15.93 9.87 15.54L19 6.41V9C19 9.55 19.45 10 20 10C20.55 10 21 9.55 21 9V4C21 3.45 20.55 3 20 3H15C14.45 3 14 3.45 14 4Z"
+                    d="M16.3 8.09014C15.91 8.48014 15.91 9.10014 16.3 9.49014L18.2 11.3901H9C8.45 11.3901 8 11.8401 8 12.3901C8 12.9401 8.45 13.3901 9 13.3901H18.2L16.3 15.2901C15.91 15.6801 15.91 16.3001 16.3 16.6901C16.69 17.0801 17.31 17.0801 17.7 16.6901L21.29 13.1001C21.68 12.7101 21.68 12.0801 21.29 11.6901L17.7 8.09014C17.31 7.70014 16.69 7.70014 16.3 8.09014ZM4 19.3901H11C11.55 19.3901 12 19.8401 12 20.3901C12 20.9401 11.55 21.3901 11 21.3901H4C2.9 21.3901 2 20.4901 2 19.3901V5.39014C2 4.29014 2.9 3.39014 4 3.39014H11C11.55 3.39014 12 3.84014 12 4.39014C12 4.94014 11.55 5.39014 11 5.39014H4V19.3901Z"
                   />
                 </svg>
               </div>

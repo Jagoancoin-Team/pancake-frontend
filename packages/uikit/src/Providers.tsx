@@ -1,4 +1,4 @@
-import { DefaultTheme, ThemeProvider } from "styled-components";
+import { ThemeProvider, DefaultTheme } from "styled-components";
 import { MatchBreakpointsProvider } from "./contexts/MatchBreakpoints/Provider";
 import { ToastsProvider } from "./contexts/ToastsContext/Provider";
 

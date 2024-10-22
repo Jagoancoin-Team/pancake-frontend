@@ -1,15 +1,14 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { Currency, CurrencyAmount, Pair, Percent, Price, Token } from '@pancakeswap/sdk'
-import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
 import { BIG_INT_ZERO } from 'config/constants/exchange'
 import { PairState, useV2Pair } from 'hooks/usePairs'
 import useTotalSupply from 'hooks/useTotalSupply'
 import { useCallback, useMemo } from 'react'
+import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
 import { useAddLiquidityV2FormDispatch, useAddLiquidityV2FormState } from 'state/mint/reducer'
 import { useAccount } from 'wagmi'
-import { CurrencyField as Field } from 'utils/types'
 import { useCurrencyBalances } from '../wallet/hooks'
-import { typeInput } from './actions'
+import { Field, typeInput } from './actions'
 
 export function useMintActionHandlers(noLiquidity: boolean | undefined): {
   onFieldAInput: (typedValue: string) => void
@@ -80,7 +79,6 @@ export function useDerivedMintInfo(
     () =>
       Boolean(
         pairState === PairState.EXISTS &&
-          pair &&
           totalSupply &&
           totalSupply.quotient === BIG_INT_ZERO &&
           ((pair.reserve0.quotient > BIG_INT_ZERO && pair.reserve1.quotient === BIG_INT_ZERO) ||

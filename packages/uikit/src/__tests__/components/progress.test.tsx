@@ -1,6 +1,5 @@
-import { expect, it } from "vitest";
-import Progress from "../../components/Progress/Progress";
 import { renderWithProvider } from "../../testHelpers";
+import Progress from "../../components/Progress/Progress";
 
 it("renders correctly", () => {
   const { asFragment } = renderWithProvider(<Progress primaryStep={50} />);

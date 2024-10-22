@@ -97,14 +97,12 @@ const reducer = createReducer<SwapState>(initialState, (builder) =>
       state.recipient = recipient
     })
     .addCase(updatePairData, (state, { payload: { pairData, pairId, timeWindow } }) => {
-      if (!state.pairDataById) state.pairDataById = {}
-      if (!state.pairDataById?.[pairId]) {
+      if (!state.pairDataById[pairId]) {
         state.pairDataById[pairId] = {}
       }
       state.pairDataById[pairId][timeWindow] = pairData
     })
     .addCase(updateDerivedPairData, (state, { payload: { pairData, pairId, timeWindow } }) => {
-      if (!state.derivedPairDataById) state.derivedPairDataById = {}
       if (!state.derivedPairDataById[pairId]) {
         state.derivedPairDataById[pairId] = {}
       }

@@ -1,75 +1,41 @@
-import { ChainId } from '@pancakeswap/chains'
-import uniq from 'lodash/uniq'
+import { ChainId } from '@pancakeswap/sdk'
+import { chains } from '@icecreamswap/constants'
 
-// @todo remove all other v2/v3 and type definitions
-export const supportedChainIdV4 = [
-  ChainId.BSC,
-  ChainId.ETHEREUM,
-  ChainId.BASE,
-  ChainId.OPBNB,
-  ChainId.ZKSYNC,
-  ChainId.POLYGON_ZKEVM,
-  ChainId.LINEA,
-  ChainId.ARBITRUM_ONE,
-] as const
-
-export const supportedChainIdV2 = [
-  ChainId.GOERLI,
-  ChainId.BSC,
-  ChainId.BSC_TESTNET,
-  ChainId.ETHEREUM,
-  ChainId.ARBITRUM_ONE,
-] as const
-export const supportedChainIdV3 = [
-  // ChainId.GOERLI,
-  ChainId.BSC,
-  ChainId.BSC_TESTNET,
-  ChainId.ETHEREUM,
-  ChainId.ZKSYNC_TESTNET,
-  ChainId.POLYGON_ZKEVM_TESTNET,
-  ChainId.POLYGON_ZKEVM,
-  ChainId.ZKSYNC,
-  ChainId.ARBITRUM_ONE,
-  ChainId.LINEA,
-  ChainId.BASE,
-  ChainId.OPBNB,
-  ChainId.OPBNB_TESTNET,
-] as const
-export const supportedChainId = uniq([...supportedChainIdV2, ...supportedChainIdV3])
-export const bCakeSupportedChainId = [ChainId.BSC, ChainId.ARBITRUM_ONE, ChainId.ETHEREUM, ChainId.ZKSYNC] as const
+export const supportedChainIdV2 = chains.filter((chain) => chain.features.includes('farms')).map((chain) => chain.id)
+export const supportedChainIdV3 = chains.filter((chain) => chain.features.includes('farmsV3')).map((chain) => chain.id)
+export const bCakeSupportedChainId: ChainId[] = []
 
 export const FARM_AUCTION_HOSTING_IN_SECONDS = 691200
-
-export type FarmSupportedChainId = (typeof supportedChainId)[number]
 
 export type FarmV2SupportedChainId = (typeof supportedChainIdV2)[number]
 
 export type FarmV3SupportedChainId = (typeof supportedChainIdV3)[number]
 
-export type FarmV4SupportedChainId = (typeof supportedChainIdV4)[number]
+export const SMART_ROUTER_ADDRESSES: Record<ChainId, `0x${string}`> = chains.reduce((acc, chain) => {
+  return chain.farmV2Address
+    ?{...acc, [chain.id]: chain.farmV2Address}
+    :acc
+}, {})
 
-export const masterChefAddresses = {
-  [ChainId.BSC_TESTNET]: '0xB4A466911556e39210a6bB2FaECBB59E4eB7E43d',
-  [ChainId.BSC]: '0xa5f8C5Dbd5F286960b9d90548680aE5ebFf07652',
-} as const
+export const masterChefAddresses: Record<number, `0x${string}`> = {
+  32520: '0x090B19ea55b93C969EC98E1D8E3db0695698efCa',
+  2000: "0xc44a6eb41f02740A6778CCb9591448a5EBC73b74",
+  122: "0xBbB4CCfc93657AC125F4b1f734111349d1bFF611",
+  50: "0xdD156cA7bff002f7827BDfFd38a0651CFBbe400e",
+  1116: "0xe3277bb0f3C4b9C6FC1DBf81E328E14F3C9368C3",
+  2415: "0xBD2e577dEa54602C7c367fa144981c8ACA6FD570",
+  40: "0xBD2e577dEa54602C7c367fa144981c8ACA6FD570",
+  1072: "0xb5C7882e37359572FD1cCFAA276e7Fdf70145D42",
+  8453: "0xb5C7882e37359572FD1cCFAA276e7Fdf70145D42",
+  148: "0xC4b5F645134DDc57c25D44095e5C1318A83C8481",
+  534352: "0x1E0b5202F8D4a247d12528ac865ab73C61Db35Af",
+  245022934: "0xe028aa99fe8e4c562f2477306eb7b98c8e083e4d",
+  288: "0x8bCf938b30575594B02420e86b100121c92A54a3",
+}
 
-export const masterChefV3Addresses = {
-  [ChainId.ETHEREUM]: '0x556B9306565093C855AEA9AE92A594704c2Cd59e',
-  // [ChainId.GOERLI]: '0x864ED564875BdDD6F421e226494a0E7c071C06f8',
-  [ChainId.BSC]: '0x556B9306565093C855AEA9AE92A594704c2Cd59e',
-  [ChainId.BSC_TESTNET]: '0x4c650FB471fe4e0f476fD3437C3411B1122c4e3B',
-  [ChainId.ZKSYNC_TESTNET]: '0x3c6Aa61f72932aD5D7C917737367be32D5509e6f',
-  [ChainId.POLYGON_ZKEVM_TESTNET]: '0xb66b07590B30d4E6E22e45Ddc83B06Bb018A7B44',
-  [ChainId.POLYGON_ZKEVM]: '0xE9c7f3196Ab8C09F6616365E8873DaEb207C0391',
-  [ChainId.ZKSYNC]: '0x4c615E78c5fCA1Ad31e4d66eb0D8688d84307463',
-  [ChainId.ARBITRUM_ONE]: '0x5e09ACf80C0296740eC5d6F643005a4ef8DaA694',
-  [ChainId.LINEA]: '0x22E2f236065B780FA33EC8C4E58b99ebc8B55c57',
-  [ChainId.BASE]: '0xC6A2Db661D5a5690172d8eB0a7DEA2d3008665A3',
-  [ChainId.OPBNB]: '0x05ddEDd07C51739d2aE21F6A9d97a8d69C2C3aaA',
-  [ChainId.OPBNB_TESTNET]: '0x236e713bFF45adb30e25D1c29A887aBCb0Ea7E21',
+export const masterChefV3Addresses: Record<number, `0x${string}`> = {
+  [ChainId.CORE]: '0xc378c540A8CD4e2F7475a1850d9E854C1Ea8b9E8',
 } as const satisfies Record<FarmV3SupportedChainId, string>
 
-export const crossFarmingVaultAddresses = {
-  [ChainId.ETHEREUM]: '0x2e71B2688019ebdFDdE5A45e6921aaebb15b25fb',
-  [ChainId.GOERLI]: '0xE6c904424417D03451fADd6E3f5b6c26BcC43841',
+export const nonBSCVaultAddresses = {
 } as const

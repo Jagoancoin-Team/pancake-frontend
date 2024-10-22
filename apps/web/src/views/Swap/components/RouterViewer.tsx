@@ -1,7 +1,7 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { Currency } from '@pancakeswap/sdk'
 import { LegacyRouter, LegacyPair as Pair } from '@pancakeswap/smart-router/legacy-router'
-import { AtomBox, Box, Flex, Text, useTooltip } from '@pancakeswap/uikit'
+import { Box, Flex, Text, useTooltip, AtomBox } from '@pancakeswap/uikit'
 import { CurrencyLogo } from 'components/Logo'
 import { styled } from 'styled-components'
 
@@ -84,18 +84,25 @@ interface RouterViewerProps {
   outputCurrency?: Currency
   pairs?: Pair[]
   path?: Currency[]
+  isMM?: boolean
 }
 
-export const RouterViewer: React.FC<RouterViewerProps> = ({ pairs, path, inputCurrency, outputCurrency }) => {
+export const RouterViewer: React.FC<RouterViewerProps> = ({
+  pairs,
+  path,
+  inputCurrency,
+  outputCurrency,
+  isMM = false,
+}) => {
   const { t } = useTranslation()
-  const { targetRef, tooltip, tooltipVisible } = useTooltip(<Text>{inputCurrency?.symbol}</Text>, {
+  const { targetRef, tooltip, tooltipVisible } = useTooltip(<Text>{inputCurrency.symbol}</Text>, {
     placement: 'right',
   })
   const {
     targetRef: outputTargetRef,
     tooltip: outputTooltip,
     tooltipVisible: outputTooltipVisible,
-  } = useTooltip(<Text>{outputCurrency?.symbol}</Text>, {
+  } = useTooltip(<Text>{outputCurrency.symbol}</Text>, {
     placement: 'right',
   })
   return (
@@ -106,12 +113,13 @@ export const RouterViewer: React.FC<RouterViewerProps> = ({ pairs, path, inputCu
       {tooltipVisible && tooltip}
       {pairs &&
         path &&
+        !isMM &&
         pairs.map((p, index) => {
           const isStableSwap = isStableSwapPair(p)
           return (
             <RouterPoolBox
               key={`tradingPairIds${isStableSwap ? p.stableSwapAddress : p.liquidityToken.address}`}
-              className={isStableSwap ? 'isStableSwap' : undefined}
+              className={isStableSwap && 'isStableSwap'}
             >
               <CurrencyLogo size="32px" currency={index === 0 ? inputCurrency : path[index]} />
               <CurrencyLogo size="32px" currency={index === pairs.length - 1 ? outputCurrency : path[index + 1]} />
@@ -119,6 +127,13 @@ export const RouterViewer: React.FC<RouterViewerProps> = ({ pairs, path, inputCu
             </RouterPoolBox>
           )
         })}
+      {isMM && path && (
+        <RouterPoolBox>
+          <CurrencyLogo size="32px" currency={inputCurrency} />
+          <CurrencyLogo size="32px" currency={outputCurrency} />
+          <RouterTypeText>{t('Market Maker')}</RouterTypeText>
+        </RouterPoolBox>
+      )}
       <CurrencyLogoWrapper ref={outputTargetRef}>
         <CurrencyLogo size="44px" currency={outputCurrency} />
       </CurrencyLogoWrapper>

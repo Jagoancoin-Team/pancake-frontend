@@ -1,7 +1,5 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Card, Flex, Text } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { Box, Card, Flex, NextLinkFromReactRouter, Text } from '@pancakeswap/uikit'
 import { useEffect, useMemo, useRef } from 'react'
 import { useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
 import { styled } from 'styled-components'
@@ -79,7 +77,7 @@ const TopTokenMovers: React.FC<React.PropsWithChildren> = () => {
         })
         .slice(0, Math.min(20, Object.values(allTokens).length))
         .filter((d) => d?.exists)
-        .filter((x) => !!x && !(chainId && TOKEN_HIDE?.[chainId]?.includes(x.address)))
+        .filter((x) => !!x && !TOKEN_HIDE?.[chainId]?.includes(x.address))
     return []
   }, [allTokens, chainId])
 

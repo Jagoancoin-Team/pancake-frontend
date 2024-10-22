@@ -1,10 +1,10 @@
 import { Currency, Pair, Price } from '@pancakeswap/sdk'
 import { Pool as SDKV3Pool, computePoolAddress } from '@pancakeswap/v3-sdk'
 import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
-import { getSwapOutput } from '@pancakeswap/stable-swap-sdk'
-import memoize from 'lodash/memoize.js'
+import memoize from 'lodash/memoize'
 import { Address } from 'viem'
 
+import * as StableSwap from '../../stableSwap'
 import { Pool, PoolType, StablePool, V2Pool, V3Pool } from '../types'
 
 export function isV2Pool(pool: Pool): pool is V2Pool {
@@ -36,7 +36,7 @@ export function involvesCurrency(pool: Pool, currency: Currency) {
   return false
 }
 
-// FIXME current version is not working with stable pools that have more than 2 tokens
+// FIXME current verison is not working with stable pools that have more than 2 tokens
 export function getOutputCurrency(pool: Pool, currencyIn: Currency): Currency {
   const tokenIn = currencyIn.wrapped
   if (isV2Pool(pool)) {
@@ -85,8 +85,7 @@ export const getPoolAddress = memoize(
     const [token0, token1] = isV2Pool(pool)
       ? [pool.reserve0.currency.wrapped, pool.reserve1.currency.wrapped]
       : [pool.token0.wrapped, pool.token1.wrapped]
-    const fee = isV3Pool(pool) ? pool.fee : 'V2_FEE'
-    return `${pool.type}_${token0.chainId}_${token0.address}_${token1.address}_${fee}`
+    return `${pool.type}_${token0.chainId}_${token0.address}_${token1.address}`
   },
 )
 
@@ -109,7 +108,7 @@ export function getTokenPrice(pool: Pool, base: Currency, quote: Currency): Pric
     if (!baseIn) {
       throw new Error(`Cannot parse amount for ${base.symbol}`)
     }
-    const quoteOut = getSwapOutput({
+    const quoteOut = StableSwap.getSwapOutput({
       amplifier,
       balances,
       fee,

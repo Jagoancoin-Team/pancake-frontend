@@ -1,18 +1,54 @@
 import React from "react";
+import styled, { keyframes } from "styled-components";
+import Image from "next/image";
+import IceCream from "../../img/dynasty.png";
 import { SpinnerProps } from "./types";
-import { Box } from "../Box";
-import { Image } from "../Image";
+
+const rotate = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
+
+const float = keyframes`
+	0% {
+		transform: translatey(0px);
+	}
+	50% {
+		transform: translatey(10px);
+	}
+	100% {
+		transform: translatey(0px);
+	}
+`;
+
+const Container = styled.div`
+  position: relative;
+  height: 180px;
+`;
+
+const IceImage = () => {
+  return <Image src={IceCream} width="180" height="180" alt="spinner" />;
+};
+
+const RotatingPancakeIcon = styled.div`
+  animation: ${rotate} 2s linear infinite;
+  transform: translate3d(0, 0, 0);
+`;
 
 const Spinner: React.FC<React.PropsWithChildren<SpinnerProps>> = ({ size = 128 }) => {
   return (
-    <Box width={size} height={size * 1.197} position="relative">
-      <Image
-        width={size}
-        height={size * 1.197}
-        src="https://assets.pancakeswap.finance/web/pancake-3d-spinner-v2.gif"
-        alt="pancake-3d-spinner"
-      />
-    </Box>
+    <Container>
+      <RotatingPancakeIcon>
+        <IceImage />
+      </RotatingPancakeIcon>
+    </Container>
   );
 };
 

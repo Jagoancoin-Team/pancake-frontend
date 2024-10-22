@@ -1,6 +1,6 @@
-import { expect, it, vi } from "vitest";
-import Input from "../../components/Input/Input";
+import { vi } from "vitest";
 import { renderWithProvider } from "../../testHelpers";
+import Input from "../../components/Input/Input";
 
 const handleChange = vi.fn();
 
@@ -39,6 +39,7 @@ it("renders correctly", () => {
 
     <input
         class="c0"
+        scale="md"
         type="text"
         value="input"
       />

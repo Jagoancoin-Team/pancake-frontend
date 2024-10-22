@@ -1,14 +1,14 @@
 import { ContextApi } from '@pancakeswap/localization'
 import { DefaultTheme } from 'styled-components'
-import { Address } from 'viem'
-import { EventInfos, UserInfos, UserStatusEnum } from 'views/PancakeSquad/types'
+import { UserInfos, EventInfos, UserStatusEnum } from 'views/PancakeSquad/types'
+import { Address } from 'wagmi'
 
 export type EventStepsProps = {
   eventInfos?: EventInfos
   userInfos?: UserInfos
   isLoading: boolean
   userStatus: UserStatusEnum
-  account?: Address
+  account: Address
 }
 
 export type EventStepsType = { t: ContextApi['t']; theme: DefaultTheme; cakeBalance: bigint } & Pick<

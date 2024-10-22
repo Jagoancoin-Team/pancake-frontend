@@ -1,59 +1,64 @@
-import {
-  Box,
-  Flex,
-  InfoIcon,
-  Message,
-  MessageText,
-  Text,
-  TooltipText,
-  WarningIcon,
-  useTooltip,
-} from '@pancakeswap/uikit'
-import BigNumber from 'bignumber.js'
 import { useMemo } from 'react'
-import { VeCakePreviewTextInfo } from 'views/TradingReward/components/YourTradingReward/VeCake/VeCakePreviewTextInfo'
-import { timeFormat } from 'views/TradingReward/utils/timeFormat'
-
-import { useTranslation } from '@pancakeswap/localization'
-import { formatNumber } from '@pancakeswap/utils/formatBalance'
-import getTimePeriods from '@pancakeswap/utils/getTimePeriods'
+import BigNumber from 'bignumber.js'
+import { Flex, Text, InfoIcon, Message, MessageText, Pool } from '@pancakeswap/uikit'
 import { GreyCard } from 'components/Card'
-import { useCakePrice } from 'hooks/useCakePrice'
-import { RewardInfo } from 'views/TradingReward/hooks/useAllTradingRewardPair'
+import { useTranslation } from '@pancakeswap/localization'
+import getTimePeriods from '@pancakeswap/utils/getTimePeriods'
+import { timeFormat } from 'views/TradingReward/utils/timeFormat'
+import { usePriceCakeUSD } from 'state/farms/hooks'
+import { formatNumber } from '@pancakeswap/utils/formatBalance'
+import AddCakeButton from 'views/Pools/components/LockedPool/Buttons/AddCakeButton'
+import { Token } from '@pancakeswap/sdk'
+import { DeserializedLockedVaultUser } from 'state/types'
+import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import { UserCampaignInfoDetail } from 'views/TradingReward/hooks/useAllUserCampaignInfo'
+import { RewardInfo } from 'views/TradingReward/hooks/useAllTradingRewardPair'
 import useRewardInCake from 'views/TradingReward/hooks/useRewardInCake'
 import useRewardInUSD from 'views/TradingReward/hooks/useRewardInUSD'
 
 interface QualifiedPreviewProps {
   timeRemaining: number
   campaignClaimTime: number
-  thresholdLockAmount: number
+  pool: Pool.DeserializedPool<Token>
+  userData: DeserializedLockedVaultUser
   rewardInfo: { [key in string]: RewardInfo }
-  currentUserCampaignInfo: UserCampaignInfoDetail | undefined
+  currentUserCampaignInfo: UserCampaignInfoDetail
 }
 
 const QualifiedPreview: React.FC<React.PropsWithChildren<QualifiedPreviewProps>> = ({
+  pool,
+  userData,
   rewardInfo,
   timeRemaining,
   campaignClaimTime,
   currentUserCampaignInfo,
-  thresholdLockAmount,
 }) => {
   const {
     t,
     currentLanguage: { locale },
   } = useTranslation()
 
+  const {
+    lockEndTime,
+    lockStartTime,
+    balance: { cakeAsBigNumber },
+  } = userData
+
+  const { stakingToken, stakingTokenPrice, userData: poolUserData } = pool ?? {}
   const { totalVolume, tradingFeeArr } = currentUserCampaignInfo ?? {}
 
+  const currentBalance = useMemo(
+    () => (poolUserData?.stakingTokenBalance ? new BigNumber(poolUserData?.stakingTokenBalance ?? '0') : BIG_ZERO),
+    [poolUserData],
+  )
   const currentRewardInfo = useMemo(
-    () => rewardInfo?.[currentUserCampaignInfo?.campaignId ?? 0],
+    () => rewardInfo?.[currentUserCampaignInfo?.campaignId],
     [rewardInfo, currentUserCampaignInfo],
   )
 
   const timeUntil = getTimePeriods(timeRemaining)
 
-  const cakePrice = useCakePrice()
+  const cakePriceBusd = usePriceCakeUSD()
 
   const rewardInUSD = useRewardInUSD({
     timeRemaining,
@@ -67,46 +72,31 @@ const QualifiedPreview: React.FC<React.PropsWithChildren<QualifiedPreviewProps>>
     timeRemaining,
     totalEstimateRewardUSD: currentUserCampaignInfo?.totalEstimateRewardUSD ?? 0,
     totalReward: currentUserCampaignInfo?.canClaim ?? '0',
-    cakePrice,
+    cakePriceBusd,
     rewardPrice: currentRewardInfo?.rewardPrice ?? '0',
     rewardTokenDecimal: currentRewardInfo?.rewardTokenDecimal ?? 0,
   })
 
   // Additional Amount
-  const totalMapCap = useMemo(
-    () => tradingFeeArr?.map((fee) => fee.maxCap).reduce((a, b) => new BigNumber(a).plus(b).toNumber(), 0) ?? 0,
-    [tradingFeeArr],
-  )
-
-  const totalMapCapCovertCakeAmount = useMemo(
-    () => new BigNumber(totalMapCap).dividedBy(cakePrice).toNumber() ?? 0,
-    [totalMapCap, cakePrice],
-  )
-
   const additionalAmount = useMemo(() => {
-    return new BigNumber(totalMapCap).minus(currentUserCampaignInfo?.totalEstimateRewardUSD ?? 0).toNumber() ?? 0
-  }, [currentUserCampaignInfo, totalMapCap])
+    const totalMapCap =
+      tradingFeeArr?.map((fee) => fee.maxCap).reduce((a, b) => new BigNumber(a).plus(b).toNumber(), 0) ?? 0
+    return new BigNumber(totalMapCap).minus(currentUserCampaignInfo.totalEstimateRewardUSD).toNumber() ?? 0
+  }, [currentUserCampaignInfo, tradingFeeArr])
 
-  const isAdditionalAmountHit = useMemo(() => new BigNumber(additionalAmount).gte(0.01), [additionalAmount])
+  // MAX REWARD CAP
+  const maxRewardCap = useMemo(() => {
+    return tradingFeeArr?.map((fee) => fee.maxCap).reduce((a, b) => new BigNumber(a).plus(b).toNumber(), 0) ?? 0
+  }, [tradingFeeArr])
 
-  const { targetRef, tooltip, tooltipVisible } = useTooltip(
-    <Box>
-      <Box mb="12px">
-        <Text lineHeight="110%" as="span">
-          {t('The maximum amount of CAKE reward you may earn is capped at')}
-        </Text>
-        <Text lineHeight="110%" as="span" bold m="0 4px">
-          0.1%
-        </Text>
-        <Text lineHeight="110%" as="span">
-          {t('of your veCAKE balance at the snapshot time.')}
-        </Text>
-      </Box>
-      <Text lineHeight="110%">{t('Increase your veCAKE to continue earning.')}</Text>
-    </Box>,
-    {
-      placement: 'top',
-    },
+  const maxRewardCapCakePrice = useMemo(
+    () => new BigNumber(maxRewardCap).div(cakePriceBusd).toNumber(),
+    [cakePriceBusd, maxRewardCap],
+  )
+
+  const maxRewardCapInfoAmount = useMemo(
+    () => new BigNumber(currentRewardInfo?.rewardFeeRatio ?? 0).div(1e10).toNumber(),
+    [currentRewardInfo],
   )
 
   return (
@@ -115,80 +105,84 @@ const QualifiedPreview: React.FC<React.PropsWithChildren<QualifiedPreviewProps>>
         <Text textTransform="uppercase" fontSize="12px" color="secondary" bold mb="4px">
           {t('Your Current trading rewards')}
         </Text>
-        <Flex>
-          <Text bold fontSize="40px">{`$${formatNumber(rewardInUSD)}`}</Text>
-          {isAdditionalAmountHit && <WarningIcon ml="10px" width={24} color="warning" />}
-        </Flex>
+        <Text bold fontSize="40px">{`$${formatNumber(rewardInUSD)}`}</Text>
         <Text fontSize="14px" color="textSubtle">{`~${formatNumber(rewardInCake)} CAKE`}</Text>
-
-        <Box>
-          <Text as="span" fontSize="12px" color="textSubtle" lineHeight="110%">
-            {t('Available for claiming')}
-          </Text>
-          <Text lineHeight="110%" as="span" m="0 4px">
-            {timeRemaining > 0 ? (
-              <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
-                {t('in')}
-                {timeUntil.months ? (
-                  <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
-                    {`${timeUntil.months}${t('m')}`}
-                  </Text>
-                ) : null}
-                {timeUntil.days ? (
-                  <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
-                    {`${timeUntil.days}${t('d')}`}
-                  </Text>
-                ) : null}
-                {timeUntil.days || timeUntil.hours ? (
-                  <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
-                    {`${timeUntil.hours}${t('h')}`}
-                  </Text>
-                ) : null}
+        <Text fontSize="12px" color="textSubtle" mt="4px">
+          {t('Available for claiming')}
+          {timeRemaining > 0 ? (
+            <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
+              {t('in')}
+              {timeUntil.months ? (
                 <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
-                  {`${timeUntil.minutes}${t('m')}`}
+                  {`${timeUntil.months}${t('m')}`}
                 </Text>
+              ) : null}
+              {timeUntil.days ? (
+                <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
+                  {`${timeUntil.days}${t('d')}`}
+                </Text>
+              ) : null}
+              {timeUntil.days || timeUntil.hours ? (
+                <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
+                  {`${timeUntil.hours}${t('h')}`}
+                </Text>
+              ) : null}
+              <Text bold fontSize="12px" color="textSubtle" as="span" ml="4px">
+                {`${timeUntil.minutes}${t('m')}`}
               </Text>
-            ) : null}
-          </Text>
-          <Text fontSize="12px" color="textSubtle" as="span" lineHeight="110%">
+            </Text>
+          ) : null}
+          <Text fontSize="12px" color="textSubtle" ml="4px" as="span">
             {t('(at ~%date%)', { date: timeFormat(locale, campaignClaimTime ?? 0) })}
           </Text>
-        </Box>
-
-        {isAdditionalAmountHit && (
+        </Text>
+        {additionalAmount >= 0.01 && (
           <Message variant="warning" mt="10px">
             <MessageText>
-              <TooltipText ref={targetRef} bold as="span" mr="4px" fontSize={14}>
-                {t('Your Max Reward Capped')}
-              </TooltipText>
-              {tooltipVisible && tooltip}
-              <Text as="span" mr="4px" fontSize={14}>
-                {t('at')}
+              <Text as="span">{t('An additional amount of reward of')}</Text>
+              <Text as="span" bold m="0 4px">{`~$${formatNumber(additionalAmount)}`}</Text>
+              <Text as="span" mr="4px">
+                {t('can not be claim due to the max reward cap.')}
               </Text>
-              <Text color="warning" as="span" bold mr="4px" fontSize={14}>
-                {`$${formatNumber(totalMapCap)} (~${formatNumber(totalMapCapCovertCakeAmount)} CAKE).`}
-              </Text>
-              <Text as="span" mr="4px" fontSize={14}>
-                {t('An additional amount of reward of')}
-              </Text>
-              <Text as="span" bold mr="4px" fontSize={14}>
-                {`~$${formatNumber(additionalAmount)}`}
-              </Text>
-              <Text as="span" fontSize={14}>
-                {t('can not be claim.')}
+              <Text as="span" bold>
+                {t('Lock more CAKE to keep earning.')}
               </Text>
             </MessageText>
           </Message>
         )}
       </GreyCard>
 
-      {isAdditionalAmountHit && (
-        <VeCakePreviewTextInfo
-          mt="24px"
-          showIncreaseButton
-          endTime={campaignClaimTime}
-          thresholdLockAmount={thresholdLockAmount}
-        />
+      {additionalAmount >= 0.01 && (
+        <GreyCard mt="24px">
+          <Text color="textSubtle" textTransform="uppercase" fontSize="12px" bold>
+            {t('Your Current Max Reward Cap')}
+          </Text>
+          <Text bold color="failure" fontSize="24px">{`$${formatNumber(maxRewardCap)}`}</Text>
+          <Text color="failure" fontSize="14px">{`~${formatNumber(maxRewardCapCakePrice)} CAKE`}</Text>
+          <Text width="100%" lineHeight="120%">
+            <Text color="textSubtle" fontSize="14px" lineHeight="120%" as="span">
+              {t('Equals to your %amount%% of locked CAKE divided by', { amount: maxRewardCapInfoAmount })}
+            </Text>
+            <Text color="textSubtle" fontSize="14px" lineHeight="120%" as="span" ml="4px">
+              {t('of the amount of your locked CAKE. Lock more CAKE to raise this limit')}
+            </Text>
+          </Text>
+          {additionalAmount >= 0.01 && (
+            <AddCakeButton
+              scale="sm"
+              mt="10px"
+              width="fit-content"
+              padding="0 16px !important"
+              lockEndTime={lockEndTime}
+              lockStartTime={lockStartTime}
+              currentLockedAmount={cakeAsBigNumber}
+              stakingToken={stakingToken}
+              stakingTokenPrice={stakingTokenPrice}
+              currentBalance={currentBalance}
+              stakingTokenBalance={currentBalance}
+            />
+          )}
+        </GreyCard>
       )}
 
       <GreyCard mt="24px">
@@ -198,7 +192,7 @@ const QualifiedPreview: React.FC<React.PropsWithChildren<QualifiedPreviewProps>>
           </Text>
           <InfoIcon color="secondary" width={16} height={16} ml="4px" />
         </Flex>
-        <Text bold fontSize="24px">{`$${formatNumber(totalVolume ?? 0)}`}</Text>
+        <Text bold fontSize="24px">{`$${formatNumber(totalVolume)}`}</Text>
       </GreyCard>
     </>
   )

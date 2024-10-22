@@ -1,5 +1,5 @@
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 
-export const verifyBscNetwork = (chainId?: number) => {
-  return Boolean(chainId && (chainId === ChainId.BSC || chainId === ChainId.BSC_TESTNET))
+export const verifyBscNetwork = (chainId: number) => {
+  return false  // chainId === ChainId.BSC
 }

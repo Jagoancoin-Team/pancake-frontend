@@ -2,8 +2,14 @@ import { useRouter } from 'next/router'
 import { Price, Token } from '@pancakeswap/swap-sdk-core'
 import { useCallback } from 'react'
 import { batch } from 'react-redux'
-import { CurrencyField as Field } from 'utils/types'
-import { typeInput, typeLeftRangeInput, typeRightRangeInput, typeStartPriceInput, setFullRange } from '../actions'
+import {
+  Field,
+  typeInput,
+  typeLeftRangeInput,
+  typeRightRangeInput,
+  typeStartPriceInput,
+  setFullRange,
+} from '../actions'
 import { useV3FormDispatch } from '../reducer'
 
 export function useV3MintActionHandlers(
@@ -13,15 +19,15 @@ export function useV3MintActionHandlers(
   onSetFullRange: () => void
   onFieldAInput: (typedValue: string | undefined) => void
   onFieldBInput: (typedValue: string) => void
-  onLeftRangeInput: (typedValue: Price<Token, Token> | undefined) => void
-  onRightRangeInput: (typedValue: Price<Token, Token> | undefined) => void
+  onLeftRangeInput: (typedValue: Price<Token, Token>) => void
+  onRightRangeInput: (typedValue: Price<Token, Token>) => void
   onStartPriceInput: (typedValue: string) => void
   onBothRangeInput: ({
     leftTypedValue,
     rightTypedValue,
   }: {
-    leftTypedValue: Price<Token, Token> | undefined
-    rightTypedValue: Price<Token, Token> | undefined
+    leftTypedValue: Price<Token, Token>
+    rightTypedValue: Price<Token, Token>
   }) => void
 } {
   const router = useRouter()
@@ -29,7 +35,7 @@ export function useV3MintActionHandlers(
   const dispatch = useV3FormDispatch()
 
   const onFieldAInput = useCallback(
-    (typedValue: string | undefined) => {
+    (typedValue: string) => {
       dispatch(typeInput({ field: Field.CURRENCY_A, typedValue, noLiquidity: noLiquidity === true }))
     },
     [dispatch, noLiquidity],
@@ -47,8 +53,8 @@ export function useV3MintActionHandlers(
       leftTypedValue,
       rightTypedValue,
     }: {
-      leftTypedValue: Price<Token, Token> | undefined
-      rightTypedValue: Price<Token, Token> | undefined
+      leftTypedValue: Price<Token, Token>
+      rightTypedValue: Price<Token, Token>
     }) => {
       batch(() => {
         dispatch(typeLeftRangeInput({ typedValue: leftTypedValue }))
@@ -80,13 +86,13 @@ export function useV3MintActionHandlers(
   )
 
   const onLeftRangeInput = useCallback(
-    (typedValue: Price<Token, Token> | undefined) => {
+    (typedValue: Price<Token, Token>) => {
       dispatch(typeLeftRangeInput({ typedValue }))
       if (routerReplace) {
         router.replace(
           {
             pathname: router.pathname,
-            query: { ...router.query, minPrice: typedValue?.toFixed(18) },
+            query: { ...router.query, minPrice: typedValue.toFixed(18) },
           },
           undefined,
           {
@@ -99,13 +105,13 @@ export function useV3MintActionHandlers(
   )
 
   const onRightRangeInput = useCallback(
-    (typedValue: Price<Token, Token> | undefined) => {
+    (typedValue: Price<Token, Token>) => {
       dispatch(typeRightRangeInput({ typedValue }))
       if (routerReplace) {
         router.replace(
           {
             pathname: router.pathname,
-            query: { ...router.query, maxPrice: typedValue?.toFixed(6) },
+            query: { ...router.query, maxPrice: typedValue.toFixed(6) },
           },
           undefined,
           {

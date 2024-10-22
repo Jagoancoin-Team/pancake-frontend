@@ -1,8 +1,8 @@
 import React from "react";
-import { Box, Flex } from "../Box";
+import { Flex, Box } from "../Box";
 import { SwapVertIcon } from "../Svg";
 import Text from "../Text/Text";
-import { StyledBalanceInput, StyledInput, SwitchUnitsButton, UnitContainer } from "./styles";
+import { StyledBalanceInput, StyledInput, UnitContainer, SwitchUnitsButton } from "./styles";
 import { BalanceInputProps } from "./types";
 
 const BalanceInput: React.FC<React.PropsWithChildren<BalanceInputProps>> = ({
@@ -15,7 +15,6 @@ const BalanceInput: React.FC<React.PropsWithChildren<BalanceInputProps>> = ({
   isWarning = false,
   decimals = 18,
   unit,
-  appendComponent,
   switchEditingUnits,
   ...props
 }) => {
@@ -28,29 +27,26 @@ const BalanceInput: React.FC<React.PropsWithChildren<BalanceInputProps>> = ({
   return (
     <StyledBalanceInput isWarning={isWarning} {...props}>
       <Flex justifyContent="flex-end">
-        <Flex width="100%">
-          {appendComponent}
-          <Box width="100%">
-            <Flex alignItems="center">
-              <StyledInput
-                pattern={`^[0-9]*[.,]?[0-9]{0,${decimals}}$`}
-                inputMode="decimal"
-                min="0"
-                value={value}
-                onChange={handleOnChange}
-                placeholder={placeholder}
-                ref={innerRef}
-                {...inputProps}
-              />
-              {unit && <UnitContainer>{unit}</UnitContainer>}
-            </Flex>
-            {currencyValue && (
-              <Text fontSize="12px" textAlign="right" color="textSubtle">
-                {currencyValue}
-              </Text>
-            )}
-          </Box>
-        </Flex>
+        <Box width="100%">
+          <Flex alignItems="center">
+            <StyledInput
+              pattern={`^[0-9]*[.,]?[0-9]{0,${decimals}}$`}
+              inputMode="decimal"
+              min="0"
+              value={value}
+              onChange={handleOnChange}
+              placeholder={placeholder}
+              ref={innerRef}
+              {...inputProps}
+            />
+            {unit && <UnitContainer>{unit}</UnitContainer>}
+          </Flex>
+          {currencyValue && (
+            <Text fontSize="12px" textAlign="right" color="textSubtle">
+              {currencyValue}
+            </Text>
+          )}
+        </Box>
         {switchEditingUnits && (
           <Flex alignItems="center" pl="12px">
             <SwitchUnitsButton scale="sm" variant="text" onClick={switchEditingUnits}>

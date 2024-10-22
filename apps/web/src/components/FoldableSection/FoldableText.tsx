@@ -23,6 +23,7 @@ const StyledChildrenFlex = styled(Flex)<{ isExpanded?: boolean; noBorder?: boole
   overflow: hidden;
   height: ${({ isExpanded }) => (isExpanded ? '100%' : '0px')};
   padding-bottom: ${({ isExpanded }) => (isExpanded ? '16px' : '0px')};
+  transition: max-height 0.3s ease-out, padding-bottom 0.3s ease-in-out;
   border-bottom: ${({ noBorder }) => (noBorder ? '' : `1px solid ${({ theme }) => theme.colors.inputSecondary}`)};
 `
 

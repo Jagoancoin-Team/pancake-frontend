@@ -1,15 +1,9 @@
 /* eslint-disable @typescript-eslint/no-shadow, no-await-in-loop, no-constant-condition, no-console */
 import { Currency } from '@pancakeswap/sdk'
-import { Pool } from '@pancakeswap/smart-router'
+import { Pool } from '@pancakeswap/smart-router/evm'
 import { useMemo, useCallback } from 'react'
 
-import {
-  useV3CandidatePools,
-  useV3CandidatePoolsWithoutTicks,
-  useV3PoolsWithTicksOnChain,
-  V3PoolsHookParams,
-  V3PoolsResult,
-} from './useV3Pools'
+import { useV3CandidatePools, useV3CandidatePoolsWithoutTicks, V3PoolsHookParams, V3PoolsResult } from './useV3Pools'
 import { useStableCandidatePools } from './usePoolsOnChain'
 import { useV2CandidatePools } from './useV2Pools'
 
@@ -21,12 +15,11 @@ interface FactoryOptions {
 }
 
 export interface PoolsWithState {
-  refresh: () => Promise<unknown>
-  pools: Pool[] | undefined
+  refresh: () => void
+  pools: Pool[] | null
   loading: boolean
   syncing: boolean
   blockNumber?: number
-  dataUpdatedAt?: number
 }
 
 export interface CommonPoolsParams {
@@ -47,7 +40,6 @@ function commonPoolsHookCreator({ useV3Pools }: FactoryOptions) {
       syncing: v3Syncing,
       blockNumber: v3BlockNumber,
       refresh: v3Refresh,
-      dataUpdatedAt: v3PoolsUpdatedAt,
     } = useV3Pools(currencyA, currencyB, { blockNumber, enabled })
     const {
       pools: v2Pools,
@@ -55,7 +47,6 @@ function commonPoolsHookCreator({ useV3Pools }: FactoryOptions) {
       syncing: v2Syncing,
       blockNumber: v2BlockNumber,
       refresh: v2Refresh,
-      dataUpdatedAt: v2PoolsUpdatedAt,
     } = useV2CandidatePools(currencyA, currencyB, { blockNumber, enabled })
     const {
       pools: stablePools,
@@ -63,7 +54,6 @@ function commonPoolsHookCreator({ useV3Pools }: FactoryOptions) {
       syncing: stableSyncing,
       blockNumber: stableBlockNumber,
       refresh: stableRefresh,
-      dataUpdatedAt: stablePoolsUpdatedAt,
     } = useStableCandidatePools(currencyA, currencyB, { blockNumber, enabled })
 
     const consistentBlockNumber = useMemo(
@@ -74,20 +64,17 @@ function commonPoolsHookCreator({ useV3Pools }: FactoryOptions) {
         v2BlockNumber === stableBlockNumber &&
         stableBlockNumber === v3BlockNumber
           ? v2BlockNumber
-          : undefined,
+          : null,
       [v2BlockNumber, v3BlockNumber, stableBlockNumber],
     )
     // FIXME: allow inconsistent block not working as expected
-    const poolsData: [Pool[], number] | undefined = useMemo(
+    const pools = useMemo(
       () =>
         (!v2Loading || v2Pools) &&
         (!v3Loading || v3Pools) &&
         (!stableLoading || stablePools) &&
         (allowInconsistentBlock || !!consistentBlockNumber)
-          ? [
-              [...(v2Pools || []), ...(v3Pools || []), ...(stablePools || [])],
-              Math.max(v2PoolsUpdatedAt || 0, Math.max(v3PoolsUpdatedAt || 0, stablePoolsUpdatedAt)),
-            ]
+          ? [...(v2Pools || []), ...(v3Pools || []), ...(stablePools || [])]
           : undefined,
       [
         v2Loading,
@@ -98,34 +85,26 @@ function commonPoolsHookCreator({ useV3Pools }: FactoryOptions) {
         stablePools,
         allowInconsistentBlock,
         consistentBlockNumber,
-        v3PoolsUpdatedAt,
-        v2PoolsUpdatedAt,
-        stablePoolsUpdatedAt,
       ],
     )
 
-    const refresh = useCallback(async () => {
-      return Promise.all([v3Refresh(), v2Refresh(), stableRefresh()])
+    const refresh = useCallback(() => {
+      v3Refresh()
+      v2Refresh()
+      stableRefresh()
     }, [v3Refresh, v2Refresh, stableRefresh])
 
     const loading = v2Loading || v3Loading || stableLoading
     const syncing = v2Syncing || v3Syncing || stableSyncing
     return {
       refresh,
-      pools: poolsData?.[0],
+      pools,
       blockNumber: consistentBlockNumber,
       loading,
       syncing,
-      dataUpdatedAt: poolsData?.[1],
     }
   }
 }
-
-// Get v3 pools data from on chain
-export const useCommonPoolsOnChain = commonPoolsHookCreator({
-  key: 'useCommonPoolsOnChain',
-  useV3Pools: useV3PoolsWithTicksOnChain,
-})
 
 export const useCommonPools = commonPoolsHookCreator({ key: 'useCommonPools', useV3Pools: useV3CandidatePools })
 

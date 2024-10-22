@@ -1,7 +1,7 @@
 import translations from './config/translations.json'
 
 export type ContextData = {
-  [key: string]: string | number | undefined
+  [key: string]: string | number
 }
 
 export interface ProviderState {

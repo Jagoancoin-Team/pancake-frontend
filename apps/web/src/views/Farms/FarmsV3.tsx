@@ -1,20 +1,25 @@
-import { ChainId } from '@pancakeswap/chains'
 import {
+  DeserializedFarm,
+  FarmV3DataWithPriceAndUserInfo,
   FarmWithStakedValue,
-  bCakeSupportedChainId,
   filterFarmsByQuery,
   supportedChainIdV2,
   supportedChainIdV3,
 } from '@pancakeswap/farms'
 import { useIntersectionObserver } from '@pancakeswap/hooks'
 import { useTranslation } from '@pancakeswap/localization'
+import { ChainId } from '@pancakeswap/sdk'
 import {
+  ArrowForwardIcon,
   Box,
+  Button,
   Flex,
   FlexLayout,
+  Heading,
   Image,
   Link,
   Loading,
+  NextLinkFromReactRouter,
   OptionProps,
   PageHeader,
   SearchInput,
@@ -23,34 +28,30 @@ import {
   Toggle,
   ToggleView,
 } from '@pancakeswap/uikit'
-import partition from 'lodash/partition'
-
-import { BIG_ONE, BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import { FarmWidget, NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
+import { FarmWidget } from '@pancakeswap/widgets-internal'
 import BigNumber from 'bignumber.js'
 import Page from 'components/Layout/Page'
-import { V2_BCAKE_MIGRATION_SUPPORTED_CHAINS, V3_MIGRATION_SUPPORTED_CHAINS } from 'config/constants/supportChains'
 import { useActiveChainId } from 'hooks/useActiveChainId'
-import { useCakePrice } from 'hooks/useCakePrice'
 import orderBy from 'lodash/orderBy'
 import { useRouter } from 'next/router'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useFarms, usePollFarmsAvgInfo, usePollFarmsWithUserData } from 'state/farms/hooks'
-import { V2FarmWithoutStakedValue, V3FarmWithoutStakedValue, type V3Farm } from 'state/farms/types'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useFarms, usePollFarmsWithUserData, usePriceCakeUSD } from 'state/farms/hooks'
 import { useFarmsV3WithPositionsAndBooster } from 'state/farmsV3/hooks'
 import { useCakeVaultUserData } from 'state/pools/hooks'
 import { ViewMode } from 'state/user/actions'
 import { useUserFarmStakedOnly, useUserFarmsViewMode } from 'state/user/hooks'
 import { styled } from 'styled-components'
 import { getFarmApr } from 'utils/apr'
-import { getStakedFarms } from 'views/Farms/utils/getStakedFarms'
-import { BCakeMigrationBanner } from 'views/Home/components/Banners/BCakeMigrationBanner'
+
+import { V3SubgraphHealthIndicator } from 'components/SubgraphHealthIndicator'
+import { isV3MigrationSupported } from 'utils/isV3MigrationSupported'
+import FarmV3MigrationBanner from 'views/Home/components/Banners/FarmV3MigrationBanner'
 import { useAccount } from 'wagmi'
+import { BIG_ONE, BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import Table from './components/FarmTable/FarmTable'
 import { FarmTypesFilter } from './components/FarmTypesFilter'
 import { BCakeBoosterCard } from './components/YieldBooster/components/bCakeV3/BCakeBoosterCard'
 import { FarmsV3Context } from './context'
-import { FarmFlexWrapper, FarmH1, FarmH2 } from './styled'
 
 const ControlContainer = styled.div`
   display: flex;
@@ -67,6 +68,29 @@ const ControlContainer = styled.div`
     flex-wrap: wrap;
     padding: 16px 32px;
     margin-bottom: 0;
+  }
+`
+
+const FarmFlexWrapper = styled(Flex)`
+  flex-wrap: wrap;
+  ${({ theme }) => theme.mediaQueries.md} {
+    flex-wrap: nowrap;
+  }
+`
+const FarmH1 = styled(Heading)`
+  font-size: 32px;
+  margin-bottom: 8px;
+  ${({ theme }) => theme.mediaQueries.sm} {
+    font-size: 64px;
+    margin-bottom: 24px;
+  }
+`
+const FarmH2 = styled(Heading)`
+  font-size: 16px;
+  margin-bottom: 8px;
+  ${({ theme }) => theme.mediaQueries.sm} {
+    font-size: 24px;
+    margin-bottom: 18px;
   }
 `
 
@@ -126,31 +150,32 @@ const StyledImage = styled(Image)`
 `
 
 const FinishedTextContainer = styled(Flex)`
+  padding-bottom: 32px;
   flex-direction: column;
-  align-items: center;
   ${({ theme }) => theme.mediaQueries.md} {
     flex-direction: row;
   }
 `
 
-const FinishedExternalTextLink = styled(Link)`
+const FinishedTextLink = styled(Link)`
   font-weight: 400;
   white-space: nowrap;
   text-decoration: underline;
-`
-
-const FinishedTextLink = styled(NextLinkFromReactRouter)`
-  font-weight: 400;
-  white-space: nowrap;
-  text-decoration: underline;
-  color: ${({ theme }) => theme.colors.failure};
-  font-size: 16px;
-  ${({ theme }) => theme.mediaQueries.md} {
-    font-size: 20px;
-  }
 `
 
 const NUMBER_OF_FARMS_VISIBLE = 12
+
+export interface V3FarmWithoutStakedValue extends FarmV3DataWithPriceAndUserInfo {
+  version: 3
+}
+
+export interface V3Farm extends V3FarmWithoutStakedValue {
+  version: 3
+}
+
+interface V2FarmWithoutStakedValue extends DeserializedFarm {
+  version: 2
+}
 
 export interface V2Farm extends FarmWithStakedValue {
   version: 2
@@ -197,7 +222,7 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
     ]
   }, [farmsV2, farmsV3, chainId])
 
-  const cakePrice = useCakePrice()
+  const cakePrice = usePriceCakeUSD()
 
   const [_query, setQuery] = useState('')
   const normalizedUrlSearch = useMemo(() => (typeof urlQuery?.search === 'string' ? urlQuery.search : ''), [urlQuery])
@@ -222,38 +247,58 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
   const userDataReady =
     !account ||
     (!!account &&
-      (chainId && supportedChainIdV2.includes(chainId) ? v2UserDataLoaded : true) &&
-      (chainId && supportedChainIdV3.includes(chainId) ? v3UserDataLoaded : true))
+      (supportedChainIdV2.includes(chainId) ? v2UserDataLoaded : true) &&
+      (supportedChainIdV3.includes(chainId) ? v3UserDataLoaded : true))
 
-  const [stakedOnly, , toggleStakedOnly] = useUserFarmStakedOnly(isActive)
+  const [stakedOnly, setStakedOnly] = useUserFarmStakedOnly(isActive)
   const [v3FarmOnly, setV3FarmOnly] = useState(false)
   const [v2FarmOnly, setV2FarmOnly] = useState(false)
   const [boostedOnly, setBoostedOnly] = useState(false)
   const [stableSwapOnly, setStableSwapOnly] = useState(false)
   const [farmTypesEnableCount, setFarmTypesEnableCount] = useState(0)
 
-  const [activeFarms, inactiveFarms] = useMemo(
-    () =>
-      partition(
-        farmsLP,
-        (farm) =>
-          farm.pid !== 0 &&
-          (farm.multiplier !== '0X' ||
-            Boolean(farm.version === 2 && farm?.bCakeWrapperAddress && farm?.bCakePublicData?.isRewardInRange)) &&
-          (farm.version === 3 ? !v3PoolLength || v3PoolLength >= farm.pid : !v2PoolLength || v2PoolLength > farm.pid),
-      ),
-    [farmsLP, v2PoolLength, v3PoolLength],
+  const activeFarms = farmsLP.filter(
+    (farm) =>
+      farm.multiplier !== '0X' &&
+      (farm.version === 3 ? !v3PoolLength || v3PoolLength >= farm.pid : !v2PoolLength || v2PoolLength > farm.pid),
   )
 
-  const farmsAvgInfo = usePollFarmsAvgInfo(activeFarms)
+  const inactiveFarms = farmsLP.filter((farm) => farm.pid !== 0 && farm.multiplier === '0X')
 
   const archivedFarms = farmsLP
 
-  const stakedOnlyFarms = useMemo(() => getStakedFarms(activeFarms), [activeFarms])
+  const stakedOnlyFarms = activeFarms.filter((farm) => {
+    if (farm.version === 3) {
+      return farm.stakedPositions.length > 0
+    }
+    return (
+      farm.userData &&
+      (new BigNumber(farm.userData.stakedBalance).isGreaterThan(0) ||
+        new BigNumber(farm.userData.proxy?.stakedBalance).isGreaterThan(0))
+    )
+  })
 
-  const stakedInactiveFarms = useMemo(() => getStakedFarms(inactiveFarms), [inactiveFarms])
+  const stakedInactiveFarms = inactiveFarms.filter((farm) => {
+    if (farm.version === 3) {
+      return farm.stakedPositions.length > 0
+    }
+    return (
+      farm.userData &&
+      (new BigNumber(farm.userData.stakedBalance).isGreaterThan(0) ||
+        new BigNumber(farm.userData.proxy?.stakedBalance).isGreaterThan(0))
+    )
+  })
 
-  const stakedArchivedFarms = useMemo(() => getStakedFarms(archivedFarms), [archivedFarms])
+  const stakedArchivedFarms = archivedFarms.filter((farm) => {
+    if (farm.version === 3) {
+      return farm.stakedPositions.length > 0
+    }
+    return (
+      farm.userData &&
+      (new BigNumber(farm.userData.stakedBalance).isGreaterThan(0) ||
+        new BigNumber(farm.userData.proxy?.stakedBalance).isGreaterThan(0))
+    )
+  })
 
   const farmsList = useCallback(
     (farmsToDisplay: V2AndV3Farms): V2StakeValueAndV3Farm[] => {
@@ -265,23 +310,20 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
         if (!farm.quoteTokenAmountTotal || !farm.quoteTokenPriceBusd) {
           return farm
         }
-
-        const totalLiquidityFromLp = new BigNumber(farm?.lpTotalInQuoteToken ?? 0).times(farm.quoteTokenPriceBusd)
+        const totalLiquidityFromLp = new BigNumber(farm.lpTotalInQuoteToken).times(farm.quoteTokenPriceBusd)
         // Mock 1$ tvl if the farm doesn't have lp staked
         const totalLiquidity = totalLiquidityFromLp.eq(BIG_ZERO) && mockApr ? BIG_ONE : totalLiquidityFromLp
-        const { cakeRewardsApr, lpRewardsApr } =
-          isActive && chainId
-            ? getFarmApr(
-                chainId,
-                new BigNumber(farm?.poolWeight ?? 0),
-                cakePrice,
-                totalLiquidity.times(farm.bCakePublicData?.totalLiquidityX ?? 1),
-                farm.lpAddress,
-                regularCakePerBlock,
-                farm.lpRewardsApr,
-                farm.bCakePublicData?.rewardPerSecond,
-              )
-            : { cakeRewardsApr: 0, lpRewardsApr: 0 }
+        const { cakeRewardsApr, lpRewardsApr } = isActive
+          ? getFarmApr(
+              chainId,
+              new BigNumber(farm.poolWeight),
+              cakePrice,
+              totalLiquidity,
+              farm.lpAddress,
+              regularCakePerBlock,
+            )
+          : { cakeRewardsApr: 0, lpRewardsApr: 0 }
+
         return { ...farm, apr: cakeRewardsApr, lpRewardsApr, liquidity: totalLiquidity }
       })
 
@@ -290,10 +332,14 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
     [query, isActive, chainId, cakePrice, regularCakePerBlock, mockApr],
   )
 
+  const handleChangeQuery = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(event.target.value)
+  }
+
   const [numberOfFarmsVisible, setNumberOfFarmsVisible] = useState(NUMBER_OF_FARMS_VISIBLE)
 
   const chosenFarms = useMemo(() => {
-    let chosenFs: V2StakeValueAndV3Farm[] = []
+    let chosenFs = []
     if (isActive) {
       chosenFs = stakedOnly ? farmsList(stakedOnlyFarms) : farmsList(activeFarms)
     }
@@ -305,15 +351,22 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
     }
 
     if (v3FarmOnly || v2FarmOnly || boostedOnly || stableSwapOnly) {
-      const filterFarmsWithTypes = chosenFs.filter(
+      const filterFarms = chosenFs.filter(
         (farm) =>
           (v3FarmOnly && farm.version === 3) ||
-          (v2FarmOnly && farm.version === 2 && !farm.isStable) ||
-          (boostedOnly && ((farm.boosted && farm.version === 3) || (farm.version === 2 && farm.bCakeWrapperAddress))) ||
-          (stableSwapOnly && farm.version === 2 && farm.isStable),
+          (v2FarmOnly && farm.version === 2) ||
+          (boostedOnly && farm.boosted && farm.version === 3) ||
+          (stableSwapOnly && farm.isStable),
       )
 
-      chosenFs = farmsList(filterFarmsWithTypes)
+      const stakedFilterFarms = chosenFs.filter(
+        (farm) =>
+          farm.userData &&
+          (new BigNumber(farm.userData.stakedBalance).isGreaterThan(0) ||
+            new BigNumber(farm.userData.proxy?.stakedBalance).isGreaterThan(0)),
+      )
+
+      chosenFs = stakedOnly ? farmsList(stakedFilterFarms) : farmsList(filterFarms)
     }
 
     return chosenFs
@@ -339,7 +392,7 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
     const sortFarms = (farms: V2StakeValueAndV3Farm[]): V2StakeValueAndV3Farm[] => {
       switch (sortOption) {
         case 'apr':
-          return orderBy(farms, (farm) => (farm.version === 3 ? Number(farm.cakeApr) : farm.apr ?? 0), 'desc')
+          return orderBy(farms, (farm) => (farm.version === 3 ? +farm.cakeApr : farm.apr ?? 0), 'desc')
         case 'multiplier':
           return orderBy(farms, (farm) => (farm.multiplier ? Number(farm.multiplier.slice(0, -1)) : 0), 'desc')
         case 'earned':
@@ -394,24 +447,24 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
     }
   }, [isIntersecting])
 
-  const handleSortOptionChange = useCallback((option: OptionProps): void => {
+  const handleSortOptionChange = (option: OptionProps): void => {
     setSortOption(option.value)
-  }, [])
+  }
 
-  const handleChangeQuery = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value)
-  }, [])
+  const providerValue = useMemo(() => ({ chosenFarmsMemoized }), [chosenFarmsMemoized])
 
-  const providerValue = useMemo(() => ({ chosenFarmsMemoized, farmsAvgInfo }), [chosenFarmsMemoized, farmsAvgInfo])
+  const isMigrationSupported = useMemo(() => isV3MigrationSupported(chainId), [chainId])
 
   return (
     <FarmsV3Context.Provider value={providerValue}>
       <PageHeader>
-        <Box mb="32px" mt="16px">
-          <BCakeMigrationBanner />
-        </Box>
         <Flex flexDirection="column">
-          <FarmFlexWrapper>
+          {isMigrationSupported && (
+            <Box m="24px 0">
+              <FarmV3MigrationBanner />
+            </Box>
+          )}
+          <FarmFlexWrapper justifyContent="space-between">
             <Box style={{ flex: '1 1 100%' }}>
               <FarmH1 as="h1" scale="xxl" color="secondary" mb="24px">
                 {t('Farms')}
@@ -419,8 +472,23 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
               <FarmH2 scale="lg" color="text">
                 {t('Stake LP tokens to earn.')}
               </FarmH2>
+              {/*
+              <NextLinkFromReactRouter to="/farms/auction" prefetch={false}>
+                <Button p="0" variant="text">
+                  <Text color="primary" bold fontSize="16px" mr="4px">
+                    {t('Community Auctions')}
+                  </Text>
+                  <ArrowForwardIcon color="primary" />
+                </Button>
+              </NextLinkFromReactRouter>
+              */}
             </Box>
-            <Box>{bCakeSupportedChainId.includes(chainId) && <BCakeBoosterCard />}</Box>
+
+            {/* (chainId === ChainId.BSC || chainId === ChainId.BSC_TESTNET) && (
+              <Box>
+                <BCakeBoosterCard />
+              </Box>
+            ) */}
           </FarmFlexWrapper>
         </Flex>
       </PageHeader>
@@ -445,7 +513,12 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
                 handleSetFarmTypesEnableCount={setFarmTypesEnableCount}
               />
               <ToggleWrapper>
-                <Toggle id="staked-only-farms" checked={stakedOnly} onChange={toggleStakedOnly} scale="sm" />
+                <Toggle
+                  id="staked-only-farms"
+                  checked={stakedOnly}
+                  onChange={() => setStakedOnly(!stakedOnly)}
+                  scale="sm"
+                />
                 <Text> {t('Staked only')}</Text>
               </ToggleWrapper>
             </Flex>
@@ -493,40 +566,22 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
             </LabelWrapper>
           </FilterContainer>
         </ControlContainer>
-        {isInactive && (
-          <Box mb="32px">
-            {chainId === ChainId.BSC && (
-              <FinishedTextContainer>
-                <Text fontSize={['16px', null, '20px']} color="failure" pr="4px">
-                  {t("Don't see the farm you are staking?")}
-                </Text>
-                <FinishedExternalTextLink
-                  external
-                  color="failure"
-                  fontSize={['16px', null, '20px']}
-                  href="https://v1-farms.pancakeswap.finance/farms/history"
-                >
-                  {t('check out v1 farms')}.
-                </FinishedExternalTextLink>
-              </FinishedTextContainer>
-            )}
-            {chainId && V2_BCAKE_MIGRATION_SUPPORTED_CHAINS.includes(chainId) && (
-              <FinishedTextContainer>
-                <Text fontSize={['16px', null, '20px']} color="failure" pr="4px">
-                  {t("Don't see the farm you are staking?")}
-                </Text>
-                <FinishedTextLink to="/migration/bcake">{t('Migrate to new v2 bCake here')}.</FinishedTextLink>
-              </FinishedTextContainer>
-            )}
-            {chainId && V3_MIGRATION_SUPPORTED_CHAINS.includes(chainId) && (
-              <FinishedTextContainer>
-                <Text fontSize={['16px', null, '20px']} color="failure" pr="4px">
-                  {t('Unstaking from v2 farm?')}
-                </Text>
-                <FinishedTextLink to="/migration">{t('Migrate to v3 here')}.</FinishedTextLink>
-              </FinishedTextContainer>
-            )}
-          </Box>
+        {isInactive && chainId === ChainId.BSC && (
+          <FinishedTextContainer>
+            <Text fontSize={['16px', null, '20px']} color="failure" pr="4px">
+              {t("Don't see the farm you are staking?")}
+            </Text>
+            <Flex>
+              <FinishedTextLink
+                external
+                color="failure"
+                fontSize={['16px', null, '20px']}
+                href="https://icecreamswap.com/farms/history"
+              >
+                {t('check out v1 farms')}.
+              </FinishedTextLink>
+            </Flex>
+          </FinishedTextContainer>
         )}
 
         {!isLoading && // FarmV3 initial data will be slower, wait for it loads for now to prevent showing the v2 farm from config and then v3 pop up later
@@ -541,7 +596,8 @@ const Farms: React.FC<React.PropsWithChildren> = ({ children }) => {
           </Flex>
         )}
         {chosenFarms.length > 0 && <div ref={observerRef} />}
-        <StyledImage src="/images/decorations/3dpan.png" alt="Pancake illustration" width={120} height={103} />
+        <StyledImage src="/images/dynasty.png" alt="IceCream illustration" width={120} height={120} />
+        <V3SubgraphHealthIndicator />
       </Page>
     </FarmsV3Context.Provider>
   )

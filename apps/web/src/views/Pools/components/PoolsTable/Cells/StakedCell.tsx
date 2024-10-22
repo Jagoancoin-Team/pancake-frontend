@@ -1,15 +1,13 @@
-import { Balance, Box, Flex, HelpIcon, Skeleton, Text, useMatchBreakpoints, useTooltip } from '@pancakeswap/uikit'
-import { Pool } from '@pancakeswap/widgets-internal'
 import { styled } from 'styled-components'
-
-import { useTranslation } from '@pancakeswap/localization'
+import { Box, Flex, Skeleton, Text, useMatchBreakpoints, Balance, Pool, useTooltip, HelpIcon } from '@pancakeswap/uikit'
 import BigNumber from 'bignumber.js'
+import { useTranslation } from '@pancakeswap/localization'
 
-import { Token } from '@pancakeswap/sdk'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
-import { getBalanceNumber } from '@pancakeswap/utils/formatBalance'
 import { useVaultPoolByKey } from 'state/pools/hooks'
 import { VaultKey } from 'state/types'
+import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
+import { getBalanceNumber } from '@pancakeswap/utils/formatBalance'
+import { Token } from '@pancakeswap/sdk'
 import OriginalLockedInfo from '../../OriginalLockedInfo'
 
 interface StakedCellProps {
@@ -26,18 +24,19 @@ const StakedCell: React.FC<React.PropsWithChildren<StakedCellProps>> = ({ pool, 
   const { isMobile } = useMatchBreakpoints()
 
   // vault
-  const vaultData = useVaultPoolByKey(pool.vaultKey as Pool.VaultKey) as Pool.DeserializedPoolLockedVault<Token>
-
+  const vaultData = useVaultPoolByKey(pool.vaultKey)
   const {
-    userShares,
-    balance: { cakeAsBigNumber, cakeAsNumberBalance },
-    isLoading,
-  } = vaultData.userData as Pool.DeserializedLockedVaultUser
+    userData: {
+      userShares,
+      balance: { cakeAsBigNumber, cakeAsNumberBalance },
+      isLoading,
+    },
+  } = vaultData
   const hasSharesStaked = userShares.gt(0)
   const isVaultWithShares = pool.vaultKey && hasSharesStaked
 
   // pool
-  const { stakingTokenPrice = 0, stakingToken, userData } = pool
+  const { stakingTokenPrice, stakingToken, userData } = pool
   const stakedAutoDollarValue = getBalanceNumber(cakeAsBigNumber.multipliedBy(stakingTokenPrice), stakingToken.decimals)
   const stakedBalance = userData?.stakedBalance ? new BigNumber(userData.stakedBalance) : BIG_ZERO
   const stakedTokenBalance = getBalanceNumber(stakedBalance, stakingToken.decimals)
@@ -46,7 +45,8 @@ const StakedCell: React.FC<React.PropsWithChildren<StakedCellProps>> = ({ pool, 
     stakingToken.decimals,
   )
 
-  const isLocked = pool.vaultKey === VaultKey.CakeVault && vaultData.userData?.locked
+  const isLocked =
+    pool.vaultKey === VaultKey.CakeVault && (vaultData as Pool.DeserializedPoolLockedVault<Token>).userData.locked
   const labelText = `${pool.stakingToken.symbol} ${isLocked ? t('Locked') : t('Staked')}`
 
   const hasStaked = account && (stakedBalance.gt(0) || isVaultWithShares)
@@ -62,7 +62,16 @@ const StakedCell: React.FC<React.PropsWithChildren<StakedCellProps>> = ({ pool, 
   })
 
   return (
-    <Pool.BaseCell role="cell" flex={['1 0 50px', '1 0 50px', '2 0 100px', '2 0 100px', '1 0 120px']}>
+    <Pool.BaseCell
+      role="cell"
+      flex={
+        pool.vaultKey === VaultKey.CakeFlexibleSideVault
+          ? '1 0 162px'
+          : pool.vaultKey === VaultKey.CakeVault && !hasStaked
+          ? '1 0 120px'
+          : '2 0 100px'
+      }
+    >
       <Pool.CellContent>
         <Text fontSize="12px" color="textSubtle" textAlign="left" verticalAlign="center">
           {labelText}

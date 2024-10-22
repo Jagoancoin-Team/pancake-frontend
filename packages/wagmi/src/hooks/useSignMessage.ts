@@ -1,10 +1,6 @@
 import { useCallback } from 'react'
-import { SignableMessage } from 'viem'
 import { useAccount, useSignMessage as useSignMessageWagmi } from 'wagmi'
-
-interface SignMessageArgs {
-  message: SignableMessage
-}
+import { SignMessageArgs } from 'wagmi/actions'
 
 export function useSignMessage() {
   const { address, connector } = useAccount()

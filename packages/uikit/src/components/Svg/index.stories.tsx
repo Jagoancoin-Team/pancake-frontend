@@ -1,11 +1,9 @@
-/// <reference types="vite/client" />
-import React from "react";
 import Box from "../Box/Box";
 import Flex from "../Box/Flex";
 import Text from "../Text/Text";
 import Svg from "./Svg";
 // eslint-disable-next-line import/no-useless-path-segments
-import { CheckmarkCircleFillIcon, CheckmarkCircleIcon } from "../Svg";
+import { CheckmarkCircleIcon, CheckmarkCircleFillIcon } from "../Svg";
 import AnimatedIconComponent from "./AnimatedIconComponent";
 
 export default {
@@ -30,6 +28,7 @@ export const Default: React.FC<React.PropsWithChildren> = () => {
   );
 };
 
+// @ts-ignore
 const modules = import.meta.glob("./Icons/*.tsx", { eager: true });
 const components = Object.keys(modules).reduce((accum, path) => {
   const file = path.substring(2).replace(".tsx", "");
@@ -44,9 +43,6 @@ export const Icons: React.FC<React.PropsWithChildren> = () => {
     <Flex justifyContent="start" alignItems="center" flexWrap="wrap">
       {Object.keys(components).map((file) => {
         const Icon = components[file].default;
-
-        if (!Icon) throw new Error(`Icon ${file} is not exported correctly`);
-
         return (
           <Flex
             key={file}

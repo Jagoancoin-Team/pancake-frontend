@@ -1,9 +1,8 @@
 import { DeserializedFarm, FarmWithStakedValue } from '@pancakeswap/farms'
 import { useTranslation } from '@pancakeswap/localization'
-import BigNumber from 'bignumber.js'
-import { CAKE_PER_YEAR } from 'config'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import { useCakePrice } from 'hooks/useCakePrice'
+import BigNumber from 'bignumber.js'
+import { useActiveChainId } from 'hooks/useActiveChainId'
 import React, { useCallback, useMemo } from 'react'
 import { useFarms, usePollFarmsWithUserData } from 'state/farms/hooks'
 import { useFarmsV3Public } from 'state/farmsV3/hooks'
@@ -45,7 +44,7 @@ const OldFarmStep1: React.FC<React.PropsWithChildren> = () => {
       (farm.userData &&
         (new BigNumber(farm.userData.stakedBalance).isGreaterThan(0) ||
           new BigNumber(farm.userData.tokenBalance).isGreaterThan(0))) ||
-      (farm.userData?.proxy?.stakedBalance && new BigNumber(farm.userData.proxy.stakedBalance).isGreaterThan(0))
+      new BigNumber(farm.userData.proxy?.stakedBalance).isGreaterThan(0)
     )
   })
 
@@ -58,14 +57,13 @@ const OldFarmStep1: React.FC<React.PropsWithChildren> = () => {
         const totalLiquidity = new BigNumber(farm.lpTotalInQuoteToken).times(farm.quoteTokenPriceBusd)
         const { cakeRewardsApr, lpRewardsApr } = getFarmApr(
           chainId,
-          new BigNumber(farm.poolWeight ?? 0),
+          new BigNumber(farm.poolWeight),
           cakePrice,
           totalLiquidity,
           farm.lpAddress,
-          CAKE_PER_YEAR,
-          farm.lpRewardsApr,
+          100,
         )
-        return { ...farm, apr: cakeRewardsApr ?? undefined, lpRewardsApr, liquidity: totalLiquidity }
+        return { ...farm, apr: cakeRewardsApr, lpRewardsApr, liquidity: totalLiquidity }
       })
 
       return farmsToDisplayWithAPR

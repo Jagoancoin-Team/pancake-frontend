@@ -1,20 +1,17 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Button, Flex } from '@pancakeswap/uikit'
+import { AutoRenewIcon, Box, Button, Flex } from '@pancakeswap/uikit'
 import useTheme from 'hooks/useTheme'
+import NextLink from 'next/link'
 import { useCallback, useMemo } from 'react'
 import {
   useBCakeBoostLimitAndLockInfo,
+  useUserMultiplierBeforeBoosted,
   useUserBoostedPoolsTokenId,
   useUserPositionInfo,
-  useVeCakeUserMultiplierBeforeBoosted,
 } from '../../hooks/bCakeV3/useBCakeV3Info'
-import { useBoostStatus } from '../../hooks/bCakeV3/useBoostStatus'
-import { useUpdateLiquidity } from '../../hooks/bCakeV3/useUpdateLiquidity'
-
+import { useBoosterFarmV3Handlers } from '../../hooks/bCakeV3/useBoostBcakeV3'
+import { BoostStatus, useBoostStatus } from '../../hooks/bCakeV3/useBoostStatus'
 import { StatusView } from './StatusView'
-import { StatusViewButtons } from './StatusViewButtons'
-
-const SHOULD_UPDATE_THRESHOLD = 1.1
 
 export const BCakeV3CardView: React.FC<{
   tokenId: string
@@ -34,57 +31,60 @@ export const BCakeV3CardView: React.FC<{
     updateUserPositionInfo()
     updateBoostedPoolsTokenId()
   }, [updateStatus, updateUserPositionInfo, updateBoostedPoolsTokenId])
-  const { locked, isLockEnd } = useBCakeBoostLimitAndLockInfo()
+  const { isReachedMaxBoostLimit, locked, isLockEnd } = useBCakeBoostLimitAndLockInfo()
 
-  const { updateLiquidity, isConfirming } = useUpdateLiquidity(tokenId, onDone)
-  const { veCakeUserMultiplierBeforeBoosted } = useVeCakeUserMultiplierBeforeBoosted(tokenId)
+  const { activate, deactivate, isConfirming } = useBoosterFarmV3Handlers(tokenId, onDone)
+  const { userMultiplierBeforeBoosted } = useUserMultiplierBeforeBoosted(tokenId)
   const { theme } = useTheme()
   const lockValidated = useMemo(() => {
     return locked && !isLockEnd
   }, [locked, isLockEnd])
-  const shouldUpdate = useMemo(() => {
-    if (
-      boostMultiplier &&
-      veCakeUserMultiplierBeforeBoosted &&
-      locked &&
-      (boostMultiplier * SHOULD_UPDATE_THRESHOLD <= veCakeUserMultiplierBeforeBoosted ||
-        (boostMultiplier === 1 && veCakeUserMultiplierBeforeBoosted > boostMultiplier))
-    )
-      return true
-    return false
-  }, [boostMultiplier, veCakeUserMultiplierBeforeBoosted, locked])
 
   return (
     <Flex width="100%" alignItems="center" justifyContent="space-between">
       <StatusView
         status={boostStatus}
-        boostedMultiplier={boostMultiplier}
-        expectMultiplier={veCakeUserMultiplierBeforeBoosted}
+        boostedMultiplier={
+          boostStatus === BoostStatus.farmCanBoostButNot ? userMultiplierBeforeBoosted : boostMultiplier
+        }
         isFarmStaking={isFarmStaking}
-        shouldUpdate={shouldUpdate}
       />
       <Box>
-        <StatusViewButtons
-          locked={lockValidated}
-          updateButton={
-            shouldUpdate && lockValidated ? (
-              <Button
-                onClick={() => {
-                  updateLiquidity()
-                }}
-                style={{
-                  backgroundColor: 'transparent',
-                  border: `2px solid ${theme.colors.primary}`,
-                  color: theme.colors.primary,
-                  padding: isConfirming ? '0 10px' : undefined,
-                }}
-                isLoading={isConfirming}
-              >
-                {isConfirming ? t('Confirming') : t('Update')}
-              </Button>
-            ) : null
-          }
-        />
+        {!lockValidated && (
+          <NextLink href="/pools" passHref>
+            <Button style={{ whiteSpace: 'nowrap' }}>{t('Go to Pool')}</Button>
+          </NextLink>
+        )}
+        {boostStatus === BoostStatus.farmCanBoostButNot && isFarmStaking && lockValidated && (
+          <Button
+            onClick={() => {
+              activate()
+            }}
+            style={{ padding: isConfirming && '0 10px' }}
+            isLoading={isConfirming}
+            endIcon={isConfirming && <AutoRenewIcon spin color="currentColor" />}
+            disabled={isReachedMaxBoostLimit}
+          >
+            {t('Boost')}
+          </Button>
+        )}
+        {boostStatus === BoostStatus.Boosted && lockValidated && (
+          <Button
+            onClick={() => {
+              deactivate()
+            }}
+            style={{
+              backgroundColor: 'transparent',
+              border: `2px solid ${theme.colors.primary}`,
+              color: theme.colors.primary,
+              padding: isConfirming && '0 10px',
+            }}
+            isLoading={isConfirming}
+            endIcon={isConfirming && <AutoRenewIcon spin color="currentColor" />}
+          >
+            {t('Unset')}
+          </Button>
+        )}
       </Box>
     </Flex>
   )

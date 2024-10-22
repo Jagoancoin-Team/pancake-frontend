@@ -1,5 +1,4 @@
-import { Currency, Token, WNATIVE } from '@pancakeswap/sdk'
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId, Currency, Token, WNATIVE } from '@pancakeswap/sdk'
 import { Address } from 'viem'
 
 import { PoolSelectorConfig, V2PoolWithTvl, V3PoolWithTvl, WithTvl } from '../../types'
@@ -56,10 +55,7 @@ function poolSelectorFactory<P extends WithTvl>({
           .sort(sortByTvl)
           .slice(0, POOL_SELECTION_CONFIG.topNWithEachBaseToken)
       })
-      .reduce<P[]>((acc, cur) => {
-        acc.push(...cur)
-        return acc
-      }, [])
+      .reduce<P[]>((acc, cur) => [...acc, ...cur], [])
       .sort(sortByTvl)
       .slice(0, POOL_SELECTION_CONFIG.topNWithBaseToken)
 
@@ -82,10 +78,7 @@ function poolSelectorFactory<P extends WithTvl>({
           .sort(sortByTvl)
           .slice(0, POOL_SELECTION_CONFIG.topNWithEachBaseToken)
       })
-      .reduce<P[]>((acc, cur) => {
-        acc.push(...cur)
-        return acc
-      }, [])
+      .reduce<P[]>((acc, cur) => [...acc, ...cur], [])
       .sort(sortByTvl)
       .slice(0, POOL_SELECTION_CONFIG.topNWithBaseToken)
 
@@ -181,27 +174,19 @@ function poolSelectorFactory<P extends WithTvl>({
             : getToken0(subgraphPool)
         })
         .map((secondHopToken: Currency) => {
-          return poolsFromSubgraph.filter((subgraphPool) => {
-            if (poolSet.has(getPoolAddress(subgraphPool))) {
-              return false
-            }
-            return (
-              getToken0(subgraphPool).wrapped.equals(secondHopToken.wrapped) ||
-              getToken1(subgraphPool).wrapped.equals(secondHopToken.wrapped)
-            )
-          })
+          return poolsFromSubgraph
+            .filter((subgraphPool) => {
+              if (poolSet.has(getPoolAddress(subgraphPool))) {
+                return false
+              }
+              return (
+                getToken0(subgraphPool).wrapped.equals(secondHopToken.wrapped) ||
+                getToken1(subgraphPool).wrapped.equals(secondHopToken.wrapped)
+              )
+            })
+            .slice(0, POOL_SELECTION_CONFIG.topNSecondHop)
         })
-        .reduce<P[]>((acc, cur) => {
-          acc.push(...cur)
-          return acc
-        }, [])
-        // Uniq
-        .reduce<P[]>((acc, cur) => {
-          if (!acc.some((p) => p === cur)) {
-            acc.push(cur)
-          }
-          return acc
-        }, [])
+        .reduce<P[]>((acc, cur) => [...acc, ...cur], [])
         .sort(sortByTvl)
         .slice(0, POOL_SELECTION_CONFIG.topNSecondHop)
 

@@ -1,3 +1,4 @@
+import noop from "lodash/noop";
 import { DropdownMenuItems, DropdownMenuItemType } from "./types";
 
 const ItemsMock: DropdownMenuItems[] = [
@@ -11,7 +12,7 @@ const ItemsMock: DropdownMenuItems[] = [
   },
   {
     label: "LP Migration",
-    href: "https://v1exchange.pancakeswap.finance/#/migrate",
+    href: "https://v1exchange.icecreamswap.com/#/migrate",
     type: DropdownMenuItemType.EXTERNAL_LINK,
   },
   {
@@ -19,10 +20,7 @@ const ItemsMock: DropdownMenuItems[] = [
   },
   {
     label: "Disconnect",
-    onClick: () => {
-      // eslint-disable-next-line no-alert
-      alert("disconnect");
-    },
+    onClick: noop,
     type: DropdownMenuItemType.BUTTON,
   },
 ];

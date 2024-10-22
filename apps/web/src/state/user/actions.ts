@@ -1,5 +1,5 @@
-import { SerializedWrappedToken } from '@pancakeswap/token-lists'
 import { createAction } from '@reduxjs/toolkit'
+import { SerializedWrappedToken } from '@pancakeswap/token-lists'
 
 export interface SerializedPair {
   token0: SerializedWrappedToken
@@ -17,6 +17,7 @@ export enum ViewMode {
   CARD = 'CARD',
 }
 
+export const updateUserDeadline = createAction<{ userDeadline: number }>('user/updateUserDeadline')
 export const addSerializedToken = createAction<{ serializedToken: SerializedWrappedToken }>('user/addSerializedToken')
 export const removeSerializedToken = createAction<{ chainId: number; address: string }>('user/removeSerializedToken')
 export const addSerializedPair = createAction<{ serializedPair: SerializedPair }>('user/addSerializedPair')
@@ -49,13 +50,8 @@ export const updateUserUsernameVisibility = createAction<{ userUsernameVisibilit
 )
 export const updateGasPrice = createAction<{ gasPrice: string }>('user/updateGasPrice')
 
-/**
- * @deprecated
- */
 export const addWatchlistToken = createAction<{ address: string }>('user/addWatchlistToken')
-/**
- * @deprecated
- */
 export const addWatchlistPool = createAction<{ address: string }>('user/addWatchlistPool')
 
+export const setIsExchangeChartDisplayed = createAction<boolean>('user/toggleIsExchangeChartDisplayed')
 export const setSubgraphHealthIndicatorDisplayed = createAction<boolean>('user/setSubgraphHealthIndicatorDisplayed')

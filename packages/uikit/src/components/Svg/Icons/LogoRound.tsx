@@ -3,6 +3,8 @@ import Svg from "../Svg";
 import { SvgProps } from "../types";
 
 const Icon: React.FC<React.PropsWithChildren<SvgProps>> = (props) => {
+    return <img src="https://dynastycoin.io/assets/img/logo/logo.png" alt="IceCream" width={24}/>
+    /*
   return (
     <Svg viewBox="0 0 96 96" {...props}>
       <circle cx={48} cy={48} r={48} fill="#53DEE9" />
@@ -32,6 +34,7 @@ const Icon: React.FC<React.PropsWithChildren<SvgProps>> = (props) => {
       </defs>
     </Svg>
   );
+  */
 };
 
 export default Icon;

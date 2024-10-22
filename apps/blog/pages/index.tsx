@@ -1,75 +1,68 @@
-import { Box } from '@pancakeswap/uikit'
-import { QueryClient, dehydrate } from '@tanstack/react-query'
-import AllArticle from 'components/Article/AllArticle'
-import ChefsChoice from 'components/ChefsChoice'
-import NewBlog from 'components/NewBlog'
-import { getArticle, getCategories } from 'hooks/getArticle'
+import { SWRConfig } from 'swr'
 import { InferGetServerSidePropsType } from 'next'
+import { getArticle, getCategories } from 'hooks/getArticle'
+import { Box } from '@pancakeswap/uikit'
+import NewBlog from 'components/NewBlog'
+import ChefsChoice from 'components/ChefsChoice'
+import AllArticle from 'components/Article/AllArticle'
 import { filterTagArray } from 'utils/filterTagArray'
 
 export async function getStaticProps() {
-  const queryClient = new QueryClient()
-
-  await queryClient.prefetchQuery({
-    queryKey: ['/latestArticles'],
-    queryFn: async () =>
-      getArticle({
-        url: '/articles',
-        urlParamsObject: {
-          populate: 'categories,image',
-          sort: 'createAt:desc',
-          pagination: { limit: 1 },
-          filters: {
-            categories: {
-              name: {
-                $notIn: filterTagArray,
-              },
+  const [latestArticles, chefChoiceArticle, categories] = await Promise.all([
+    getArticle({
+      url: '/articles',
+      urlParamsObject: {
+        populate: 'categories,image',
+        sort: 'createAt:desc',
+        pagination: { limit: 1 },
+        filters: {
+          categories: {
+            name: {
+              $notIn: filterTagArray,
             },
           },
         },
-      }).then((latestArticles) => latestArticles.data),
-  })
-
-  await queryClient.prefetchQuery({
-    queryKey: ['/chefChoiceArticle'],
-    queryFn: async () =>
-      getArticle({
-        url: '/articles',
-        urlParamsObject: {
-          populate: 'categories,image',
-          sort: 'createAt:desc',
-          pagination: { limit: 9 },
-          filters: {
-            categories: {
-              name: {
-                $eq: 'Chef’s choice',
-              },
+      },
+    }),
+    getArticle({
+      url: '/articles',
+      urlParamsObject: {
+        populate: 'categories,image',
+        sort: 'createAt:desc',
+        pagination: { limit: 9 },
+        filters: {
+          categories: {
+            name: {
+              $eq: 'Chef’s choice',
             },
           },
         },
-      }).then((article) => article.data),
-  })
-
-  await queryClient.prefetchQuery({
-    queryKey: ['/categories'],
-    queryFn: getCategories,
-  })
+      },
+    }),
+    getCategories(),
+  ])
 
   return {
     props: {
-      dehydratedState: dehydrate(queryClient),
+      fallback: {
+        '/latestArticles': latestArticles.data,
+        '/chefChoiceArticle': chefChoiceArticle.data,
+        '/categories': categories,
+      },
     },
     revalidate: 60,
   }
 }
 
-const BlogPage: React.FC<InferGetServerSidePropsType<typeof getStaticProps>> = () => {
+const BlogPage: React.FC<InferGetServerSidePropsType<typeof getStaticProps>> = ({ fallback }) => {
   return (
-    <Box width="100%" mb="150px">
-      <NewBlog />
-      <ChefsChoice />
-      <AllArticle />
-    </Box>
+    <SWRConfig value={{ fallback }}>
+      <Box width="100%" mb="150px">
+        <NewBlog />
+        <ChefsChoice />
+        <AllArticle />
+      </Box>
+    </SWRConfig>
   )
 }
 

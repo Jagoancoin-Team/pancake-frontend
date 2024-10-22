@@ -28,22 +28,10 @@ const IfoGetTokenModal: React.FC<React.PropsWithChildren<Props>> = ({ symbol, ad
           as={Link}
           external
           href={`/swap?outputCurrency=${address}`}
-          color="invertedContrast"
           endIcon={<OpenNewIcon color="invertedContrast" />}
           minWidth="100%" // Bypass the width="fit-content" on Links
         >
           {t("Get %symbol%", { symbol })}
-        </Button>
-        <Button
-          mt="1rem"
-          as={Link}
-          external
-          href="https://bridge.pancakeswap.finance/"
-          color="invertedContrast"
-          endIcon={<OpenNewIcon color="invertedContrast" />}
-          minWidth="100%" // Bypass the width="fit-content" on Links
-        >
-          {t("Bridge CAKE")}
         </Button>
       </ModalBody>
     </Modal>

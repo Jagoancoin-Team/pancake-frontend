@@ -1,14 +1,14 @@
 import { BigintIsh, Currency, CurrencyAmount, Price, ZERO } from '@pancakeswap/sdk'
 import { formatPrice } from '@pancakeswap/utils/formatFractions'
 
-import { WithFallbackOptions, createAsyncCallWithFallbacks } from '../../../utils/withFallback'
-import { getPairCombinations } from '../../functions'
 import { OnChainProvider, SubgraphProvider, V2PoolWithTvl } from '../../types'
-import { getPoolAddress, logger } from '../../utils'
-import { CommonTokenPriceProvider, getCommonTokenPrices as defaultGetCommonTokenPrices } from '../getCommonTokenPrices'
-import { getV2PoolsOnChain } from './onChainPoolProviders'
-import { v2PoolTvlSelector } from './poolTvlSelectors'
+import { createAsyncCallWithFallbacks, WithFallbackOptions } from '../../../utils/withFallback'
 import { getV2PoolSubgraph } from './subgraphPoolProviders'
+import { getV2PoolsOnChain } from './onChainPoolProviders'
+import { getCommonTokenPrices as defaultGetCommonTokenPrices, CommonTokenPriceProvider } from '../getCommonTokenPrices'
+import { getPairCombinations } from '../../functions'
+import { getPoolAddress } from '../../utils'
+import { v2PoolTvlSelector } from './poolTvlSelectors'
 
 export type GetV2PoolsParams = {
   currencyA?: Currency
@@ -36,7 +36,7 @@ export function createV2PoolsProviderByCommonTokenPrices<T = any>(getCommonToken
     blockNumber,
     ...rest
   }: GetV2PoolsParams & T) {
-    const pairs = providedPairs || (await getPairCombinations(currencyA, currencyB))
+    const pairs = providedPairs || getPairCombinations(currencyA, currencyB)
     const [poolsFromOnChain, baseTokenUsdPrices] = await Promise.all([
       getV2PoolsOnChain(pairs, onChainProvider, blockNumber),
       getCommonTokenPrices({ currencyA, currencyB, ...(rest as T) }),
@@ -47,7 +47,7 @@ export function createV2PoolsProviderByCommonTokenPrices<T = any>(getCommonToken
     }
 
     if (!baseTokenUsdPrices) {
-      logger.log('Failed to get base token prices')
+      console.debug('Failed to get base token prices')
       return poolsFromOnChain.map((pool) => {
         return {
           ...pool,
@@ -104,8 +104,8 @@ export function createGetV2CandidatePools<T = any>(
 
 export async function getV2CandidatePools(params: Params) {
   const fallbacks: GetV2Pools[] = [
-    async ({ pairs: providedPairs, currencyA, currencyB, v2SubgraphProvider }) => {
-      const pairs = providedPairs || (await getPairCombinations(currencyA, currencyB))
+    ({ pairs: providedPairs, currencyA, currencyB, v2SubgraphProvider }) => {
+      const pairs = providedPairs || getPairCombinations(currencyA, currencyB)
       return getV2PoolSubgraph({ provider: v2SubgraphProvider, pairs })
     },
   ]

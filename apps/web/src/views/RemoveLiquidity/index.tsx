@@ -1,72 +1,71 @@
-import { useDebouncedChangeHandler } from '@pancakeswap/hooks'
-import { useTranslation } from '@pancakeswap/localization'
+import { useCallback, useMemo, useState } from 'react'
+import { useActiveChainId } from 'hooks/useActiveChainId'
+import { styled } from 'styled-components'
+import { useRouter } from 'next/router'
 import { Currency, Percent, WNATIVE } from '@pancakeswap/sdk'
 import {
+  Button,
+  Text,
   AddIcon,
   ArrowDownIcon,
-  AutoColumn,
-  Box,
-  Button,
   CardBody,
-  ColumnCenter,
+  Slider,
+  Box,
   Flex,
+  useModal,
+  TooltipText,
+  useTooltip,
+  useToast,
+  useMatchBreakpoints,
   IconButton,
   PencilIcon,
-  Slider,
-  Text,
-  TooltipText,
-  useMatchBreakpoints,
-  useModal,
-  useToast,
-  useTooltip,
+  AutoColumn,
+  ColumnCenter,
 } from '@pancakeswap/uikit'
-import { useUserSlippage } from '@pancakeswap/utils/user'
-import { CommitButton } from 'components/CommitButton'
-import { formattedCurrencyAmount } from 'components/FormattedCurrencyAmount/FormattedCurrencyAmount'
-import { V2_ROUTER_ADDRESS } from 'config/constants/exchange'
-import { useActiveChainId } from 'hooks/useActiveChainId'
-import useNativeCurrency from 'hooks/useNativeCurrency'
-import { useRouter } from 'next/router'
-import { useCallback, useMemo, useState } from 'react'
-import { useLPApr } from 'state/swap/useLPApr'
-import { styled } from 'styled-components'
-import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
-// import { splitSignature } from 'utils/splitSignature'
-import { Hash } from 'viem'
+import { useDebouncedChangeHandler } from '@pancakeswap/hooks'
 import { useSignTypedData } from 'wagmi'
+import useNativeCurrency from 'hooks/useNativeCurrency'
+import { CommitButton } from 'components/CommitButton'
+import { useTranslation } from '@pancakeswap/localization'
+import { useUserSlippage } from '@pancakeswap/utils/user'
+import { V2_ROUTER_ADDRESS } from 'config/constants/exchange'
+import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
+import { useLPApr } from 'state/swap/useLPApr'
+import { formattedCurrencyAmount } from 'components/Chart/FormattedCurrencyAmount/FormattedCurrencyAmount'
+import { splitSignature } from 'utils/splitSignature'
+import { Hash } from 'viem'
 
-import { LightGreyCard } from 'components/Card'
-import { RowBetween } from 'components/Layout/Row'
 import { MinimalPositionCard } from 'components/PositionCard'
+import { RowBetween } from 'components/Layout/Row'
+import { LightGreyCard } from 'components/Card'
 
 import { usePairContract } from 'hooks/useContract'
 
-import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
-import { useBurnActionHandlers, useDerivedBurnInfo } from 'state/burn/hooks'
 import { useTransactionAdder } from 'state/transactions/hooks'
 import { calculateGasMargin } from 'utils'
-import { currencyId } from 'utils/currencyId'
 import { calculateSlippageAmount, useRouterContract } from 'utils/exchange'
+import { currencyId } from 'utils/currencyId'
+import { useApproveCallback, ApprovalState } from 'hooks/useApproveCallback'
+import { useBurnActionHandlers, useDerivedBurnInfo } from 'state/burn/hooks'
 
-import { SettingsMode } from 'components/Menu/GlobalSettings/types'
-import { CommonBasesType } from 'components/SearchModal/types'
 import { Field } from 'state/burn/actions'
-import { useRemoveLiquidityV2FormState } from 'state/burn/reducer'
 import { useGasPrice } from 'state/user/hooks'
-import { logGTMClickRemoveLiquidityEvent } from 'utils/customGTMEventTracking'
 import { isUserRejected, logError } from 'utils/sentry'
-import { AppBody, AppHeader } from '../../components/App'
-import ConnectWalletButton from '../../components/ConnectWalletButton'
-import CurrencyInputPanel from '../../components/CurrencyInputPanel'
-import StyledInternalLink from '../../components/Links'
-import Dots from '../../components/Loader/Dots'
-import { CurrencyLogo } from '../../components/Logo'
-import SettingsModal from '../../components/Menu/GlobalSettings/SettingsModal'
-import useActiveWeb3React from '../../hooks/useActiveWeb3React'
-import { useTransactionDeadline } from '../../hooks/useTransactionDeadline'
-import { formatAmount } from '../../utils/formatInfoNumbers'
+import { CommonBasesType } from 'components/SearchModal/types'
+import { SettingsMode } from 'components/Menu/GlobalSettings/types'
+import { useRemoveLiquidityV2FormState } from 'state/burn/reducer'
 import Page from '../Page'
 import ConfirmLiquidityModal from '../Swap/components/ConfirmRemoveLiquidityModal'
+import { formatAmount } from '../../utils/formatInfoNumbers'
+import SettingsModal from '../../components/Menu/GlobalSettings/SettingsModal'
+import Dots from '../../components/Loader/Dots'
+import StyledInternalLink from '../../components/Links'
+import useTransactionDeadline from '../../hooks/useTransactionDeadline'
+import useActiveWeb3React from '../../hooks/useActiveWeb3React'
+import { CurrencyLogo } from '../../components/Logo'
+import ConnectWalletButton from '../../components/ConnectWalletButton'
+import { AppHeader, AppBody } from '../../components/App'
+import CurrencyInputPanel from '../../components/CurrencyInputPanel'
 
 const BorderCard = styled.div`
   border: solid 1px ${({ theme }) => theme.colors.cardBorder};
@@ -90,9 +89,9 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
   // burn state
   const { independentField, typedValue } = useRemoveLiquidityV2FormState()
   const { pair, parsedAmounts, error } = useDerivedBurnInfo(currencyA ?? undefined, currencyB ?? undefined)
-  const poolData = useLPApr('v2', pair)
+  const poolData = useLPApr(pair)
   const { targetRef, tooltip, tooltipVisible } = useTooltip(
-    t(`Based on last 24 hours' performance. Does not account for impermanent loss`),
+    t(`Based on last 7 days' performance. Does not account for impermanent loss`),
     {
       placement: 'bottom',
     },
@@ -113,7 +112,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
   })
 
   // txn values
-  const [deadline] = useTransactionDeadline()
+  const deadline = useTransactionDeadline()
   const [allowedSlippage] = useUserSlippage()
 
   const formattedAmounts = {
@@ -143,75 +142,72 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
   const [signatureData, setSignatureData] = useState<{ v: number; r: string; s: string; deadline: number } | null>(null)
   const { approvalState, approveCallback } = useApproveCallback(
     parsedAmounts[Field.LIQUIDITY],
-    chainId ? V2_ROUTER_ADDRESS[chainId] : undefined,
+    V2_ROUTER_ADDRESS[chainId],
   )
 
   async function onAttemptToApprove() {
-    if (!pairContractRead || !pair || !signTypedDataAsync || !deadline || !account)
-      throw new Error('missing dependencies')
+    if (!pairContractRead || !pair || !signTypedDataAsync || !deadline) throw new Error('missing dependencies')
     const liquidityAmount = parsedAmounts[Field.LIQUIDITY]
     if (!liquidityAmount) {
       toastError(t('Error'), t('Missing liquidity amount'))
       throw new Error('missing liquidity amount')
     }
 
-    return approveCallback()
+    // try to gather a signature for permission
+    const nonce = await pairContractRead.read.nonces([account])
 
-    // // try to gather a signature for permission
-    // const nonce = await pairContractRead.read.nonces([account])
+    const EIP712Domain = [
+      { name: 'name', type: 'string' },
+      { name: 'version', type: 'string' },
+      { name: 'chainId', type: 'uint256' },
+      { name: 'verifyingContract', type: 'address' },
+    ]
+    const domain = {
+      name: 'icecreamswap.com LP',
+      version: '1',
+      chainId,
+      verifyingContract: pair.liquidityToken.address as `0x${string}`,
+    }
+    const Permit = [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'nonce', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+    ]
+    const message = {
+      owner: account,
+      spender: V2_ROUTER_ADDRESS[chainId],
+      value: liquidityAmount.quotient.toString(),
+      nonce,
+      deadline: Number(deadline),
+    }
 
-    // const EIP712Domain = [
-    //   { name: 'name', type: 'string' },
-    //   { name: 'version', type: 'string' },
-    //   { name: 'chainId', type: 'uint256' },
-    //   { name: 'verifyingContract', type: 'address' },
-    // ]
-    // const domain = {
-    //   name: 'Pancake LPs',
-    //   version: '1',
-    //   chainId,
-    //   verifyingContract: pair.liquidityToken.address as `0x${string}`,
-    // }
-    // const Permit = [
-    //   { name: 'owner', type: 'address' },
-    //   { name: 'spender', type: 'address' },
-    //   { name: 'value', type: 'uint256' },
-    //   { name: 'nonce', type: 'uint256' },
-    //   { name: 'deadline', type: 'uint256' },
-    // ]
-    // const message = {
-    //   owner: account,
-    //   spender: chainId ? V2_ROUTER_ADDRESS[chainId] : undefined,
-    //   value: liquidityAmount.quotient.toString(),
-    //   nonce,
-    //   deadline: Number(deadline),
-    // }
-
-    // signTypedDataAsync({
-    //   // @ts-ignore
-    //   domain,
-    //   primaryType: 'Permit',
-    //   types: {
-    //     EIP712Domain,
-    //     Permit,
-    //   },
-    //   message,
-    // })
-    //   .then(splitSignature)
-    //   .then((signature) => {
-    //     setSignatureData({
-    //       v: signature.v,
-    //       r: signature.r,
-    //       s: signature.s,
-    //       deadline: Number(deadline),
-    //     })
-    //   })
-    //   .catch((err) => {
-    //     // for all errors other than 4001 (EIP-1193 user rejected request), fall back to manual approve
-    //     if (!isUserRejected(err)) {
-    //       approveCallback()
-    //     }
-    //   })
+    signTypedDataAsync({
+      // @ts-ignore
+      domain,
+      primaryType: 'Permit',
+      types: {
+        EIP712Domain,
+        Permit,
+      },
+      message,
+    })
+      .then(splitSignature)
+      .then((signature) => {
+        setSignatureData({
+          v: signature.v,
+          r: signature.r,
+          s: signature.s,
+          deadline: Number(deadline),
+        })
+      })
+      .catch((err) => {
+        // for all errors other than 4001 (EIP-1193 user rejected request), fall back to manual approve
+        if (!isUserRejected(err)) {
+          approveCallback()
+        }
+      })
   }
 
   // wrapped onUserInput to clear signatures
@@ -264,7 +260,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
     }
 
     let methodNames: string[]
-    let args: any
+    let args
     // we have approval, use normal remove liquidity
     if (approvalState === ApprovalState.APPROVED) {
       // removeLiquidityETH
@@ -333,9 +329,9 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
       throw new Error('Attempting to confirm without approval or a signature')
     }
 
-    let methodSafeGasEstimate: { methodName: string; safeGasEstimate: bigint } | undefined
+    let methodSafeGasEstimate: { methodName: string; safeGasEstimate: bigint }
     for (let i = 0; i < methodNames.length; i++) {
-      let safeGasEstimate: any
+      let safeGasEstimate
       try {
         // eslint-disable-next-line no-await-in-loop
         safeGasEstimate = calculateGasMargin(await routerContract.estimateGas[methodNames[i]](args, { account }))
@@ -357,7 +353,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
 
       setLiquidityState({ attemptingTxn: true, liquidityErrorMessage: undefined, txHash: undefined })
       await routerContract.write[methodName](args, {
-        gas: safeGasEstimate,
+        gasLimit: safeGasEstimate,
         gasPrice,
       })
         .then((response: Hash) => {
@@ -376,7 +372,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
             },
           )
         })
-        .catch((err: any) => {
+        .catch((err) => {
           if (err && !isUserRejected(err)) {
             logError(err)
             console.error(`Remove Liquidity failed`, err, args)
@@ -448,7 +444,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
   )
 
   const handleChangePercent = useCallback(
-    (value: any) => setInnerLiquidityPercentage(Math.ceil(value)),
+    (value) => setInnerLiquidityPercentage(Math.ceil(value)),
     [setInnerLiquidityPercentage],
   )
 
@@ -488,7 +484,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
         </RowBetween>
         {!showDetailed && (
           <BorderCard style={{ padding: isMobile ? '8px' : '16px' }}>
-            <Text fontSize="40px" bold mb="16px" style={{ lineHeight: 1 }}>
+            <Text fontSize="32px" bold mb="16px" style={{ lineHeight: 1 }}>
               {formattedAmounts[Field.LIQUIDITY_PERCENT]}%
             </Text>
             <Slider
@@ -683,7 +679,7 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
           </TooltipText>
           {tooltipVisible && tooltip}
           <Text bold color="primary">
-            {formatAmount(poolData.lpApr)}%
+            {formatAmount(poolData.lpApr7d)}%
           </Text>
         </RowBetween>
       )}
@@ -722,7 +718,6 @@ export default function RemoveLiquidity({ currencyA, currencyB, currencyIdA, cur
                   txHash: undefined,
                 })
                 onPresentRemoveLiquidity()
-                logGTMClickRemoveLiquidityEvent()
               }}
               width="100%"
               disabled={!isValid || (signatureData === null && approvalState !== ApprovalState.APPROVED)}
@@ -740,13 +735,13 @@ export const RemoveLiquidityV2Layout = ({ currencyA, currencyB, children }) => {
   const { pair } = useDerivedBurnInfo(currencyA ?? undefined, currencyB ?? undefined)
 
   return (
-    <RemoveLiquidityLayout currencyA={currencyA} currencyB={currencyB} pair={pair} isStable={false}>
+    <RemoveLiquidityLayout currencyA={currencyA} currencyB={currencyB} pair={pair}>
       {children}
     </RemoveLiquidityLayout>
   )
 }
 
-export const RemoveLiquidityLayout = ({ currencyA, currencyB, children, pair, isStable }) => {
+export const RemoveLiquidityLayout = ({ currencyA, currencyB, children, pair }) => {
   const { t } = useTranslation()
   const { chainId } = useActiveChainId()
 
@@ -759,11 +754,7 @@ export const RemoveLiquidityLayout = ({ currencyA, currencyB, children, pair, is
     <Page>
       <AppBody>
         <AppHeader
-          backTo={
-            isStable
-              ? `/stable/${pair?.liquidityToken?.address}`
-              : `/v2/pair/${currencyA?.address}/${currencyB?.address}`
-          }
+          backTo={`/v2/pair/${currencyA?.address}/${currencyB?.address}`}
           title={t('Remove %assetA%-%assetB% Liquidity', {
             assetA: currencyA?.symbol ?? '',
             assetB: currencyB?.symbol ?? '',

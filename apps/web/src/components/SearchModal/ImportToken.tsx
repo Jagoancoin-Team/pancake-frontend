@@ -1,40 +1,39 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, Token } from '@pancakeswap/sdk'
-import { WrappedTokenInfo } from '@pancakeswap/token-lists'
+import { useEffect, useState } from 'react'
+import { Token, Currency, ChainId } from '@pancakeswap/sdk'
 import {
-  AutoColumn,
-  BscScanIcon,
   Button,
-  Checkbox,
+  Text,
   ErrorIcon,
   Flex,
-  Grid,
-  HelpIcon,
-  Link,
   Message,
+  Checkbox,
+  Link,
   Tag,
-  Text,
+  Grid,
+  BscScanIcon,
+  ListLogo,
   useTooltip,
+  HelpIcon,
+  AutoColumn,
 } from '@pancakeswap/uikit'
-import truncateHash from '@pancakeswap/utils/truncateHash'
-import { ListLogo } from '@pancakeswap/widgets-internal'
-import AccessRisk, { TOKEN_RISK } from 'components/AccessRisk'
-import { ACCESS_TOKEN_SUPPORT_CHAIN_IDS } from 'components/AccessRisk/config/supportedChains'
-import { fetchRiskToken } from 'components/AccessRisk/utils/fetchTokenRisk'
-import { useActiveChainId } from 'hooks/useActiveChainId'
-import { useState } from 'react'
-import { useCombinedInactiveList } from 'state/lists/hooks'
 import { useAddUserToken } from 'state/user/hooks'
 import { getBlockExploreLink, getBlockExploreName } from 'utils'
+import useSWRImmutable from 'swr/immutable'
+import truncateHash from '@pancakeswap/utils/truncateHash'
+import { useCombinedInactiveList } from 'state/lists/hooks'
+import { useTranslation } from '@pancakeswap/localization'
 import { chains } from 'utils/wagmi'
-import { useQuery } from '@tanstack/react-query'
+import { useActiveChainId } from 'hooks/useActiveChainId'
+import { WrappedTokenInfo } from '@pancakeswap/token-lists'
 
 interface ImportProps {
   tokens: Token[]
   handleCurrencySelect?: (currency: Currency) => void
 }
 
+const getStandard = (chainId: ChainId) => 'ERC20'
+
+const IMPORT_COUNTDOWN = 5
 function ImportToken({ tokens, handleCurrencySelect }: ImportProps) {
   const { chainId } = useActiveChainId()
 
@@ -47,23 +46,29 @@ function ImportToken({ tokens, handleCurrencySelect }: ImportProps) {
   // use for showing import source on inactive tokens
   const inactiveTokenList = useCombinedInactiveList()
 
-  const { data: hasRiskToken } = useQuery({
-    queryKey: ['has-risks', tokens],
-
-    queryFn: async () => {
-      const result = await Promise.all(tokens.map((token) => fetchRiskToken(token.address, token.chainId)))
-      return result.some((r) => r.riskLevel >= TOKEN_RISK.MEDIUM)
-    },
-
-    enabled: Boolean(tokens),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
+  const hasRiskToken = false
+  /*
+  const { data: hasRiskToken } = useSWRImmutable(tokens && ['has-risks', tokens], async () => {
+    const result = await Promise.all(tokens.map((token) => fetchRiskToken(token.address, token.chainId)))
+    return result.some((r) => r.riskLevel >= TOKEN_RISK.MEDIUM)
   })
+  */
 
   const { targetRef, tooltip, tooltipVisible } = useTooltip(
     t('I have read the scanning result, understood the risk and want to proceed with token importing.'),
   )
+
+  const [importCountdown, setImportCountdown] = useState(IMPORT_COUNTDOWN)
+
+  useEffect(() => {
+    if (confirmed) {
+      const timer = setInterval(() => {
+        setImportCountdown((ic) => ic - 1)
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+    return undefined
+  }, [confirmed])
 
   return (
     <AutoColumn gap="lg">
@@ -123,11 +128,6 @@ function ImportToken({ tokens, handleCurrencySelect }: ImportProps) {
                 </>
               )}
             </Grid>
-            {token && chainId && ACCESS_TOKEN_SUPPORT_CHAIN_IDS.includes(chainId) && (
-              <Flex mt={['20px', '20px', '0']}>
-                <AccessRisk token={token} />
-              </Flex>
-            )}
           </Flex>
         )
       })}
@@ -153,7 +153,7 @@ function ImportToken({ tokens, handleCurrencySelect }: ImportProps) {
         </Flex>
         <Button
           variant="danger"
-          disabled={!confirmed}
+          disabled={!confirmed || importCountdown > 0}
           onClick={() => {
             tokens.forEach((token) => {
               const inactiveToken = chainId && inactiveTokenList?.[token.chainId]?.[token.address]
@@ -174,6 +174,7 @@ function ImportToken({ tokens, handleCurrencySelect }: ImportProps) {
           className=".token-dismiss-button"
         >
           {hasRiskToken ? t('Proceed') : t('Import')}
+          {confirmed && importCountdown > 0 ? ` (${importCountdown})` : ''}
         </Button>
       </Grid>
     </AutoColumn>

@@ -1,16 +1,16 @@
-import { Order } from '@gelatonetwork/limit-orders-lib'
 import { useCallback } from 'react'
+import { Order } from '@gelatonetwork/limit-orders-lib'
 
-import { Currency, Price } from '@pancakeswap/sdk'
-import { useQueryClient } from '@tanstack/react-query'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { useOrderActionHandlers } from 'state/limitOrders/hooks'
 import { Field, Rate } from 'state/limitOrders/types'
+import { Currency, Price } from '@pancakeswap/sdk'
 import { useTransactionAdder } from 'state/transactions/hooks'
+import { useSWRConfig } from 'swr'
 import {
-  EXECUTED_CANCELLED_ORDERS_QUERY_KEY,
-  OPEN_ORDERS_QUERY_KEY,
+  OPEN_ORDERS_SWR_KEY,
+  EXECUTED_CANCELLED_ORDERS_SWR_KEY,
 } from 'views/LimitOrders/hooks/useGelatoLimitOrdersHistory'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import useGelatoLimitOrdersLib from './useGelatoLimitOrdersLib'
 
 export interface GelatoLimitOrdersHandlers {
@@ -41,7 +41,7 @@ export interface GelatoLimitOrdersHandlers {
 const useGelatoLimitOrdersHandlers = (): GelatoLimitOrdersHandlers => {
   const { account, chainId } = useAccountActiveChain()
 
-  const queryClient = useQueryClient()
+  const { mutate } = useSWRConfig()
 
   const gelatoLimitOrders = useGelatoLimitOrdersLib()
 
@@ -102,16 +102,12 @@ const useGelatoLimitOrdersHandlers = (): GelatoLimitOrdersHandlers => {
         } as Order,
       })
 
-      queryClient.invalidateQueries({
-        queryKey: OPEN_ORDERS_QUERY_KEY,
-      })
-      queryClient.invalidateQueries({
-        queryKey: EXECUTED_CANCELLED_ORDERS_QUERY_KEY,
-      })
+      mutate(OPEN_ORDERS_SWR_KEY)
+      mutate(EXECUTED_CANCELLED_ORDERS_SWR_KEY)
 
       return tx
     },
-    [addTransaction, chainId, gelatoLimitOrders, queryClient],
+    [addTransaction, chainId, gelatoLimitOrders, mutate],
   )
 
   const handleLimitOrderCancellation = useCallback(
@@ -183,16 +179,12 @@ const useGelatoLimitOrdersHandlers = (): GelatoLimitOrdersHandlers => {
         },
       })
 
-      queryClient.invalidateQueries({
-        queryKey: OPEN_ORDERS_QUERY_KEY,
-      })
-      queryClient.invalidateQueries({
-        queryKey: EXECUTED_CANCELLED_ORDERS_QUERY_KEY,
-      })
+      mutate(OPEN_ORDERS_SWR_KEY)
+      mutate(EXECUTED_CANCELLED_ORDERS_SWR_KEY)
 
       return tx
     },
-    [gelatoLimitOrders, chainId, account, addTransaction, queryClient],
+    [gelatoLimitOrders, chainId, account, addTransaction, mutate],
   )
 
   const handleInput = useCallback(

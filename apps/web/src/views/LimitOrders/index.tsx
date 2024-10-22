@@ -1,11 +1,17 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, Percent, Token, Trade, TradeType } from '@pancakeswap/sdk'
-import { AutoColumn, BottomDrawer, Box, Button, Flex, Link, useMatchBreakpoints, useModal } from '@pancakeswap/uikit'
-import { Swap as SwapUI } from '@pancakeswap/widgets-internal'
-
+import { ChainId, Currency, CurrencyAmount, Percent, Token, Trade, TradeType } from "@pancakeswap/sdk";
+import {
+  BottomDrawer,
+  Box,
+  Button,
+  Flex,
+  Link,
+  Swap as SwapUI,
+  useMatchBreakpoints,
+  useModal,
+  AutoColumn,
+} from '@pancakeswap/uikit'
 import replaceBrowserHistory from '@pancakeswap/utils/replaceBrowserHistory'
-import AccessRisk from 'components/AccessRisk'
-import { ACCESS_TOKEN_SUPPORT_CHAIN_IDS } from 'components/AccessRisk/config/supportedChains'
 import { AppBody } from 'components/App'
 import ConnectWalletButton from 'components/ConnectWalletButton'
 import CurrencyInputPanel from 'components/CurrencyInputPanel'
@@ -21,15 +27,16 @@ import { useDefaultsFromURLSearch } from 'state/limitOrders/hooks'
 import { Field } from 'state/limitOrders/types'
 import { useExchangeChartManager } from 'state/user/hooks'
 import { maxAmountSpend } from 'utils/maxAmountSpend'
+import AccessRisk from 'components/AccessRisk'
 import PriceChartContainer from 'views/Swap/components/Chart/PriceChartContainer'
 
 import { CommonBasesType } from 'components/SearchModal/types'
 import { useAllTokens, useCurrency } from 'hooks/Tokens'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { currencyId } from 'utils/currencyId'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import ImportTokenWarningModal from '../../components/ImportTokenWarningModal'
-import Page from '../Page'
 import ClaimWarning from './components/ClaimWarning'
+import Page from '../Page'
 import { ConfirmLimitOrderModal } from './components/ConfirmLimitOrderModal'
 import CurrencyInputHeader from './components/CurrencyInputHeader'
 import LimitOrderPrice from './components/LimitOrderPrice'
@@ -45,8 +52,13 @@ const LimitOrders = () => {
   const router = useRouter()
   const { isMobile, isTablet, isDesktop } = useMatchBreakpoints()
   const { theme } = useTheme()
-  const [isChartDisplayed, setIsChartDisplayed] = useExchangeChartManager(isMobile)
+  const [userChartPreference, setUserChartPreference] = useExchangeChartManager(isMobile)
   const [isChartExpanded, setIsChartExpanded] = useState(false)
+  const [isChartDisplayed, setIsChartDisplayed] = useState(userChartPreference)
+
+  useEffect(() => {
+    setUserChartPreference(isChartDisplayed)
+  }, [isChartDisplayed, setUserChartPreference])
 
   const loadedUrlParams = useDefaultsFromURLSearch()
   // token warning stuff
@@ -55,7 +67,7 @@ const LimitOrders = () => {
     useCurrency(loadedUrlParams?.outputCurrencyId),
   ]
   const urlLoadedTokens: Token[] = useMemo(
-    () => [loadedInputCurrency, loadedOutputCurrency]?.filter((c): c is Token => c?.isToken ?? false) ?? [],
+    () => [loadedInputCurrency, loadedOutputCurrency]?.filter((c): c is Token => c?.isToken) ?? [],
     [loadedInputCurrency, loadedOutputCurrency],
   )
 
@@ -318,7 +330,8 @@ const LimitOrders = () => {
 
   const isSideFooter = isChartExpanded || isChartDisplayed
 
-  const isAccessTokenSupported = chainId && ACCESS_TOKEN_SUPPORT_CHAIN_IDS.includes(chainId)
+  const ACCESS_TOKEN_SUPPORT_CHAIN_IDS = [ChainId.BITGERT]
+  const isAccessTokenSupported = ACCESS_TOKEN_SUPPORT_CHAIN_IDS.includes(chainId)
 
   return (
     <Page

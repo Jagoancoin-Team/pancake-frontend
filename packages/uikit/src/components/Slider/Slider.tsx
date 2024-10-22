@@ -45,7 +45,6 @@ const Slider: React.FC<React.PropsWithChildren<SliderProps>> = ({
   const displayValueLabel = isMax ? "MAX" : valueLabel;
   return (
     <Box position="relative" height="48px" {...props}>
-      <BunnyButt disabled={disabled} />
       <BunnySlider>
         <BarBackground disabled={disabled} />
         <BarProgress style={{ width: progressWidth }} disabled={disabled} />
@@ -57,7 +56,7 @@ const Slider: React.FC<React.PropsWithChildren<SliderProps>> = ({
           value={value}
           step={step}
           onChange={handleChange}
-          $isMax={isMax}
+          isMax={isMax}
           disabled={disabled}
         />
       </BunnySlider>

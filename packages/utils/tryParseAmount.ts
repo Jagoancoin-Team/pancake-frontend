@@ -1,8 +1,8 @@
+import { parseUnits } from 'viem'
 import { Currency, CurrencyAmount } from '@pancakeswap/swap-sdk-core'
-import { parseUnits } from './viem/parseUnits'
 
 // try to parse a user entered amount for a given token
-function tryParseAmount<T extends Currency>(value?: string, currency?: T | null): CurrencyAmount<T> | undefined {
+function tryParseAmount<T extends Currency>(value?: string, currency?: T): CurrencyAmount<T> | undefined {
   if (!value || !currency) {
     return undefined
   }

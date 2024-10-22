@@ -1,50 +1,9 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Card, CardBody, CardHeader, Heading, LinkExternal, Text, useTooltip } from '@pancakeswap/uikit'
+import { Card, CardHeader, Heading, CardBody, Text, LinkExternal } from '@pancakeswap/uikit'
 
 import FoldableText from 'components/FoldableSection/FoldableText'
-import { ONRAMP_PROVIDERS } from '../constants'
-
-type LinkDataMap = {
-  [key in ONRAMP_PROVIDERS]: string
-}
-
-const linkData: LinkDataMap = {
-  [ONRAMP_PROVIDERS.Mercuryo]:
-    'https://help.mercuryo.io/hc/en-gb/articles/14495507502749-Which-fiat-currencies-are-supported',
-  [ONRAMP_PROVIDERS.MoonPay]: 'https://support.moonpay.com/customers/docs/moonpays-supported-currencies',
-  [ONRAMP_PROVIDERS.Transak]: 'https://transak.com/global-coverage',
-  [ONRAMP_PROVIDERS.Topper]:
-    'https://support.topperpay.com/hc/en-us/articles/8926553047708-What-fiat-currencies-does-Topper-support',
-}
-
-const PartnersDocumentation = ({ t }) => {
-  const { tooltip, tooltipVisible, targetRef } = useTooltip(
-    <Box>
-      {Object.entries(linkData).map(([provider, href]) => (
-        <LinkExternal key={provider} href={href}>
-          {provider}
-        </LinkExternal>
-      ))}
-    </Box>,
-  )
-
-  return (
-    <>
-      {tooltipVisible && tooltip}
-      <Text ref={targetRef} style={{ display: 'inline-flex', textDecoration: 'underline dotted' }}>
-        {t('partners documentation')}
-      </Text>
-    </>
-  )
-}
 
 const config = (t) => [
-  {
-    title: t("Why can't I see my bitcoin purchase"),
-    description: t(
-      'Transfers through the Bitcoin network may take longer due to network congestion. Please check your BTC address again after a few hours.',
-    ),
-  },
   {
     title: t('Why can’t I see quotes from providers?'),
     description: t('Some providers might not operate in your region or support the currency/token exchange requested.'),
@@ -63,7 +22,14 @@ const config = (t) => [
         >
           {t('documentation')}
         </LinkExternal>{' '}
-        {t('or')} <PartnersDocumentation t={t} /> {t('for more info.')}
+        {t('or')}{' '}
+        <LinkExternal
+          style={{ display: 'inline-flex' }}
+          href="https://help.mercuryo.io/en/articles/6122838-on-and-off-ramps"
+        >
+          {t('partners documentation')}
+        </LinkExternal>{' '}
+        {t('for more info.')}
       </>
     ),
   },
@@ -80,6 +46,12 @@ const config = (t) => [
           {t('here.')}
         </LinkExternal>
       </>
+    ),
+  },
+  {
+    title: t('Why do i receive different USDC tokens on Arbitrum?'),
+    description: t(
+      `In the case of Arbitrum, there's a bridged version of USDC known as USDC.e that has been bridged from Ethereum to Arbitrum, and native USDC, known as USDC. Depending on providers, we support both USDC.e and USDC. Please check your wallet balances for both tokens`,
     ),
   },
 ]

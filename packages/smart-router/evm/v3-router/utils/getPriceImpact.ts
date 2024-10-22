@@ -1,13 +1,9 @@
 import { CurrencyAmount, Percent, TradeType } from '@pancakeswap/sdk'
 
-import { Route, SmartRouterTrade } from '../types'
+import { SmartRouterTrade } from '../types'
 import { getMidPrice } from './route'
 
-export function getPriceImpact(
-  trade: Pick<SmartRouterTrade<TradeType>, 'outputAmount' | 'routes'> & {
-    routes: Pick<Route, 'path' | 'pools'>[]
-  },
-): Percent {
+export function getPriceImpact(trade: SmartRouterTrade<TradeType>): Percent {
   let spotOutputAmount = CurrencyAmount.fromRawAmount(trade.outputAmount.currency.wrapped, 0)
   for (const route of trade.routes) {
     const { inputAmount } = route

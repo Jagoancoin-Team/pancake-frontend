@@ -1,23 +1,35 @@
-import { ChainId } from '@pancakeswap/chains'
-import { Currency, ERC20Token } from '@pancakeswap/sdk'
-import { CAKE } from '@pancakeswap/tokens'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
+import { ERC20Token, Currency, ChainId } from '@pancakeswap/sdk'
+import { ICE } from '@pancakeswap/tokens'
 import { tickToPrice } from '@pancakeswap/v3-sdk'
+import { Address, PublicClient, formatUnits } from 'viem'
 import BN from 'bignumber.js'
+import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import chunk from 'lodash/chunk'
-import { Address, PublicClient, formatUnits, getAddress } from 'viem'
 
-import { getCurrencyListUsdPrice } from '@pancakeswap/price-api-sdk'
-import { DEFAULT_COMMON_PRICE, PriceHelper } from '../constants/common'
+import { DEFAULT_COMMON_PRICE, PriceHelper, CHAIN_ID_TO_CHAIN_NAME } from '../constants/common'
+import { ComputedFarmConfigV3, FarmV3Data, FarmV3DataWithPrice } from './types'
 import { getFarmApr } from './apr'
 import { FarmV3SupportedChainId, supportedChainIdV3 } from './const'
-import { ComputedFarmConfigV3, FarmV3Data, FarmV3DataWithPrice } from './types'
 
 const chainlinkAbi = [
   {
     inputs: [],
     name: 'latestAnswer',
     outputs: [{ internalType: 'int256', name: '', type: 'int256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const
+
+const poolV2Abi = [
+  {
+    inputs: [],
+    name: 'getReserves',
+    outputs: [
+      { internalType: 'uint112', name: '_reserve0', type: 'uint112' },
+      { internalType: 'uint112', name: '_reserve1', type: 'uint112' },
+      { internalType: 'uint32', name: '_blockTimestampLast', type: 'uint32' },
+    ],
     stateMutability: 'view',
     type: 'function',
   },
@@ -40,13 +52,13 @@ export async function farmV3FetchFarms({
 }) {
   const [poolInfos, cakePrice, v3PoolData] = await Promise.all([
     fetchPoolInfos(farms, chainId, provider, masterChefAddress),
-    provider({ chainId: ChainId.BSC })
+    provider({ chainId: ChainId.CORE })
       .readContract({
-        abi: chainlinkAbi,
-        address: '0xB6064eD41d4f67e353768aA239cA86f4F73665a1',
-        functionName: 'latestAnswer',
+        abi: poolV2Abi,
+        address: '0xf1A996Efba43DCBD7945D2b91fA78420d9C23bF0',
+        functionName: 'getReserves',
       })
-      .then((res) => formatUnits(res, 8)),
+      .then((res) => formatUnits(res[0] * 10n**8n / res[1], 8)),
     fetchV3Pools(farms, chainId, provider),
   ])
 
@@ -443,11 +455,24 @@ export const fetchTokenUSDValues = async (currencies: Currency[] = []): Promise<
   }
 
   if (currencies.length > 0) {
-    const prices = await getCurrencyListUsdPrice(currencies)
+    const list = currencies
+      .map(
+        (currency) =>
+          `${currency.wrapped.address}`,
+      )
+      .join(',')
+    const result: { [key: string]: string } = await fetch(
+      `https://pricing.icecreamswap.com/${currencies[0].chainId}?token=${list}`,
+    )
+      .then((res) => res.json())
+      .catch(reason => {
+        console.warn("Error while getting token price", reason)
+        return {}
+      })
 
-    Object.entries(prices || {}).forEach(([key, value]) => {
-      const [, address] = key.split(':')
-      commonTokenUSDValue[getAddress(address)] = value.toString()
+    Object.entries(result || {}).forEach(([key, value]) => {
+      const address = key
+      commonTokenUSDValue[address] = value
     })
   }
 
@@ -471,18 +496,18 @@ export function getFarmsPrices(
       tokenPriceBusd = new BN(commonPrice[farm.token.address])
     }
 
-    // try price via CAKE
+    // try price via ICE
     if (
       tokenPriceBusd.isZero() &&
-      farm.token.chainId in CAKE &&
-      farm.token.equals(CAKE[farm.token.chainId as keyof typeof CAKE])
+      farm.token.chainId in ICE &&
+      farm.token.equals(ICE[farm.token.chainId as keyof typeof ICE])
     ) {
       tokenPriceBusd = new BN(cakePriceUSD)
     }
     if (
       quoteTokenPriceBusd.isZero() &&
-      farm.quoteToken.chainId in CAKE &&
-      farm.quoteToken.equals(CAKE[farm.quoteToken.chainId as keyof typeof CAKE])
+      farm.quoteToken.chainId in ICE &&
+      farm.quoteToken.equals(ICE[farm.quoteToken.chainId as keyof typeof ICE])
     ) {
       quoteTokenPriceBusd = new BN(cakePriceUSD)
     }

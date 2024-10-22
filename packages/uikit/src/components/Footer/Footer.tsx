@@ -1,6 +1,5 @@
 import { useIsMounted } from "@pancakeswap/hooks";
 import React from "react";
-import { useMatchBreakpoints } from "../../contexts";
 import { Box, Flex } from "../Box";
 import { Link } from "../Link";
 import {
@@ -17,7 +16,7 @@ import { vars } from "../../css/vars.css";
 import { Button } from "../Button";
 import CakePrice from "../CakePrice/CakePrice";
 import LangSelector from "../LangSelector/LangSelector";
-import { ArrowForwardIcon, LogoIcon, LogoWithTextIcon } from "../Svg";
+import { ArrowForwardIcon, LogoWithTextIcon } from "../Svg";
 import { ThemeSwitcher } from "../ThemeSwitcher";
 import { FooterProps } from "./types";
 
@@ -30,12 +29,9 @@ const MenuItem: React.FC<React.PropsWithChildren<FooterProps>> = ({
   setLang,
   cakePriceUsd,
   buyCakeLabel,
-  buyCakeLink,
-  chainId,
   ...props
 }) => {
   const isMounted = useIsMounted();
-  const { isXl } = useMatchBreakpoints();
   return (
     <StyledFooter
       data-theme="dark"
@@ -50,7 +46,7 @@ const MenuItem: React.FC<React.PropsWithChildren<FooterProps>> = ({
         </StyledIconMobileContainer>
         <Flex
           order={[2, null, 1]}
-          flexDirection={["column", "column", "column", "column", "row", "row"]}
+          flexDirection={["column", null, "row"]}
           justifyContent="space-between"
           alignItems="flex-start"
           mb={["42px", null, "36px"]}
@@ -64,10 +60,10 @@ const MenuItem: React.FC<React.PropsWithChildren<FooterProps>> = ({
                     <Link
                       data-theme="dark"
                       href={href}
-                      external
+                      target="_blank"
+                      rel="noreferrer noopener"
                       color={isHighlighted ? vars.colors.warning : "text"}
                       bold={false}
-                      style={{ textTransform: "none" }}
                     >
                       {label}
                     </Link>
@@ -78,7 +74,9 @@ const MenuItem: React.FC<React.PropsWithChildren<FooterProps>> = ({
               ))}
             </StyledList>
           ))}
-          <Box display={["none", null, "block"]}>{isXl ? <LogoIcon /> : <LogoWithTextIcon width="160px" />}</Box>
+          <Box display={["none", null, "block"]}>
+            <LogoWithTextIcon width="160px" />
+          </Box>
         </Flex>
         <StyledSocialLinks order={[2]} pb={["42px", null, "32px"]} mb={["0", null, "32px"]} />
         <StyledToolsContainer
@@ -99,12 +97,12 @@ const MenuItem: React.FC<React.PropsWithChildren<FooterProps>> = ({
           </Flex>
           <Flex order={[1, null, 2]} mb={["24px", null, "0"]} justifyContent="space-between" alignItems="center">
             <Box mr="20px">
-              <CakePrice chainId={chainId} cakePriceUsd={cakePriceUsd} color="textSubtle" />
+              <CakePrice cakePriceUsd={cakePriceUsd} color="textSubtle" />
             </Box>
             <Button
-              data-theme="dark"
+              data-theme={isDark ? "dark" : "light"}
               as="a"
-              href={buyCakeLink}
+              href="https://icecreamswap.com/swap?outputCurrency=0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82&chainId=56"
               target="_blank"
               scale="sm"
               endIcon={<ArrowForwardIcon color="backgroundAlt" />}

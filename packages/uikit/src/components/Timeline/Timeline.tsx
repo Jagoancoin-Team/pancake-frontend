@@ -1,5 +1,5 @@
 import { Colors } from "../../theme";
-import { lightColors } from "../../tokens";
+import { lightColors } from "../..";
 import { Flex } from "../Box";
 import { CircleOutlineIcon, LogoIcon, CheckmarkCircleFillIcon } from "../Svg";
 import { Text } from "../Text";

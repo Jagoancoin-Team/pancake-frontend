@@ -1,106 +1,186 @@
-import { getWagmiConnectorV2 } from '@binance/w3w-wagmi-connector-v2'
-import { cyberWalletConnector as createCyberWalletConnector, isCyberWallet } from '@cyberlab/cyber-app-sdk'
-import { blocto } from '@pancakeswap/wagmi/connectors/blocto'
+import { BinanceWalletConnector } from '@pancakeswap/wagmi/connectors/binanceWallet'
+import { BloctoConnector } from '@pancakeswap/wagmi/connectors/blocto'
+import { TrustWalletConnector } from '@pancakeswap/wagmi/connectors/trustWallet'
 import { CHAINS } from 'config/chains'
-import { PUBLIC_NODES } from 'config/nodes'
 import memoize from 'lodash/memoize'
-import { Transport } from 'viem'
-import { createConfig, fallback, http } from 'wagmi'
+import { configureChains, createConfig, createStorage } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors'
-import { CLIENT_CONFIG, publicClient } from './viem'
+import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
+import { InjectedConnector } from 'wagmi/connectors/injected'
+import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 
-export const chains = CHAINS
+// get most configs chain nodes length
+const mostNodesConfig = Object.values(CHAINS).reduce((prev, chain) => {
+  const rpcs = chain.rpcUrls.default.http
+  return rpcs.length > prev ? rpcs.length : prev
+}, 0)
 
-export const injectedConnector = injected({
-  shimDisconnect: false,
+export const { publicClient, chains } = configureChains(
+  CHAINS,
+  Array.from({ length: mostNodesConfig })
+    .map((_, i) => i)
+    .map((i) => {
+      return jsonRpcProvider({
+        rpc: (chain) => {
+          const rpcs = chain.rpcUrls.default.http
+          return rpcs[i]
+            ? {
+              http: rpcs[i],
+            }
+            : null
+        },
+      })
+    }),
+  {
+    batch: {
+      multicall: {
+        batchSize: 1024 * 200,
+      },
+    },
+  },
+)
+
+export const injectedConnector = new InjectedConnector({
+  chains,
+  options: {
+    shimDisconnect: false,
+  },
 })
 
-export const coinbaseConnector = coinbaseWallet({
-  appName: 'PancakeSwap',
-  appLogoUrl: 'https://pancakeswap.com/logo.png',
+export const coinbaseConnector = new CoinbaseWalletConnector({
+  chains,
+  options: {
+    appName: 'DynastySwap',
+    appLogoUrl: 'https://dynastycoin.io/assets/img/logo/logo.png',
+  },
 })
 
-export const walletConnectConnector = walletConnect({
-  // ignore the error in test environment
-  // Error: To use QR modal, please install @walletconnect/modal package
-  showQrModal: process.env.NODE_ENV !== 'test',
-  projectId: 'e542ff314e26ff34de2d4fba98db70bb',
+export const walletConnectConnector = new WalletConnectConnector({
+  chains,
+  options: {
+    projectId: 'c33f5b4a87af478e80a3b8b807e52895',
+    showQrModal: true,
+  },
 })
 
-export const walletConnectNoQrCodeConnector = walletConnect({
-  showQrModal: false,
-  projectId: 'e542ff314e26ff34de2d4fba98db70bb',
+export const walletConnectNoQrCodeConnector = new WalletConnectConnector({
+  chains,
+  options: {
+    projectId: 'c33f5b4a87af478e80a3b8b807e52895',
+    showQrModal: false,
+  },
 })
 
-export const metaMaskConnector = injected({ target: 'metaMask', shimDisconnect: false })
-export const trustConnector = injected({ target: 'trust', shimDisconnect: false })
-
-const bloctoConnector = blocto({
-  appId: 'e2f2f0cd-3ceb-4dec-b293-bb555f2ed5af',
+export const metaMaskConnector = new MetaMaskConnector({
+  chains,
+  options: {
+    shimDisconnect: false,
+  },
 })
 
-export const binanceWeb3WalletConnector = getWagmiConnectorV2()
+const bloctoConnector = new BloctoConnector({
+  chains,
+  options: {
+    defaultChainId: 56,
+    appId: 'e2f2f0cd-3ceb-4dec-b293-bb555f2ed5af',
+  },
+})
+
+export const bscConnector = new BinanceWalletConnector({ chains })
+
+export const trustWalletConnector = new TrustWalletConnector({
+  chains,
+  options: {
+    shimDisconnect: false,
+    shimChainChangedDisconnect: true,
+  },
+})
+
+class BitKeepConnector extends InjectedConnector {
+  provider?: Window['ethereum']
+
+  public id = 'bitKeep'
+
+  async getProvider() {
+    this.provider = (window as any).bitkeep?.ethereum
+    return this.provider
+  }
+}
+
+export const bitKeepConnector = new BitKeepConnector({
+  chains,
+  options: {
+    shimDisconnect: false,
+  },
+})
+
+class NaboxConnector extends InjectedConnector {
+  provider?: Window['ethereum']
+
+  public id = 'nabox'
+
+  async getProvider() {
+    if (!(window as any).NaboxWallet) throw new Error('Nabox not found')
+    this.provider = (window as any).ethereum
+    return this.provider
+  }
+}
+
+export const naboxConnector = new NaboxConnector({
+  chains,
+  options: {
+    shimDisconnect: false,
+  },
+})
+
+class OkxConnector extends InjectedConnector {
+  provider?: Window['ethereum']
+
+  public id = 'okx'
+
+  async getProvider() {
+    if (!(window as any).okxwallet) throw new Error('Okx Wallet not found')
+    this.provider = (window as any).okxwallet
+    return this.provider
+  }
+}
+
+export const okxConnector = new OkxConnector({
+  chains,
+  options: {
+    shimDisconnect: true,
+  },
+})
 
 export const noopStorage = {
-  getItem: (_key: any) => '',
-  setItem: (_key: any, _value: any) => {},
-  removeItem: (_key: any) => {},
+  getItem: (_key) => '',
+  setItem: (_key, _value) => null,
+  removeItem: (_key) => null,
 }
 
-const PUBLIC_MAINNET = 'https://ethereum.publicnode.com'
-
-export const transports = chains.reduce((ts, chain) => {
-  let httpStrings: string[] | readonly string[] = []
-
-  if (process.env.NODE_ENV === 'test' && chain.id === mainnet.id) {
-    httpStrings = [PUBLIC_MAINNET]
-  } else {
-    httpStrings = PUBLIC_NODES[chain.id] ? PUBLIC_NODES[chain.id] : []
-  }
-
-  if (ts) {
-    return {
-      ...ts,
-      [chain.id]: fallback(httpStrings.map((t: any) => http(t))),
-    }
-  }
-
-  return {
-    [chain.id]: fallback(httpStrings.map((t: any) => http(t))),
-  }
-}, {} as Record<number, Transport>)
-
-export const cyberWalletConnector = isCyberWallet()
-  ? createCyberWalletConnector({
-      name: 'PancakeSwap',
-      appId: 'b825cd87-2db3-456d-b108-d61e74d89771',
-    })
-  : undefined
-
-export function createWagmiConfig() {
-  return createConfig({
-    chains,
-    ssr: true,
-    syncConnectedChain: true,
-    transports,
-    ...CLIENT_CONFIG,
-
-    connectors: [
-      metaMaskConnector,
-      injectedConnector,
-      safe(),
-      coinbaseConnector,
-      walletConnectConnector,
-      bloctoConnector,
-      // ledgerConnector,
-      trustConnector,
-      binanceWeb3WalletConnector(),
-
-      ...(cyberWalletConnector ? [cyberWalletConnector as any] : []),
-    ],
-  })
-}
+export const wagmiConfig = createConfig({
+  storage: createStorage({
+    storage: typeof window !== 'undefined' ? window.localStorage : noopStorage,
+    key: 'wagmi_v1.1',
+  }),
+  autoConnect: false,
+  publicClient,
+  connectors: [
+    metaMaskConnector,
+    injectedConnector,
+    coinbaseConnector,
+    walletConnectConnector,
+    bscConnector,
+    bitKeepConnector,
+    naboxConnector,
+    okxConnector,
+    // @ts-ignore FIXME: wagmi
+    bloctoConnector,
+    trustWalletConnector,
+  ],
+})
 
 export const CHAIN_IDS = chains.map((c) => c.id)
 
@@ -109,5 +189,3 @@ export const isChainTestnet = memoize((chainId: number) => {
   const found = chains.find((c) => c.id === chainId)
   return found ? 'testnet' in found : false
 })
-
-export { publicClient }

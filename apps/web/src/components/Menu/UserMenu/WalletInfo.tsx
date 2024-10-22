@@ -1,37 +1,36 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useTranslation } from '@pancakeswap/localization'
-import { WNATIVE } from '@pancakeswap/sdk'
 import {
   Box,
   Button,
-  CopyAddress,
   Flex,
-  FlexGap,
-  InfoFilledIcon,
   InjectedModalProps,
   LinkExternal,
   Message,
-  ScanLink,
   Skeleton,
   Text,
-  TooltipText,
+  CopyAddress,
+  FlexGap,
   useTooltip,
+  TooltipText,
+  InfoFilledIcon,
+  ScanLink,
 } from '@pancakeswap/uikit'
-import { ChainLogo } from 'components/Logo/ChainLogo'
+import { ChainId, WNATIVE } from '@pancakeswap/sdk'
 import { FetchStatus } from 'config/constants/types'
 import useActiveWeb3React from 'hooks/useActiveWeb3React'
+import { useTranslation } from '@pancakeswap/localization'
 import useAuth from 'hooks/useAuth'
 import useNativeCurrency from 'hooks/useNativeCurrency'
-import useTokenBalance, { useBSCCakeBalance } from 'hooks/useTokenBalance'
+import useTokenBalance, { useGetIceBalance } from 'hooks/useTokenBalance'
+import { ChainLogo } from 'components/Logo/ChainLogo'
 
-import { formatBigInt, getFullDisplayBalance } from '@pancakeswap/utils/formatBalance'
-import InternalLink from 'components/Links'
-import { useDomainNameForAddress } from 'hooks/useDomain'
-import { useState } from 'react'
-import { isMobile } from 'react-device-detect'
 import { getBlockExploreLink, getBlockExploreName } from 'utils'
-import { Address } from 'viem'
+import { getFullDisplayBalance, formatBigInt } from '@pancakeswap/utils/formatBalance'
 import { useBalance } from 'wagmi'
+import { useDomainNameForAddress } from 'hooks/useDomain'
+import { isMobile } from 'react-device-detect'
+import { useState } from 'react'
+import InternalLink from 'components/Links'
+import { SUPPORT_BUY_CRYPTO } from 'config/constants/supportChains'
 
 const COLORS = {
   ETH: '#627EEA',
@@ -47,16 +46,16 @@ interface WalletInfoProps {
 const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowNativeBalance, onDismiss }) => {
   const { t } = useTranslation()
   const { account, chainId, chain } = useActiveWeb3React()
-  const { domainName } = useDomainNameForAddress(account ?? '')
+  const { domainName } = useDomainNameForAddress(account)
   const isBSC = chainId === ChainId.BSC
-  const bnbBalance = useBalance({ address: account ?? undefined, chainId: ChainId.BSC })
-  const nativeBalance = useBalance({ address: account ?? undefined, query: { enabled: !isBSC } })
+  const bnbBalance = useBalance({ address: account, chainId: ChainId.BSC })
+  const nativeBalance = useBalance({ address: account })
   const native = useNativeCurrency()
-  const wNativeToken = !isBSC ? WNATIVE[chainId as ChainId] : null
+  const wNativeToken = !isBSC ? WNATIVE[chainId] : null
   const wBNBToken = WNATIVE[ChainId.BSC]
-  const { balance: wNativeBalance, fetchStatus: wNativeFetchStatus } = useTokenBalance(wNativeToken?.address as Address)
+  const { balance: wNativeBalance, fetchStatus: wNativeFetchStatus } = useTokenBalance(wNativeToken?.address)
   const { balance: wBNBBalance, fetchStatus: wBNBFetchStatus } = useTokenBalance(wBNBToken?.address, true)
-  const { balance: cakeBalance, fetchStatus: cakeFetchStatus } = useBSCCakeBalance()
+  const { balance: cakeBalance, fetchStatus: cakeFetchStatus } = useGetIceBalance()
   const [mobileTooltipShow, setMobileTooltipShow] = useState(false)
   const { logout } = useAuth()
 
@@ -91,8 +90,8 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowNativeBalance, onDismiss 
     },
   )
 
-  const showBscEntryPoint = Number(bnbBalance?.data?.value) === 0
-  const showNativeEntryPoint = Number(nativeBalance?.data?.value) === 0
+  const showBscEntryPoint = Number(bnbBalance?.data?.value) === 0 && SUPPORT_BUY_CRYPTO.includes(chainId)
+  const showNativeEntryPoint = Number(nativeBalance?.data?.value) === 0 && SUPPORT_BUY_CRYPTO.includes(chainId)
 
   return (
     <>
@@ -100,10 +99,10 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowNativeBalance, onDismiss 
         {t('Your Address')}
       </Text>
       <FlexGap flexDirection="column" mb="24px" gap="8px">
-        <CopyAddress tooltipMessage={t('Copied')} account={account ?? undefined} />
+        <CopyAddress tooltipMessage={t('Copied')} account={account} />
         {domainName ? <Text color="textSubtle">{domainName}</Text> : null}
       </FlexGap>
-      {hasLowNativeBalance && (
+      {hasLowNativeBalance && SUPPORT_BUY_CRYPTO.includes(chainId) && (
         <Message variant="warning" mb="24px">
           <Box>
             <Text fontWeight="bold">
@@ -121,7 +120,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowNativeBalance, onDismiss 
           </Box>
         </Message>
       )}
-      {!isBSC && chain && (
+      {chain && (
         <Box mb="12px">
           <Flex justifyContent="space-between" alignItems="center" mb="8px">
             <Flex bg={COLORS.ETH} borderRadius="16px" pl="4px" pr="8px" py="2px">
@@ -178,59 +177,9 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowNativeBalance, onDismiss 
           )}
         </Box>
       )}
-
       <Box mb="24px">
-        <Flex justifyContent="space-between" alignItems="center" mb="8px">
-          <Flex bg={COLORS.BNB} borderRadius="16px" pl="4px" pr="8px" py="2px">
-            <ChainLogo chainId={ChainId.BSC} />
-            <Text color="white" ml="4px">
-              BNB Smart Chain
-            </Text>
-          </Flex>
-          <ScanLink useBscCoinFallback href={getBlockExploreLink(account, 'address', ChainId.BSC)}>
-            {getBlockExploreName(ChainId.BSC)}
-          </ScanLink>
-        </Flex>
-        {chainId === 56 ? (
-          <Flex alignItems="center" justifyContent="space-between">
-            <Text color="textSubtle">BNB {t('Balance')}</Text>
-            {!bnbBalance.isFetched ? (
-              <Skeleton height="22px" width="60px" />
-            ) : (
-              <Flex alignItems="center" justifyContent="center">
-                <Text
-                  fontWeight={showBscEntryPoint ? 'bold' : 'normal'}
-                  color={showBscEntryPoint ? 'warning' : 'normal'}
-                >
-                  {formatBigInt(bnbBalance?.data?.value ?? 0n, 6)}
-                </Text>
-                {showBscEntryPoint ? (
-                  <TooltipText
-                    ref={buyCryptoTargetRef}
-                    onClick={() => setMobileTooltipShow(false)}
-                    display="flex"
-                    style={{ justifyContent: 'center' }}
-                  >
-                    <InfoFilledIcon pl="2px" fill="#000" color="#D67E0A" width="22px" />
-                  </TooltipText>
-                ) : null}
-                {buyCryptoTooltipVisible && (!isMobile || mobileTooltipShow) && buyCryptoTooltip}
-              </Flex>
-            )}
-          </Flex>
-        ) : null}
-        {wBNBBalance.gt(0) && (
-          <Flex alignItems="center" justifyContent="space-between">
-            <Text color="textSubtle">WBNB {t('Balance')}</Text>
-            {wBNBFetchStatus !== FetchStatus.Fetched ? (
-              <Skeleton height="22px" width="60px" />
-            ) : (
-              <Text>{getFullDisplayBalance(wBNBBalance, wBNBToken.decimals, 6)}</Text>
-            )}
-          </Flex>
-        )}
         <Flex alignItems="center" justifyContent="space-between">
-          <Text color="textSubtle">{t('CAKE Balance')}</Text>
+          <Text color="textSubtle">{t('ICE Balance')}</Text>
           {cakeFetchStatus !== FetchStatus.Fetched ? (
             <Skeleton height="22px" width="60px" />
           ) : (

@@ -1,60 +1,56 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { CurrencyAmount, WNATIVE } from '@pancakeswap/sdk'
 import {
+  AutoRow,
+  CardBody,
+  Heading,
+  Flex,
+  Slider,
+  Button,
+  Text,
+  ColumnCenter,
   ArrowDownIcon,
   AutoColumn,
-  AutoRow,
-  Box,
-  Button,
-  CardBody,
-  ColumnCenter,
-  Flex,
-  Heading,
-  Message,
+  useModal,
+  ConfirmationModalContent,
   RowBetween,
   RowFixed,
-  Slider,
-  Tag,
-  Text,
   Toggle,
-  useModal,
+  Box,
+  Tag,
+  Message,
 } from '@pancakeswap/uikit'
-import { ConfirmationModalContent } from '@pancakeswap/widgets-internal'
-
-import { useDebouncedChangeHandler } from '@pancakeswap/hooks'
-import { useUserSlippage } from '@pancakeswap/utils/user'
-import { MasterChefV3, NonfungiblePositionManager } from '@pancakeswap/v3-sdk'
+import { NonfungiblePositionManager, MasterChefV3 } from '@pancakeswap/v3-sdk'
 import { AppBody, AppHeader } from 'components/App'
-import { LightGreyCard } from 'components/Card'
-import FormattedCurrencyAmount from 'components/FormattedCurrencyAmount/FormattedCurrencyAmount'
 import { CurrencyLogo, DoubleCurrencyLogo } from 'components/Logo'
-import TransactionConfirmationModal from 'components/TransactionConfirmationModal'
-import useLocalSelector from 'contexts/LocalRedux/useSelector'
 import { useMasterchefV3, useV3NFTPositionManagerContract } from 'hooks/useContract'
-import useNativeCurrency from 'hooks/useNativeCurrency'
-import { useStablecoinPrice } from 'hooks/useStablecoinPrice'
-import { useTransactionDeadline } from 'hooks/useTransactionDeadline'
+import useTransactionDeadline from 'hooks/useTransactionDeadline'
 import { useDerivedV3BurnInfo } from 'hooks/v3/useDerivedV3BurnInfo'
 import { useV3PositionFromTokenId, useV3TokenIdsByAccount } from 'hooks/v3/useV3Positions'
+import { useStablecoinPrice } from 'hooks/useBUSDPrice'
 import { useRouter } from 'next/router'
 import { useCallback, useMemo, useState } from 'react'
 import { useTransactionAdder } from 'state/transactions/hooks'
-import { styled } from 'styled-components'
-import { hexToBigInt } from 'viem'
+import { useUserSlippage } from '@pancakeswap/utils/user'
 import Page from 'views/Page'
-import { useSendTransaction, useWalletClient } from 'wagmi'
+import { useSendTransaction } from 'wagmi'
+import useLocalSelector from 'contexts/LocalRedux/useSelector'
+import { styled } from 'styled-components'
+import { useDebouncedChangeHandler } from '@pancakeswap/hooks'
+import { LightGreyCard } from 'components/Card'
+import TransactionConfirmationModal from 'components/TransactionConfirmationModal'
+import FormattedCurrencyAmount from 'components/Chart/FormattedCurrencyAmount/FormattedCurrencyAmount'
+import useNativeCurrency from 'hooks/useNativeCurrency'
+import { hexToBigInt } from 'viem'
 
-import Divider from 'components/Divider'
 import { RangeTag } from 'components/RangeTag'
-import { calculateGasMargin } from 'utils'
+import Divider from 'components/Divider'
+import { formatCurrencyAmount, formatRawAmount } from 'utils/formatCurrencyAmount'
 import { basisPointsToPercent } from 'utils/exchange'
-import { formatRawAmount } from 'utils/formatCurrencyAmount'
 import { getViemClients } from 'utils/viem'
+import { calculateGasMargin } from 'utils'
 
 import useAccountActiveChain from 'hooks/useAccountActiveChain'
-import { logGTMClickRemoveLiquidityEvent } from 'utils/customGTMEventTracking'
-import { isUserRejected } from 'utils/sentry'
-import { transactionErrorToUserReadableMessage } from 'utils/transactionErrorToUserReadableMessage'
 import { useBurnV3ActionHandlers } from './form/hooks'
 
 const BorderCard = styled.div`
@@ -73,15 +69,18 @@ export default function RemoveLiquidityV3() {
     try {
       return BigInt(tokenId as string)
     } catch {
-      return undefined
+      return null
     }
   }, [tokenId])
 
   return <Remove tokenId={parsedTokenId} />
 }
 
-function Remove({ tokenId }: { tokenId?: bigint }) {
-  const { t } = useTranslation()
+function Remove({ tokenId }: { tokenId: bigint }) {
+  const {
+    t,
+    currentLanguage: { locale },
+  } = useTranslation()
 
   // flag for receiving WNATIVE
   const [receiveWNATIVE, setReceiveWNATIVE] = useState(false)
@@ -91,9 +90,8 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
   const { percent } = useLocalSelector<{ percent: number }>((s) => s) as { percent: number }
 
   const { account, chainId } = useAccountActiveChain()
+  const { sendTransactionAsync } = useSendTransaction()
   const addTransaction = useTransactionAdder()
-
-  const { data: walletClient } = useWalletClient()
 
   const masterchefV3 = useMasterchefV3()
   const { tokenIds: stakedTokenIds, loading: tokenIdsInMCv3Loading } = useV3TokenIdsByAccount(
@@ -120,19 +118,16 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
   const [percentForSlider, onPercentSelectForSlider] = useDebouncedChangeHandler(percent, onPercentSelect)
 
   const handleChangePercent = useCallback(
-    (value: any) => onPercentSelectForSlider(Math.ceil(value)),
+    (value) => onPercentSelectForSlider(Math.ceil(value)),
     [onPercentSelectForSlider],
   )
 
   const [allowedSlippage] = useUserSlippage() // custom from users
   // const allowedSlippage = useUserSlippageToleranceWithDefault(DEFAULT_REMOVE_V3_LIQUIDITY_SLIPPAGE_TOLERANCE) // custom from users
 
-  const [deadline] = useTransactionDeadline() // custom from users settings
+  const deadline = useTransactionDeadline() // custom from users settings
   const [attemptingTxn, setAttemptingTxn] = useState(false)
   const [txnHash, setTxnHash] = useState<string | undefined>()
-  const [errorMessage, setErrorMessage] = useState<string | undefined>()
-
-  const { sendTransactionAsync } = useSendTransaction()
 
   const positionManager = useV3NFTPositionManagerContract()
 
@@ -156,8 +151,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
       !chainId ||
       !positionSDK ||
       !liquidityPercentage ||
-      !tokenId ||
-      !walletClient
+      !sendTransactionAsync
     ) {
       return
     }
@@ -187,7 +181,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
 
     const publicClient = getViemClients({ chainId })
 
-    publicClient?.estimateGas(txn).then((gas) => {
+    publicClient.estimateGas(txn).then((gas) => {
       sendTransactionAsync({
         ...txn,
         gas: calculateGasMargin(gas),
@@ -197,22 +191,14 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
           const amount0 = formatRawAmount(liquidityValue0.quotient.toString(), liquidityValue0.currency.decimals, 4)
           const amount1 = formatRawAmount(liquidityValue1.quotient.toString(), liquidityValue1.currency.decimals, 4)
 
-          setTxnHash(response)
+          setTxnHash(response.hash)
           setAttemptingTxn(false)
-          addTransaction(
-            { hash: response },
-            {
-              type: 'remove-liquidity-v3',
-              summary: `Remove ${amount0} ${liquidityValue0.currency.symbol} and ${amount1} ${liquidityValue1.currency.symbol}`,
-            },
-          )
+          addTransaction(response, {
+            type: 'remove-liquidity-v3',
+            summary: `Remove ${amount0} ${liquidityValue0.currency.symbol} and ${amount1} ${liquidityValue1.currency.symbol}`,
+          })
         })
         .catch((err) => {
-          if (isUserRejected(err)) {
-            setErrorMessage(t('Transaction rejected'))
-          } else {
-            setErrorMessage(transactionErrorToUserReadableMessage(err, t))
-          }
           setAttemptingTxn(false)
           console.error(err)
         })
@@ -228,14 +214,12 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
     chainId,
     positionSDK,
     liquidityPercentage,
+    sendTransactionAsync,
     tokenId,
     allowedSlippage,
     feeValue0,
     feeValue1,
     addTransaction,
-    walletClient,
-    sendTransactionAsync,
-    t,
   ])
 
   const removed = position?.liquidity === 0n
@@ -243,7 +227,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
   const price0 = useStablecoinPrice(liquidityValue0?.currency?.wrapped ?? undefined, { enabled: !!feeValue0 })
   const price1 = useStablecoinPrice(liquidityValue1?.currency?.wrapped ?? undefined, { enabled: !!feeValue1 })
 
-  const modalHeader = useCallback(() => {
+  function modalHeader() {
     return (
       <>
         <RowBetween alignItems="flex-end">
@@ -299,7 +283,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
         ) : null}
       </>
     )
-  }, [feeValue0, feeValue1, liquidityValue0, liquidityValue1, t])
+  }
 
   const router = useRouter()
 
@@ -307,26 +291,14 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
     // if there was a tx hash, we want to clear the input
     if (txnHash) {
       if (percentForSlider === 100) {
-        router.push('/liquidity/positions')
+        router.push('/liquidity')
       } else {
         onPercentSelectForSlider(0)
       }
     }
     setAttemptingTxn(false)
     setTxnHash('')
-    setErrorMessage(undefined)
   }, [onPercentSelectForSlider, percentForSlider, router, txnHash])
-
-  const pendingText = useMemo(
-    () =>
-      t('Removing %amountA% %symbolA% and %amountB% %symbolB%', {
-        amountA: liquidityValue0?.toSignificant(6),
-        symbolA: liquidityValue0?.currency?.symbol,
-        amountB: liquidityValue1?.toSignificant(6),
-        symbolB: liquidityValue1?.currency?.symbol,
-      }),
-    [liquidityValue0, liquidityValue1, t],
-  )
 
   const [onPresentRemoveLiquidityModal] = useModal(
     <TransactionConfirmationModal
@@ -337,7 +309,6 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
       style={{
         minHeight: 'auto',
       }}
-      errorMessage={errorMessage}
       content={() => (
         <ConfirmationModalContent
           topContent={modalHeader}
@@ -348,7 +319,12 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
           )}
         />
       )}
-      pendingText={pendingText}
+      pendingText={t("Removing %amountA% %symbolA% and %amountB% %symbolB%", {
+        amountA: liquidityValue0?.toSignificant(6),
+        symbolA: liquidityValue0?.currency?.symbol,
+        amountB: liquidityValue1?.toSignificant(6),
+        symbolB: liquidityValue1?.currency?.symbol
+      })}
     />,
     true,
     true,
@@ -357,11 +333,11 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
 
   const showCollectAsWNative = Boolean(
     liquidityValue0?.currency &&
-      liquidityValue1?.currency &&
-      (liquidityValue0.currency.isNative ||
-        liquidityValue1.currency.isNative ||
-        WNATIVE[liquidityValue0.currency.chainId]?.equals(liquidityValue0.currency.wrapped) ||
-        WNATIVE[liquidityValue1.currency.chainId]?.equals(liquidityValue1.currency.wrapped)),
+    liquidityValue1?.currency &&
+    (liquidityValue0.currency.isNative ||
+      liquidityValue1.currency.isNative ||
+      WNATIVE[liquidityValue0.currency.chainId]?.equals(liquidityValue0.currency.wrapped) ||
+      WNATIVE[liquidityValue1.currency.chainId]?.equals(liquidityValue1.currency.wrapped)),
   )
 
   return (
@@ -446,9 +422,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
                   </Text>
                 </Flex>
                 <Flex>
-                  <Text small>
-                    <FormattedCurrencyAmount currencyAmount={liquidityValue0} />
-                  </Text>
+                  <Text small>{formatCurrencyAmount(liquidityValue0, 4, locale)}</Text>
                 </Flex>
               </Flex>
               <Flex justifyContent="flex-end" mb="8px">
@@ -466,9 +440,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
                   </Text>
                 </Flex>
                 <Flex>
-                  <Text small>
-                    <FormattedCurrencyAmount currencyAmount={liquidityValue1} />
-                  </Text>
+                  <Text small>{formatCurrencyAmount(liquidityValue1, 4, locale)}</Text>
                 </Flex>
               </Flex>
               <Flex justifyContent="flex-end" mb="8px">
@@ -487,9 +459,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
                   </Text>
                 </Flex>
                 <Flex>
-                  <Text small>
-                    <FormattedCurrencyAmount currencyAmount={feeValue0} />
-                  </Text>
+                  <Text small>{formatCurrencyAmount(feeValue0, 4, locale)}</Text>
                 </Flex>
               </Flex>
               <Flex justifyContent="flex-end" mb="8px">
@@ -507,9 +477,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
                   </Text>
                 </Flex>
                 <Flex>
-                  <Text small>
-                    <FormattedCurrencyAmount currencyAmount={feeValue1} />
-                  </Text>
+                  <Text small>{formatCurrencyAmount(feeValue1, 4, locale)}</Text>
                 </Flex>
               </Flex>
               <Flex justifyContent="flex-end" mb="8px">
@@ -537,7 +505,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
           {isStakedInMCv3 ? (
             <Message variant="primary" mb="20px">
               {t(
-                'This liquidity position is currently staking in the Farm. Adding or removing liquidity will also harvest any unclaimed CAKE to your wallet.',
+                'This liquidity position is currently staking in the Farm. Adding or removing liquidity will also harvest any unclaimed ICE to your wallet.',
               )}
             </Message>
           ) : null}
@@ -545,10 +513,7 @@ function Remove({ tokenId }: { tokenId?: bigint }) {
           <Button
             disabled={attemptingTxn || removed || Boolean(error)}
             width="100%"
-            onClick={() => {
-              onPresentRemoveLiquidityModal()
-              logGTMClickRemoveLiquidityEvent()
-            }}
+            onClick={onPresentRemoveLiquidityModal}
           >
             {removed ? t('Closed') : error ?? t('Remove')}
           </Button>

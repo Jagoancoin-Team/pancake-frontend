@@ -1,4 +1,3 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTranslation } from '@pancakeswap/localization'
 import {
   Box,
@@ -9,22 +8,20 @@ import {
   Flex,
   HelpIcon,
   Link,
+  Message,
+  MessageText,
   RocketIcon,
   Text,
   useMatchBreakpoints,
   useTooltip,
 } from '@pancakeswap/uikit'
 import ConnectWalletButton from 'components/ConnectWalletButton'
-import { CrossChainVeCakeModal } from 'components/CrossChainVeCakeModal'
-import { SwitchToBnbChainModal } from 'components/CrossChainVeCakeModal/components/SwitchToBnbCahinModal'
-import { useMultichainVeCakeWellSynced } from 'components/CrossChainVeCakeModal/hooks/useMultichainVeCakeWellSynced'
 import Image from 'next/legacy/image'
 import NextLink from 'next/link'
-import { useMemo, useState } from 'react'
 import { styled, useTheme } from 'styled-components'
 import { useAccount } from 'wagmi'
+import useBCakeProxyBalance from '../../../../hooks/useBCakeProxyBalance'
 import boosterCardImage from '../../../../images/boosterCardImage.png'
-import boosterCardImagePM from '../../../../images/boosterCardImagePM.png'
 import { useBCakeBoostLimitAndLockInfo } from '../../hooks/bCakeV3/useBCakeV3Info'
 
 export const CardWrapper = styled.div`
@@ -41,9 +38,13 @@ export const CardWrapper = styled.div`
 `
 export const ImageWrapper = styled.div`
   position: absolute;
+  top: -50px;
   transform: translateY(-50%) scale(75%);
-  right: auto;
+  right: 10px;
   ${({ theme }) => theme.mediaQueries.sm} {
+    right: auto;
+    top: 50%;
+    left: -70px;
     transform: translateY(-50%);
   }
   z-index: 2;
@@ -66,18 +67,33 @@ const StyledCardFooter = styled(CardFooter)`
   }
 `
 
+export const BCakeProxyCakeBalanceCard = () => {
+  const { t } = useTranslation()
+  const { bCakeProxyBalance, bCakeProxyDisplayBalance, isLoading } = useBCakeProxyBalance()
+  return !isLoading && bCakeProxyBalance > 0 ? (
+    <Message marginBottom="8px" variant="warning">
+      <MessageText>
+        {t(
+          'There is %amount% ICE in the proxy booster contract. In order to harvest that amount you should withdraw, deposit or harvest one of the boosted farms.',
+          { amount: bCakeProxyDisplayBalance },
+        )}
+      </MessageText>
+    </Message>
+  ) : null
+}
+
 export const useBCakeTooltipContent = () => {
   const { t } = useTranslation()
   const tooltipContent = (
     <>
       <Box mb="20px">
         {t(
-          'Yield Boosters allow you to boost your farming yields by locking CAKE in the veCAKE pool. The more CAKE you lock, and the longer you lock them, the higher the boost you will receive.',
+          'Yield Boosters allow you to boost your farming yields by locking ICE in the fixed-term staking ICE pool. The more ICE you lock, and the longer you lock them, the higher the boost you will receive.',
         )}
       </Box>
       <Box>
         {t('To learn more, check out the')}
-        <Link external href="https://medium.com/pancakeswap/introducing-bcake-farm-yield-boosters-b27b7a6f0f84">
+        <Link target="_blank" href="https://medium.com/pancakeswap/introducing-bcake-farm-yield-boosters-b27b7a6f0f84">
           {t('Medium Article')}
         </Link>
       </Box>
@@ -86,7 +102,7 @@ export const useBCakeTooltipContent = () => {
   return tooltipContent
 }
 
-export const BCakeBoosterCard: React.FC<{ variants?: 'farm' | 'pm' }> = ({ variants = 'farm' }) => {
+export const BCakeBoosterCard = () => {
   const { t } = useTranslation()
   const theme = useTheme()
   const { isMobile } = useMatchBreakpoints()
@@ -99,15 +115,6 @@ export const BCakeBoosterCard: React.FC<{ variants?: 'farm' | 'pm' }> = ({ varia
   })
   return (
     <CardWrapper>
-      <ImageWrapper style={{ left: variants === 'pm' ? -185 : isMobile ? -65 : -70, top: 105 }}>
-        <Image
-          src={variants === 'pm' ? boosterCardImagePM : boosterCardImage}
-          alt="booster-card-image"
-          width={variants === 'pm' ? 259 : 99}
-          height={variants === 'pm' ? 226 : 191}
-          placeholder="blur"
-        />
-      </ImageWrapper>
       <Card p="0px" style={{ zIndex: 1 }}>
         <StyledCardBody style={{ padding: '15px 24px' }}>
           <RocketIcon />
@@ -120,21 +127,19 @@ export const BCakeBoosterCard: React.FC<{ variants?: 'farm' | 'pm' }> = ({ varia
           </Box>
         </StyledCardBody>
         <StyledCardFooter>
-          <CardContent variants={variants} />
+          <BCakeProxyCakeBalanceCard />
+          <CardContent />
         </StyledCardFooter>
       </Card>
     </CardWrapper>
   )
 }
 
-const CardContent: React.FC<{ variants?: 'farm' | 'pm' }> = ({ variants }) => {
+const CardContent: React.FC = () => {
   const { t } = useTranslation()
-  const { address: account, chainId } = useAccount()
-  const { locked } = useBCakeBoostLimitAndLockInfo(ChainId.BSC)
-  const { isVeCakeWillSync } = useMultichainVeCakeWellSynced(chainId ?? -1)
+  const { address: account } = useAccount()
+  const { locked, isLockEnd, remainingCounts, maxBoostLimit } = useBCakeBoostLimitAndLockInfo()
   const theme = useTheme()
-  const [isOpen, setIsOpen] = useState(false)
-  const isBSC = useMemo(() => chainId === ChainId.BSC, [chainId])
 
   if (!account)
     return (
@@ -143,7 +148,7 @@ const CardContent: React.FC<{ variants?: 'farm' | 'pm' }> = ({ variants }) => {
           {t('Connect wallet to view booster')}
         </Text>
         <Text color="textSubtle" fontSize={12} mb="16px">
-          {t('An active veCAKE staking position is required for activating farm yield boosters.')}
+          {t('An active fixed-term ICE staking position is required for activating farm yield boosters.')}
         </Text>
         <ConnectWalletButton width="100%" style={{ backgroundColor: theme.colors.textSubtle }} />
       </Box>
@@ -152,60 +157,67 @@ const CardContent: React.FC<{ variants?: 'farm' | 'pm' }> = ({ variants }) => {
     return (
       <Box width="100%">
         <Text color="textSubtle" fontSize={12} bold>
-          {t('No CAKE locked')}
+          {t('No ICE locked')}
         </Text>
         <Text color="textSubtle" fontSize={12} mb="16px">
-          {t('An active veCAKE staking position is required for activating farm yield boosters.')}
+          {t('An active fixed-term ICE staking position is required for activating farm yield boosters.')}
         </Text>
-        <NextLink href="/cake-staking" passHref>
+        <NextLink href="/pools" passHref prefetch={false}>
           <Button width="100%" style={{ backgroundColor: theme.colors.textSubtle }}>
-            {t('Go to CAKE Staking')}
+            {t('Go to Pool')}
           </Button>
         </NextLink>
       </Box>
     )
+  if (isLockEnd)
+    return (
+      <Box>
+        <Text color="textSubtle" fontSize={12} bold>
+          {t('Locked staking is ended')}
+        </Text>
+        <Text color="textSubtle" fontSize={12} mb="16px">
+          {t('An active fixed-term ICE staking position is required for activating farm yield boosters.')}
+        </Text>
+        <NextLink href="/pools" passHref prefetch={false}>
+          <Button width="100%" style={{ backgroundColor: theme.colors.textSubtle }}>
+            {t('Go to Pool')}
+          </Button>
+        </NextLink>
+      </Box>
+    )
+  if (remainingCounts > 0)
+    return (
+      <Box>
+        <Flex justifyContent="space-between" alignItems="center" mb="5px">
+          <Text color="secondary" fontSize={12} bold textTransform="uppercase">
+            {t('Available Yield Booster')}
+          </Text>
+          <Text color="secondary" fontSize={16} bold textTransform="uppercase">
+            {remainingCounts}/{maxBoostLimit}
+          </Text>
+        </Flex>
 
+        <Text color="textSubtle" fontSize={12}>
+          {t('You will be able to activate the yield booster on an additional %num% farm(s).', {
+            num: remainingCounts,
+          })}
+        </Text>
+      </Box>
+    )
   return (
     <Box>
       <Flex justifyContent="space-between">
         <Text color="secondary" fontSize={12} bold textTransform="uppercase">
-          {isVeCakeWillSync ? t('Yield booster active') : t('veCAKE Not Synced')}
+          {t('Available Yield Booster')}
+        </Text>
+        <Text color="secondary" fontSize={12} bold textTransform="uppercase">
+          0
         </Text>
       </Flex>
-      <Text color="textSubtle" fontSize={12} mb="10px">
-        {isBSC
-          ? variants === 'pm'
-            ? t(
-                'Boost the token rewards from unlimited number of Position Managers. Boost will be applied when staking. Lock more CAKE or extend your lock to receive a higher boost.',
-              )
-            : t(
-                'Boost your CAKE rewards from V3, V2 and StableSwap farms. Boost will be applied when staking. Lock more CAKE or extend your lock to receive a higher boost.',
-              )
-          : isVeCakeWillSync
-          ? t('Boost unlimited number of positions on all V3 Farms. Boost will be applied when staking.')
-          : t('You need to sync your veCAKE to the current network to activate farm yield boosters.')}
+
+      <Text color="textSubtle" fontSize={12}>
+        {t('To activate yield boosters on additional farms, unset yield boosters on some currently boosted farms.')}
       </Text>
-      {!isBSC && isVeCakeWillSync && (
-        <Text fontSize={12} mb="10px" color="textSubtle">
-          {t(
-            'You will need to re-sync your veCAKE after extending or adding more CAKE to your veCAKE staking position.',
-          )}
-        </Text>
-      )}
-      <Button width="100%" style={{ backgroundColor: theme.colors.textSubtle }} onClick={() => setIsOpen(true)}>
-        {t('Sync veCAKE')}
-      </Button>
-      {isBSC ? (
-        <CrossChainVeCakeModal
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
-          onDismiss={() => {
-            setIsOpen(false)
-          }}
-        />
-      ) : (
-        <SwitchToBnbChainModal isOpen={isOpen} onDismiss={() => setIsOpen(false)} />
-      )}
     </Box>
   )
 }

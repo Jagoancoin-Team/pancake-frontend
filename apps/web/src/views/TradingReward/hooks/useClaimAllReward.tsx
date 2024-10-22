@@ -1,8 +1,9 @@
 import { useCallback } from 'react'
 import BigNumber from 'bignumber.js'
+import { useSWRConfig } from 'swr'
 import { parseEther, encodePacked, keccak256 } from 'viem'
 import { useAccount } from 'wagmi'
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 import { useToast } from '@pancakeswap/uikit'
 import useCatchTxError from 'hooks/useCatchTxError'
 import { useTranslation } from '@pancakeswap/localization'
@@ -11,7 +12,6 @@ import { useTradingRewardContract, useTradingRewardTopTraderContract } from 'hoo
 import { ToastDescriptionWithTx } from 'components/Toast'
 import { TRADING_REWARD_API } from 'config/constants/endpoints'
 import { Qualification, RewardType } from 'views/TradingReward/hooks/useAllTradingRewardPair'
-import { useQueryClient } from '@tanstack/react-query'
 
 interface UseClaimAllRewardProps {
   campaignIds: Array<string>
@@ -24,7 +24,7 @@ export const useClaimAllReward = ({ campaignIds, unclaimData, qualification, typ
   const { t } = useTranslation()
   const { address: account } = useAccount()
   const { toastSuccess } = useToast()
-  const queryClient = useQueryClient()
+  const { mutate } = useSWRConfig()
   const { fetchWithCatchTxError, loading: isPending } = useCatchTxError()
   const tradingRewardContract = useTradingRewardContract({ chainId: ChainId.BSC })
   const tradingRewardTopTradersContract = useTradingRewardTopTraderContract({ chainId: ChainId.BSC })
@@ -43,7 +43,7 @@ export const useClaimAllReward = ({ campaignIds, unclaimData, qualification, typ
         const isQualification = new BigNumber(i.totalTradingFee).gt(new BigNumber(qualification.minAmountUSD).div(1e18))
         const totalFee = isQualification ? i.totalTradingFee.toFixed(8) : i.totalTradingFee.toString()
         const value = parseEther(totalFee as `${number}`)
-        const originHash = keccak256(keccak256(encodePacked(['address', 'uint256'], [account || '0x', value])))
+        const originHash = keccak256(keccak256(encodePacked(['address', 'uint256'], [account, value])))
 
         const response = await fetch(
           `${TRADING_REWARD_API}/hash/campaignId/${i.campaignId}/originHash/${originHash}/type/${type}`,
@@ -55,15 +55,13 @@ export const useClaimAllReward = ({ campaignIds, unclaimData, qualification, typ
 
     const receipt = await fetchWithCatchTxError(() =>
       contract.write.claimRewardMulti([claimCampaignIds, merkleProofs, tradingFee], {
-        account: contract.account || '0x',
+        account: contract.account,
         chain: contract.chain,
       }),
     )
 
     if (receipt?.status) {
-      await queryClient.invalidateQueries({
-        queryKey: ['tradingReward', 'all-campaign-id-info', account, campaignIds],
-      })
+      await mutate(['/all-campaign-id-info', account, campaignIds])
       toastSuccess(
         t('Success!'),
         <ToastDescriptionWithTx txHash={receipt.transactionHash}>
@@ -77,7 +75,7 @@ export const useClaimAllReward = ({ campaignIds, unclaimData, qualification, typ
     campaignIds,
     contract,
     fetchWithCatchTxError,
-    queryClient,
+    mutate,
     qualification.minAmountUSD,
     t,
     toastSuccess,

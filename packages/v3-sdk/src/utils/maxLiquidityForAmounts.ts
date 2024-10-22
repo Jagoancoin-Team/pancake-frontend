@@ -14,7 +14,8 @@ import { Q96 } from '../internalConstants'
  */
 function maxLiquidityForAmount0Imprecise(sqrtRatioAX96: bigint, sqrtRatioBX96: bigint, amount0: BigintIsh): bigint {
   if (sqrtRatioAX96 > sqrtRatioBX96) {
-    ;[sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96]
+    sqrtRatioAX96 = sqrtRatioBX96
+    sqrtRatioBX96 = sqrtRatioAX96
   }
   const intermediate = (sqrtRatioAX96 * sqrtRatioBX96) / Q96
   return (BigInt(amount0) * intermediate) / (sqrtRatioBX96 - sqrtRatioAX96)
@@ -30,7 +31,8 @@ function maxLiquidityForAmount0Imprecise(sqrtRatioAX96: bigint, sqrtRatioBX96: b
  */
 function maxLiquidityForAmount0Precise(sqrtRatioAX96: bigint, sqrtRatioBX96: bigint, amount0: BigintIsh): bigint {
   if (sqrtRatioAX96 > sqrtRatioBX96) {
-    ;[sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96]
+    sqrtRatioAX96 = sqrtRatioBX96
+    sqrtRatioBX96 = sqrtRatioAX96
   }
 
   const numerator = BigInt(amount0) * sqrtRatioAX96 * sqrtRatioBX96
@@ -48,7 +50,8 @@ function maxLiquidityForAmount0Precise(sqrtRatioAX96: bigint, sqrtRatioBX96: big
  */
 function maxLiquidityForAmount1(sqrtRatioAX96: bigint, sqrtRatioBX96: bigint, amount1: BigintIsh): bigint {
   if (sqrtRatioAX96 > sqrtRatioBX96) {
-    ;[sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96]
+    sqrtRatioAX96 = sqrtRatioBX96
+    sqrtRatioBX96 = sqrtRatioAX96
   }
   return (BigInt(amount1) * Q96) / (sqrtRatioBX96 - sqrtRatioAX96)
 }
@@ -73,7 +76,8 @@ export function maxLiquidityForAmounts(
   useFullPrecision: boolean
 ): bigint {
   if (sqrtRatioAX96 > sqrtRatioBX96) {
-    ;[sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96]
+    sqrtRatioAX96 = sqrtRatioBX96
+    sqrtRatioBX96 = sqrtRatioAX96
   }
 
   const maxLiquidityForAmount0 = useFullPrecision ? maxLiquidityForAmount0Precise : maxLiquidityForAmount0Imprecise

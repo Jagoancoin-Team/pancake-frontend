@@ -1,20 +1,20 @@
-import { ChainId } from '@pancakeswap/chains'
-import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
 import BigNumber from 'bignumber.js'
-import chunk from 'lodash/chunk'
 import fromPairs from 'lodash/fromPairs'
-import { erc20Abi } from 'viem'
+import chunk from 'lodash/chunk'
+import { BIG_ZERO } from '@pancakeswap/utils/bigNumber'
+import { ChainId } from '@pancakeswap/sdk'
+import { erc20ABI } from 'wagmi'
 
-import { smartChefABI } from '../abis/ISmartChef'
+import { blockTime, getPoolsConfig } from '../constants'
 import { sousChefABI } from '../abis/ISousChef'
 import { sousChefV2ABI } from '../abis/ISousChefV2'
+import { smartChefABI } from '../abis/ISmartChef'
 import { sousChefV3ABI } from '../abis/ISousChefV3'
-import { BSC_BLOCK_TIME, getPoolsConfig } from '../constants'
 import { LegacySerializedPool, OnChainProvider, UpgradedSerializedPool } from '../types'
 import { isLegacyPool, isUpgradedPool } from '../utils'
 
 const getLivePoolsWithEnd = async (chainId: ChainId) => {
-  const poolsConfig = await getPoolsConfig(chainId)
+  const poolsConfig = getPoolsConfig(chainId)
   if (!poolsConfig) {
     return null
   }
@@ -121,7 +121,7 @@ const fetchLegacyPoolsBlockLimits = async (
   }, [])
 
   const getTimestampFromBlock = (targetBlock: number) => {
-    return Number(block.timestamp) + (targetBlock - Number(block.number)) * BSC_BLOCK_TIME
+    return Number(block.timestamp) + (targetBlock - Number(block.number)) * blockTime(chainId)
   }
   return pools.map((cakePoolConfig, index) => {
     const [startBlock, endBlock] = startEndBlockResult[index]
@@ -148,13 +148,13 @@ export const fetchPoolsTimeLimits = async (chainId: ChainId, provider: OnChainPr
 }
 
 export const fetchPoolsTotalStaking = async (chainId: ChainId, provider: OnChainProvider) => {
-  const poolsConfig = await getPoolsConfig(chainId)
+  const poolsConfig = getPoolsConfig(chainId)
   if (!poolsConfig) {
     return null
   }
   const poolsBalanceOf = poolsConfig.map(({ contractAddress, stakingToken }) => {
     return {
-      abi: erc20Abi,
+      abi: erc20ABI,
       address: stakingToken.address,
       functionName: 'balanceOf',
       args: [contractAddress],
@@ -186,7 +186,7 @@ export const fetchPoolsStakingLimitsByBlock = async ({
 }: FetchingPoolsStakingLimitsParams): Promise<{
   [key: string]: { stakingLimit: BigNumber; numberSecondsForUserLimit: number }
 }> => {
-  const poolsConfig = await getPoolsConfig(chainId)
+  const poolsConfig = getPoolsConfig(chainId)
   if (!poolsConfig) {
     throw new Error(`No pools found on chain ${chainId}`)
   }
@@ -225,7 +225,7 @@ export const fetchPoolsStakingLimitsByBlock = async ({
       const stakingLimit =
         hasUserLimit && stakingLimitRaw[1].result ? new BigNumber(stakingLimitRaw[1].result.toString()) : BIG_ZERO
       const numberBlocksForUserLimit = stakingLimitRaw[2].result ? Number(stakingLimitRaw[2].result) : 0
-      const numberSecondsForUserLimit = numberBlocksForUserLimit * BSC_BLOCK_TIME
+      const numberSecondsForUserLimit = numberBlocksForUserLimit * blockTime(chainId)
       return [validPools[index].sousId, { stakingLimit, numberSecondsForUserLimit }]
     }),
   )
@@ -238,7 +238,7 @@ const fetchPoolsStakingLimitsByTime = async ({
 }: FetchingPoolsStakingLimitsParams): Promise<{
   [key: string]: { stakingLimit: BigNumber; numberSecondsForUserLimit: number }
 }> => {
-  const poolsConfig = await getPoolsConfig(chainId)
+  const poolsConfig = getPoolsConfig(chainId)
   if (!poolsConfig) {
     throw new Error(`No pools found on chain ${chainId}`)
   }
@@ -304,7 +304,7 @@ export const fetchPoolsProfileRequirement = async (
     thresholdPoints: string
   }
 }> => {
-  const poolsConfig = await getPoolsConfig(chainId)
+  const poolsConfig = getPoolsConfig(chainId)
   if (!poolsConfig) {
     throw new Error(`No pools found on chain ${chainId}`)
   }

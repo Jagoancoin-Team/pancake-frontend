@@ -1,8 +1,7 @@
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId } from '@pancakeswap/sdk'
 import { enumValues } from '@pancakeswap/utils/enumValues'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
-import { useMemo } from 'react'
 
 type TokenAndPoolList = Record<ChainId, Record<'tokens' | 'pools', string[]>>
 
@@ -21,9 +20,6 @@ const defaultTokenAndPoolList = createDefaultTokenAndPoolList()
 
 const tokensAtom = atomWithStorage('pcs:infoSavedTOkensAndPools', defaultTokenAndPoolList)
 
-/**
- * @deprecated
- */
 const useInfoUserSavedTokensAndPools = (chainId: ChainId) => {
   const [lists, setLists] = useAtom(tokensAtom)
 
@@ -32,7 +28,7 @@ const useInfoUserSavedTokensAndPools = (chainId: ChainId) => {
       ...lists,
       [chainId]: {
         ...lists[chainId],
-        tokens: new Set([newToken.toLowerCase(), ...lists[chainId].tokens]),
+        tokens: [newToken, ...lists[chainId].tokens],
       },
     })
   }
@@ -42,7 +38,7 @@ const useInfoUserSavedTokensAndPools = (chainId: ChainId) => {
       ...lists,
       [chainId]: {
         ...lists[chainId],
-        tokens: lists[chainId].tokens.filter((t) => t !== token.toLowerCase()),
+        tokens: lists[chainId].tokens.filter((t) => t !== token),
       },
     }))
   }
@@ -52,7 +48,7 @@ const useInfoUserSavedTokensAndPools = (chainId: ChainId) => {
       ...lists,
       [chainId]: {
         ...lists[chainId],
-        pools: [...new Set([newPool.toLowerCase(), ...lists[chainId].pools])],
+        pools: [newPool, ...lists[chainId].pools],
       },
     })
   }
@@ -62,16 +58,16 @@ const useInfoUserSavedTokensAndPools = (chainId: ChainId) => {
       ...lists,
       [chainId]: {
         ...lists[chainId],
-        pools: lists[chainId].pools.filter((p) => p !== pool.toLowerCase()),
+        pools: lists[chainId].pools.filter((p) => p !== pool),
       },
     }))
   }
 
   return {
-    savedTokens: useMemo(() => [...new Set(lists[chainId]?.tokens ?? [])], [lists, chainId]),
+    savedTokens: lists[chainId]?.tokens ?? [],
     addToken,
     removeToken,
-    savedPools: useMemo(() => [...new Set(lists[chainId]?.pools ?? [])], [lists, chainId]),
+    savedPools: lists[chainId]?.pools ?? [],
     addPool,
     removePool,
   }

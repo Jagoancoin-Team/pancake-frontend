@@ -1,7 +1,7 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useQuery } from '@tanstack/react-query'
+import useSWR from 'swr'
 import BigNumber from 'bignumber.js'
 import { TRADING_REWARD_API } from 'config/constants/endpoints'
+import { ChainId } from '@pancakeswap/sdk'
 import { RewardType } from 'views/TradingReward/hooks/useAllTradingRewardPair'
 
 export interface CampaignVolume {
@@ -11,7 +11,6 @@ export interface CampaignVolume {
   tradingFee: string
   maxCap: number
   chainId: ChainId
-  preCap: number
 }
 
 export interface CampaignIdInfoResponse {
@@ -46,10 +45,9 @@ interface UseCampaignIdInfoProps {
 }
 
 const useCampaignIdInfo = ({ campaignId, type }: UseCampaignIdInfoProps): CampaignIdInfo => {
-  const { data: campaignIdInfo, isPending } = useQuery({
-    queryKey: ['tradingReward', 'campaign-id-info', campaignId, type],
-
-    queryFn: async () => {
+  const { data: campaignIdInfo, isLoading } = useSWR(
+    campaignId && type && ['/campaign-id-info', campaignId, type],
+    async () => {
       try {
         const response = await fetch(`${TRADING_REWARD_API}/campaign/campaignId/${campaignId}/address/0x/type/${type}`)
         const { data }: { data: CampaignIdInfoResponse } = await response.json()
@@ -77,15 +75,17 @@ const useCampaignIdInfo = ({ campaignId, type }: UseCampaignIdInfoProps): Campai
         return initialState
       }
     },
-
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    initialData: initialState,
-    enabled: Boolean(campaignId && type),
-  })
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
+      fallbackData: initialState,
+    },
+  )
 
   return {
-    isFetching: isPending,
+    isFetching: isLoading,
     data: campaignIdInfo,
   }
 }

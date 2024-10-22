@@ -1,12 +1,12 @@
-import { ChainId } from '@pancakeswap/chains'
-import { Account, Address, Chain, GetContractReturnType, PublicClient, WalletClient, getContract } from 'viem'
+import { ChainId } from '@pancakeswap/sdk'
+import { WalletClient, getContract, PublicClient, Address, GetContractReturnType, Account, Chain } from 'viem'
 
-import { smartChefABI } from '../abis/ISmartChef'
-import { sousChefBnbABI } from '../abis/ISousChefBNB'
-import { sousChefV2ABI } from '../abis/ISousChefV2'
 import { getPoolsConfig } from '../constants'
-import { PoolCategory } from '../types'
 import { isLegacyPool } from './isLegacyPool'
+import { smartChefABI } from '../abis/ISmartChef'
+import { PoolCategory } from '../types'
+import { sousChefV2ABI } from '../abis/ISousChefV2'
+import { sousChefBnbABI } from '../abis/ISousChefBNB'
 
 interface Params {
   chainId?: ChainId
@@ -35,10 +35,8 @@ export function getSousChefBNBContract({
     ...getContract({
       abi: sousChefBnbABI,
       address,
-      client: {
-        public: publicClient as PublicClient,
-        wallet: signer,
-      },
+      walletClient: signer,
+      publicClient,
     }),
     abi: sousChefBnbABI,
     address,
@@ -60,10 +58,8 @@ export function getSousChefV2Contract({
     ...getContract({
       abi: sousChefV2ABI,
       address,
-      client: {
-        public: publicClient as PublicClient,
-        wallet: signer,
-      },
+      walletClient: signer,
+      publicClient,
     }),
     abi: sousChefV2ABI,
     address,
@@ -85,10 +81,8 @@ export function getSmartChefChefV2Contract({
     ...getContract({
       abi: smartChefABI,
       address,
-      client: {
-        public: publicClient as PublicClient,
-        wallet: signer,
-      },
+      walletClient: signer,
+      publicClient,
     }),
     abi: smartChefABI,
     address,
@@ -97,18 +91,18 @@ export function getSmartChefChefV2Contract({
   }
 }
 
-export async function getPoolContractBySousId({ chainId, sousId, signer, publicClient }: Params): Promise<any | null> {
+export function getPoolContractBySousId({ chainId, sousId, signer, publicClient }: Params): any | null {
   if (!chainId) {
     return null
   }
-  const pools = await getPoolsConfig(chainId)
+  const pools = getPoolsConfig(chainId)
   const pool = pools?.find((p) => p.sousId === Number(sousId))
   if (!pool) {
     return null
   }
   const { contractAddress } = pool
   if (isLegacyPool(pool)) {
-    if (pool.poolCategory === PoolCategory.BINANCE) {
+    if (pool.poolCategory === PoolCategory.BINANCE || pool.poolCategory === PoolCategory.BINANCE_AUTO) {
       return getSousChefBNBContract({ address: contractAddress, signer, publicClient })
     }
     return getSousChefV2Contract({ address: contractAddress, signer, publicClient })

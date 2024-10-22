@@ -1,26 +1,26 @@
 import { Currency, CurrencyAmount, Percent, Token } from '@pancakeswap/sdk'
 
 import { useTranslation } from '@pancakeswap/localization'
-import { useQuery } from '@tanstack/react-query'
-import { useInfoStableSwapContract } from 'hooks/useContract'
-import { useContext, useMemo } from 'react'
 import { Field } from 'state/burn/actions'
-import { useRemoveLiquidityV2FormState } from 'state/burn/reducer'
 import { useTokenBalances } from 'state/wallet/hooks'
-import { Address } from 'viem'
 import { StablePair, useStablePair } from 'views/AddLiquidity/AddStableLiquidity/hooks/useStableLPDerivedMintInfo'
 import { StableConfigContext } from 'views/Swap/hooks/useStableConfig'
+import useSWR from 'swr'
+import { useContext, useMemo } from 'react'
 import { useAccount } from 'wagmi'
+import { Address } from 'viem'
+import { useInfoStableSwapContract } from 'hooks/useContract'
+import { useRemoveLiquidityV2FormState } from 'state/burn/reducer'
 
-export function useGetRemovedTokenAmounts({ lpAmount }: { lpAmount?: string }) {
-  const stableConfigContext = useContext(StableConfigContext)
+export function useGetRemovedTokenAmounts({ lpAmount }: { lpAmount: string }) {
+  const { stableSwapInfoContract, stableSwapConfig } = useContext(StableConfigContext)
 
   return useGetRemovedTokenAmountsNoContext({
-    stableSwapInfoContract: stableConfigContext?.stableSwapInfoContract,
-    stableSwapAddress: stableConfigContext?.stableSwapConfig?.stableSwapAddress,
+    stableSwapInfoContract,
+    stableSwapAddress: stableSwapConfig?.stableSwapAddress,
     lpAmount,
-    token0: stableConfigContext?.stableSwapConfig?.token0.wrapped,
-    token1: stableConfigContext?.stableSwapConfig?.token1.wrapped,
+    token0: stableSwapConfig?.token0.wrapped,
+    token1: stableSwapConfig?.token1.wrapped,
   })
 }
 
@@ -31,24 +31,20 @@ export function useGetRemovedTokenAmountsNoContext({
   token1,
   stableSwapInfoContract,
 }: {
-  lpAmount?: string
-  stableSwapAddress?: string
-  token0?: Token
-  token1?: Token
-  stableSwapInfoContract?: ReturnType<typeof useInfoStableSwapContract>
+  lpAmount: string
+  stableSwapAddress: string
+  token0: Token
+  token1: Token
+  stableSwapInfoContract: ReturnType<typeof useInfoStableSwapContract>
 }) {
-  const { data } = useQuery({
-    queryKey: ['stableSwapInfoContract', 'calc_coins_amount', stableSwapAddress, lpAmount],
-
-    queryFn: async () => {
-      if (!stableSwapInfoContract || !lpAmount) return undefined
+  const { data } = useSWR(
+    !lpAmount ? null : ['stableSwapInfoContract', 'calc_coins_amount', stableSwapAddress, lpAmount],
+    async () => {
       return stableSwapInfoContract.read.calc_coins_amount([stableSwapAddress as Address, BigInt(lpAmount)])
     },
+  )
 
-    enabled: Boolean(lpAmount),
-  })
-
-  if (!Array.isArray(data) || !token0 || !token1) return []
+  if (!Array.isArray(data)) return []
 
   const tokenAAmount = CurrencyAmount.fromRawAmount(token0, data[0].toString())
   const tokenBAmount = CurrencyAmount.fromRawAmount(token1, data[1].toString())
@@ -82,7 +78,7 @@ export function useStableDerivedBurnInfo(
   // balances
   const relevantTokenBalances = useTokenBalances(
     account ?? undefined,
-    useMemo(() => [pair?.liquidityToken || undefined], [pair?.liquidityToken]),
+    useMemo(() => [pair?.liquidityToken], [pair?.liquidityToken]),
   )
   const userLiquidity: undefined | CurrencyAmount<Token> = relevantTokenBalances?.[pair?.liquidityToken?.address ?? '']
 

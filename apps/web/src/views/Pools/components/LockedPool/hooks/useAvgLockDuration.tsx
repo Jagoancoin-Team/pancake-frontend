@@ -7,26 +7,23 @@ import { getFullDecimalMultiplier } from '@pancakeswap/utils/getFullDecimalMulti
 import { DEFAULT_TOKEN_DECIMAL } from 'config'
 import formatSecondsToWeeks, { secondsToWeeks } from '../../utils/formatSecondsToWeeks'
 
-const ZERO = new BigNumber(0)
-const ONE = new BigNumber(1)
-
 export default function useAvgLockDuration() {
   const { totalLockedAmount, totalShares, totalCakeInVault, pricePerFullShare } = useCakeVault()
 
   const avgLockDurationsInSeconds = useMemo(() => {
-    const flexibleCakeAmount = totalCakeInVault?.minus(totalLockedAmount || ZERO)
-    const flexibleCakeShares = flexibleCakeAmount?.div(pricePerFullShare || ONE).times(DEFAULT_TOKEN_DECIMAL)
-    const lockedCakeBoostedShares = totalShares?.minus(flexibleCakeShares || ZERO)
-    const lockedCakeOriginalShares = totalLockedAmount?.div(pricePerFullShare || ONE).times(DEFAULT_TOKEN_DECIMAL)
-    const avgBoostRatio = lockedCakeBoostedShares?.div(lockedCakeOriginalShares || ONE)
+    const flexibleCakeAmount = totalCakeInVault.minus(totalLockedAmount)
+    const flexibleCakeShares = flexibleCakeAmount.div(pricePerFullShare).times(DEFAULT_TOKEN_DECIMAL)
+    const lockedCakeBoostedShares = totalShares.minus(flexibleCakeShares)
+    const lockedCakeOriginalShares = totalLockedAmount.div(pricePerFullShare).times(DEFAULT_TOKEN_DECIMAL)
+    const avgBoostRatio = lockedCakeBoostedShares.div(lockedCakeOriginalShares)
 
     return (
       Math.round(
         avgBoostRatio
-          ?.minus(1)
+          .minus(1)
           .times(new BigNumber(DURATION_FACTOR.toString()))
           .div(new BigNumber(BOOST_WEIGHT.toString()).div(getFullDecimalMultiplier(12)))
-          .toNumber() ?? 0,
+          .toNumber(),
       ) || 0
     )
   }, [totalCakeInVault, totalLockedAmount, pricePerFullShare, totalShares])

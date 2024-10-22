@@ -1,12 +1,14 @@
 import { gql } from 'graphql-request'
-import union from 'lodash/union'
+import { useCallback, useState, useEffect } from 'react'
 import { getDeltaTimestamps } from 'utils/getDeltaTimestamps'
+import union from 'lodash/union'
+import { useGetChainName } from '../../hooks'
 import {
-  MultiChainNameExtend,
-  checkIsStableSwap,
   getMultiChainQueryEndPointWithStableSwap,
+  checkIsStableSwap,
   multiChainTokenBlackList,
   multiChainTokenWhiteList,
+  MultiChainNameExtend,
 } from '../../constant'
 
 interface TopTokensResponse {
@@ -28,9 +30,7 @@ interface StableSwapTopTokensResponse {
  */
 const fetchTopTokens = async (chainName: MultiChainNameExtend, timestamp24hAgo: number): Promise<string[]> => {
   const whereCondition =
-    chainName === 'ETH'
-      ? `where: { date_gt: ${timestamp24hAgo}, token_not_in: $blacklist, dailyVolumeUSD_gt:2000 }`
-      : checkIsStableSwap()
+    checkIsStableSwap()
       ? ''
       : `where: { id_not_in: $blacklist, date_gt: ${timestamp24hAgo}}`
   const firstCount = 50
@@ -85,10 +85,30 @@ const fetchTopTokens = async (chainName: MultiChainNameExtend, timestamp24hAgo: 
   }
 }
 
+/**
+ * Fetch top addresses by volume
+ */
+const useTopTokenAddresses = (): string[] => {
+  const [topTokenAddresses, setTopTokenAddresses] = useState([])
+  const [timestamp24hAgo] = getDeltaTimestamps()
+  const chainName = useGetChainName()
+
+  const fetch = useCallback(async () => {
+    const addresses = await fetchTopTokens(chainName, timestamp24hAgo)
+    if (addresses.length > 0) setTopTokenAddresses(addresses)
+  }, [timestamp24hAgo, chainName])
+
+  useEffect(() => {
+    fetch()
+  }, [chainName, fetch])
+
+  return topTokenAddresses
+}
+
 export const fetchTokenAddresses = async (chainName: MultiChainNameExtend) => {
   const [timestamp24hAgo] = getDeltaTimestamps()
 
-  const addresses = await fetchTopTokens(chainName, timestamp24hAgo)
-
-  return addresses
+  return fetchTopTokens(chainName, timestamp24hAgo)
 }
+
+export default useTopTokenAddresses

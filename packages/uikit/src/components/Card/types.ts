@@ -1,7 +1,6 @@
 import { HTMLAttributes } from "react";
 import { SpaceProps } from "styled-system";
 import { Colors } from "../../theme/types";
-import { BoxProps } from "../Box/types";
 
 export interface CardRibbonProps extends SpaceProps, HTMLAttributes<HTMLDivElement> {
   variantColor?: keyof Colors;
@@ -20,7 +19,6 @@ export type CardTheme = {
     blue: string;
     bubblegum: string;
     violet: string;
-    pale: string;
   };
   dropShadow: string;
 };
@@ -33,5 +31,4 @@ export interface CardProps extends SpaceProps, HTMLAttributes<HTMLDivElement> {
   ribbon?: React.ReactNode;
   borderBackground?: string;
   background?: string;
-  innerCardProps?: BoxProps;
 }

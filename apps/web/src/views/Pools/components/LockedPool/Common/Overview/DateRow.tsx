@@ -1,20 +1,17 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { Text, Flex, TooltipText, useTooltip } from '@pancakeswap/uikit'
-import dayjs from 'dayjs'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
-
-dayjs.extend(advancedFormat)
+import { format } from 'date-fns'
 
 interface PropsType {
   title: React.ReactNode
-  value?: Date
+  value: Date
   color: string
 }
 
 const DateRow: React.FC<React.PropsWithChildren<PropsType>> = ({ title, value, color }) => {
   const { t } = useTranslation()
   const tooltipContent = t(
-    'You will be able to withdraw the staked CAKE and profit only when the staking position is unlocked, i.e. when the staking period ends.',
+    'You will be able to withdraw the staked ICE and profit only when the staking position is unlocked, i.e. when the staking period ends.',
   )
   const { targetRef, tooltip, tooltipVisible } = useTooltip(tooltipContent, { placement: 'bottom-start' })
 
@@ -27,7 +24,7 @@ const DateRow: React.FC<React.PropsWithChildren<PropsType>> = ({ title, value, c
         </Text>
       </TooltipText>
       <Text bold color={color}>
-        {value ? dayjs(value).format('MMM Do, YYYY HH:mm') : '-'}
+        {value ? format(value, 'MMM do, yyyy HH:mm') : '-'}
       </Text>
     </Flex>
   )

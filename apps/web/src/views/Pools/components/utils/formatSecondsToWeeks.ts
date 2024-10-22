@@ -1,27 +1,24 @@
-import dayjs from 'dayjs'
-import duration from 'dayjs/plugin/duration'
-import relativeTime from 'dayjs/plugin/relativeTime'
-
-dayjs.extend(duration)
-dayjs.extend(relativeTime)
+import formatDuration from 'date-fns/formatDuration'
+import differenceInWeeks from 'date-fns/differenceInWeeks'
+import differenceInDays from 'date-fns/differenceInDays'
+import addSeconds from 'date-fns/addSeconds'
 
 export const secondsToWeeks = (seconds) => {
-  const now = dayjs()
-  const addedDate = now.add(seconds, 'seconds')
+  const now = new Date()
+  const addedDate = addSeconds(now, seconds)
 
-  return Math.round(addedDate.diff(now, 'weeks', true))
+  return differenceInWeeks(new Date(addedDate), now, { roundingMethod: 'round' })
 }
 
 export const secondsToDays = (seconds) => {
-  const now = dayjs()
-  const addedDate = now.add(seconds, 'seconds')
+  const now = new Date()
+  const addedDate = addSeconds(now, seconds)
 
-  return addedDate.diff(now, 'days')
+  return differenceInDays(new Date(addedDate), now)
 }
 
 export const weeksToSeconds = (weeks) => weeks * 7 * 24 * 60 * 60
 
-const formatSecondsToWeeks = (secondDuration) =>
-  `${dayjs.duration(secondsToWeeks(secondDuration), 'weeks').asWeeks()} weeks`
+const formatSecondsToWeeks = (secondDuration) => formatDuration({ weeks: secondsToWeeks(secondDuration) })
 
 export default formatSecondsToWeeks

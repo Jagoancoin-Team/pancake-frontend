@@ -1,6 +1,6 @@
-import { expect, it, vi } from "vitest";
-import Checkbox from "../../components/Checkbox/Checkbox";
+import { vi } from "vitest";
 import { renderWithProvider } from "../../testHelpers";
+import Checkbox from "../../components/Checkbox/Checkbox";
 
 const handleChange = vi.fn();
 
@@ -16,28 +16,12 @@ it("renders correctly", () => {
       display: inline-block;
       height: 32px;
       width: 32px;
-      min-height: 32px;
-      min-width: 32px;
       vertical-align: middle;
       transition: background-color 0.2s ease-in-out;
       border: 0;
       border-radius: 8px;
       background-color: var(--colors-cardBorder);
       box-shadow: var(--shadows-inset);
-    }
-
-    .c0:before {
-      content: "";
-      position: absolute;
-      border-top: 2px solid;
-      border-color: transparent;
-      top: 50%;
-      left: 50%;
-      width: 33%;
-      height: 0;
-      margin: auto;
-      transform: translate(-50%, -50%);
-      transition: border-color 0.2s ease-in-out;
     }
 
     .c0:after {
@@ -81,6 +65,7 @@ it("renders correctly", () => {
     }
 
     <input
+        checked=""
         class="c0"
         scale="md"
         type="checkbox"

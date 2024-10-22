@@ -1,6 +1,6 @@
 import { styled } from "styled-components";
 import { useMemo } from "react";
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { useTranslation } from "@pancakeswap/localization";
 import { Flex } from "../../components/Box";
 import { Text } from "../../components/Text";
@@ -52,7 +52,7 @@ const IfoVestingFooter: React.FC<React.PropsWithChildren<IfoVestingFooterProps>>
   const releaseDate = useMemo(() => {
     const currentTimeStamp = getNow();
     const date = vestingStartTime === 0 ? currentTimeStamp : ((vestingStartTime || 0) + duration) * 1000;
-    return dayjs(date).format("MM/DD/YYYY HH:mm");
+    return format(date, "MM/dd/yyyy HH:mm");
   }, [vestingStartTime, duration, getNow]);
 
   return (

@@ -1,12 +1,11 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useHttpLocations } from '@pancakeswap/hooks'
-import { Currency } from '@pancakeswap/sdk'
-import { WrappedTokenInfo } from '@pancakeswap/token-lists'
+import { ChainId, Currency } from '@pancakeswap/sdk'
 import { BinanceIcon, TokenLogo } from '@pancakeswap/uikit'
-import { ASSET_CDN } from 'config/constants/endpoints'
 import { useMemo } from 'react'
+import { WrappedTokenInfo } from '@pancakeswap/token-lists'
 import { styled } from 'styled-components'
+import { useHttpLocations } from '@pancakeswap/hooks'
 import getTokenLogoURL from '../../utils/getTokenLogoURL'
+import chainName from 'config/constants/chainName'
 
 const StyledLogo = styled(TokenLogo)<{ size: string }>`
   width: ${({ size }) => size};
@@ -24,7 +23,7 @@ export function FiatLogo({ currency, size = '24px', style }: LogoProps) {
   return (
     <StyledLogo
       size={size}
-      srcs={[`${ASSET_CDN}/web/onramp/currencies/${currency?.symbol?.toLowerCase()}.png`]}
+      srcs={[`/images/currencies/${currency?.symbol?.toLowerCase()}.png`]}
       width={size}
       style={style}
     />
@@ -49,13 +48,18 @@ export default function CurrencyLogo({ currency, size = '24px', style }: LogoPro
     }
     return []
   }, [currency, uriLocations])
+  const chainId = currency?.chainId
+  const nativeName = chainName[chainId]
 
   if (currency?.isNative) {
-    if (currency.chainId === ChainId.BSC) {
-      return <BinanceIcon width={size} style={style} />
-    }
     return (
-      <StyledLogo size={size} srcs={[`${ASSET_CDN}/web/native/${currency.chainId}.png`]} width={size} style={style} />
+      <StyledLogo
+        size={size}
+        srcs={[`/images/chains/${currency.chainId}.png`]}
+        width={size}
+        style={style}
+        alt={`native ${nativeName} logo`}
+      />
     )
   }
 

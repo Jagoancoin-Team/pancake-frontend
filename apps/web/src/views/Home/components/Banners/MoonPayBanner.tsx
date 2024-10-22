@@ -132,7 +132,7 @@ const MoonPayBanner = () => {
             <StyledImage
               style={{ paddingTop: isMobile ? 2 : 4 }}
               src={mercuryoLogo.src}
-              alt="mercuryoLogo"
+              alt="arbLogo"
               width={isMobile ? 65 : 114}
               height={isMobile ? 9 : 15}
             />

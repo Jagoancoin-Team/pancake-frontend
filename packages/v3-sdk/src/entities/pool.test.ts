@@ -1,11 +1,10 @@
-import { CurrencyAmount, Token, WETH9 } from '@pancakeswap/sdk'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { Token, CurrencyAmount, WETH9 } from '@pancakeswap/sdk'
 import { FeeAmount, TICK_SPACINGS } from '../constants'
-import { NEGATIVE_ONE } from '../internalConstants'
-import { encodeSqrtRatioX96 } from '../utils/encodeSqrtRatioX96'
 import { nearestUsableTick } from '../utils/nearestUsableTick'
 import { TickMath } from '../utils/tickMath'
 import { Pool } from './pool'
+import { encodeSqrtRatioX96 } from '../utils/encodeSqrtRatioX96'
+import { NEGATIVE_ONE } from '../internalConstants'
 
 const ONE_ETHER = 10n ** 18n
 

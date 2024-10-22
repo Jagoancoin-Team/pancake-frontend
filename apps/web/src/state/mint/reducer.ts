@@ -2,8 +2,7 @@ import { createContext, useContext } from 'react'
 import { createReducer } from '@reduxjs/toolkit'
 import { atomWithReducer } from 'jotai/utils'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { CurrencyField as Field } from 'utils/types'
-import { resetMintState, typeInput } from './actions'
+import { Field, resetMintState, typeInput } from './actions'
 
 export interface MintState {
   readonly independentField: Field

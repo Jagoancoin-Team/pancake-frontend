@@ -1,17 +1,18 @@
+import { useMemo, useState } from 'react'
 import { PositionDetails } from '@pancakeswap/farms'
 import { useTranslation } from '@pancakeswap/localization'
 import { Token } from '@pancakeswap/swap-sdk-core'
 import {
-  AutoRow,
-  Balance,
   Box,
-  Button,
-  ChevronRightIcon,
+  AutoRow,
   QuestionHelper,
   RowBetween,
-  StyledLink,
   SyncAltIcon,
+  Button,
+  Link,
+  ChevronRightIcon,
   Text,
+  Balance,
 } from '@pancakeswap/uikit'
 import BigNumber from 'bignumber.js'
 import { RangeTag } from 'components/RangeTag'
@@ -19,14 +20,12 @@ import { Bound } from 'config/constants/types'
 import { useDerivedPositionInfo } from 'hooks/v3/useDerivedPositionInfo'
 import useIsTickAtLimit from 'hooks/v3/useIsTickAtLimit'
 import { formatTickPrice } from 'hooks/v3/utils/formatTickPrice'
-import NextLink from 'next/link'
-import { useMemo, useState } from 'react'
-import { type V3Farm } from 'state/farms/types'
 import { styled } from 'styled-components'
+import { V3Farm } from 'views/Farms/FarmsV3'
 import { unwrappedToken } from 'utils/wrappedCurrency'
 import { FarmV3ApyButton } from './FarmV3ApyButton'
 
-const StyledInitialLink = styled(StyledLink)`
+const StyledLink = styled(Link)`
   &:hover {
     text-decoration: initial;
   }
@@ -56,12 +55,10 @@ export const FarmV3LPTitle = ({
   title: string
   outOfRange: boolean
 }) => (
-  <NextLink href={liquidityUrl}>
-    <StyledInitialLink>
-      <Text bold>{title}</Text>
-      <ChevronRightIcon fontSize="12px" />
-    </StyledInitialLink>
-  </NextLink>
+  <StyledLink href={liquidityUrl}>
+    <Text bold>{title}</Text>
+    <ChevronRightIcon fontSize="12px" />
+  </StyledLink>
 )
 
 export const FarmV3LPPosition = ({
@@ -84,7 +81,7 @@ export const FarmV3LPPosition = ({
   const [inverted, setInverted] = useState(false)
 
   const priceLower = useMemo(() => {
-    if (!position) return undefined
+    if (!position) return null
     return token.equals(position.amount0.currency)
       ? inverted
         ? position.token0PriceLower
@@ -94,7 +91,7 @@ export const FarmV3LPPosition = ({
       : position.token0PriceLower
   }, [position, inverted, token])
   const priceUpper = useMemo(() => {
-    if (!position) return undefined
+    if (!position) return null
     return token.equals(position.amount1.currency)
       ? inverted
         ? position.token0PriceLower.invert()
@@ -127,8 +124,8 @@ export const FarmV3LPPosition = ({
         <Box>
           <Text bold fontSize="12px">
             {t('%assetA% per %assetB%', {
-              assetA: inverted ? unwrappedToken(quoteToken)?.symbol : unwrappedToken(token)?.symbol,
-              assetB: inverted ? unwrappedToken(token)?.symbol : unwrappedToken(quoteToken)?.symbol,
+              assetA: inverted ? unwrappedToken(quoteToken).symbol : unwrappedToken(token).symbol,
+              assetB: inverted ? unwrappedToken(token).symbol : unwrappedToken(quoteToken).symbol,
             })}
           </Text>
         </Box>
@@ -189,13 +186,13 @@ export function FarmV3LPPositionDetail({
           />
         </AutoRow>
       )}
-      <Balance fontSize="12px" color="textSubtle" decimals={2} value={estimatedUSD ?? 0} unit=" USD" prefix="~" />
+      <Balance fontSize="12px" color="textSubtle" decimals={2} value={estimatedUSD} unit=" USD" prefix="~" />
       <AutoRow columnGap="8px">
         <Balance
           fontSize="12px"
           color="textSubtle"
           decimals={2}
-          value={position && amountA ? Number(amountA.toSignificant(6)) : 0}
+          value={position ? +amountA.toSignificant(6) : 0}
           unit={` ${token.symbol}`}
           startFromValue
         />
@@ -203,7 +200,7 @@ export function FarmV3LPPositionDetail({
           fontSize="12px"
           color="textSubtle"
           decimals={2}
-          value={position && amountB ? Number(amountB.toSignificant(6)) : 0}
+          value={position ? +amountB.toSignificant(6) : 0}
           unit={` ${quoteToken.symbol}`}
           startFromValue
         />
@@ -234,7 +231,7 @@ const FarmV3StakeAndUnStake: React.FunctionComponent<React.PropsWithChildren<Far
           {t('Inactive')}
           <QuestionHelper
             ml="4px"
-            text={t('Inactive positions will NOT earn CAKE rewards from farm.')}
+            text={t('Inactive positions will NOT earn ICE rewards from farm.')}
             size="20px"
             color="white"
             placement="bottom"

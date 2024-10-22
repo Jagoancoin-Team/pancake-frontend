@@ -14,9 +14,7 @@ import getLiquidityUrlPathParts from 'utils/getLiquidityUrlPathParts'
 import { unwrappedToken } from 'utils/wrappedCurrency'
 import { AddLiquidityV3Modal } from 'views/AddLiquidityV3/Modal'
 import { SELECTOR_TYPE } from 'views/AddLiquidityV3/types'
-import { useBCakeBoostLimitAndLockInfo } from 'views/Farms/components/YieldBooster/hooks/bCakeV3/useBCakeV3Info'
 import { useFarmV2Multiplier } from 'views/Farms/hooks/useFarmV2Multiplier'
-import { RewardPerDay } from 'views/PositionManagers/components/RewardPerDay'
 import ApyButton from './ApyButton'
 import CardActionsContainer from './CardActionsContainer'
 import CardHeading from './CardHeading'
@@ -47,7 +45,7 @@ const ExpandingWrapper = styled.div`
 
 interface FarmCardProps {
   farm: FarmWithStakedValue
-  displayApr: string | null
+  displayApr: string
   removed: boolean
   cakePrice?: BigNumber
   account?: string
@@ -66,14 +64,9 @@ const FarmCard: React.FC<React.PropsWithChildren<FarmCardProps>> = ({
   const { chainId } = useActiveChainId()
   const [showExpandableSection, setShowExpandableSection] = useState(false)
 
-  const { totalMultipliers, getFarmCakePerSecond, getNumberFarmCakePerSecond } = useFarmV2Multiplier()
-  const isBooster = Boolean(farm.bCakeWrapperAddress)
+  const { totalMultipliers, getFarmCakePerSecond } = useFarmV2Multiplier()
+
   const farmCakePerSecond = getFarmCakePerSecond(farm.poolWeight)
-  const numberFarmCakePerSecond = isBooster
-    ? farm?.bCakePublicData?.rewardPerSecond ?? 0
-    : getNumberFarmCakePerSecond(farm.poolWeight)
-  // if (farm.pid === 163 || farm.pid === 2) console.log(farm, '888')
-  const { locked } = useBCakeBoostLimitAndLockInfo()
 
   const liquidity =
     farm?.liquidity && originalLiquidity?.gt(0) ? farm.liquidity.plus(originalLiquidity) : farm.liquidity
@@ -83,29 +76,24 @@ const FarmCard: React.FC<React.PropsWithChildren<FarmCardProps>> = ({
       ? `$${liquidity.toNumber().toLocaleString(undefined, { maximumFractionDigits: 0 })}`
       : ''
 
-  const lpLabel = farm.lpSymbol && farm.lpSymbol.replace(/pancake/gi, '')
-  const earnLabel = t('CAKE + Fees')
+  const lpLabel = farm.lpSymbol && farm.lpSymbol.toUpperCase().replace('PANICE', '')
+  const earnLabel = farm.dual ? farm.dual.earnLabel : t('ICE + Fees')
 
   const liquidityUrlPathParts = getLiquidityUrlPathParts({
     quoteTokenAddress: farm.quoteToken.address,
     tokenAddress: farm.token.address,
-    chainId: farm.token.chainId,
+    chainId,
   })
-
   const addLiquidityUrl = `${BASE_ADD_LIQUIDITY_URL}/v2/${liquidityUrlPathParts}`
   const { lpAddress, stableSwapAddress, stableLpFee } = farm
-  const isPromotedFarm = farm.token.symbol === 'CAKE'
+  const isPromotedFarm = farm.token.symbol === 'ICE'
 
   const infoUrl = useMemo(() => {
     if (farm.isStable) {
-      return `/info${multiChainPaths[farm.token.chainId]}/pairs/${stableSwapAddress}?type=stableSwap&chain=${
-        CHAIN_QUERY_NAME[farm.token.chainId]
-      }`
+      return `/info${multiChainPaths[chainId]}/pairs/${stableSwapAddress}?type=stableSwap&chain=${CHAIN_QUERY_NAME[chainId]}`
     }
-    return `/info${multiChainPaths[farm.token.chainId]}/pairs/${lpAddress}?chain=${
-      CHAIN_QUERY_NAME[farm.token.chainId]
-    }`
-  }, [farm, lpAddress, stableSwapAddress])
+    return `/info${multiChainPaths[chainId]}/pairs/${lpAddress}?chain=${CHAIN_QUERY_NAME[chainId]}`
+  }, [chainId, farm.isStable, lpAddress, stableSwapAddress])
 
   const toggleExpandableSection = useCallback(() => {
     setShowExpandableSection((prev) => !prev)
@@ -128,12 +116,10 @@ const FarmCard: React.FC<React.PropsWithChildren<FarmCardProps>> = ({
           pid={farm.pid}
           farmCakePerSecond={farmCakePerSecond}
           totalMultipliers={totalMultipliers}
-          isBooster={isBooster && farm?.bCakePublicData?.isRewardInRange}
-          bCakeWrapperAddress={farm.bCakeWrapperAddress}
         />
         {!removed && (
           <Flex justifyContent="space-between" alignItems="center">
-            <Text>{t('APR')}:</Text>
+            <Text>{t('APY')}:</Text>
             <Text style={{ display: 'flex', alignItems: 'center' }}>
               {farm.apr ? (
                 <>
@@ -160,29 +146,16 @@ const FarmCard: React.FC<React.PropsWithChildren<FarmCardProps>> = ({
                     lpLabel={lpLabel}
                     addLiquidityUrl={addLiquidityUrl}
                     cakePrice={cakePrice}
-                    apr={
-                      (isBooster && farm.bCakePublicData?.rewardPerSecond === 0) ||
-                      !farm?.bCakePublicData?.isRewardInRange
-                        ? 0
-                        : farm.apr
-                    }
-                    displayApr={displayApr ?? undefined}
+                    apr={farm.apr}
+                    displayApr={displayApr}
                     lpRewardsApr={farm.lpRewardsApr}
-                    isBooster={isBooster && farm?.bCakePublicData?.isRewardInRange}
+                    strikethrough={false}
                     useTooltipText
+                    boosted={false}
                     stableSwapAddress={stableSwapAddress}
                     stableLpFee={stableLpFee}
                     farmCakePerSecond={farmCakePerSecond}
                     totalMultipliers={totalMultipliers}
-                    boosterMultiplier={
-                      isBooster
-                        ? farm?.bCakeUserData?.boosterMultiplier === 0 ||
-                          farm?.bCakeUserData?.stakedBalance.eq(0) ||
-                          !locked
-                          ? 2.5
-                          : farm?.bCakeUserData?.boosterMultiplier
-                        : 1
-                    }
                   />
                 </>
               ) : (
@@ -195,17 +168,12 @@ const FarmCard: React.FC<React.PropsWithChildren<FarmCardProps>> = ({
           <Text>{t('Earn')}:</Text>
           <Text>{earnLabel}</Text>
         </Flex>
-        <Flex justifyContent="space-between">
-          <Text>{t('Reward/Day')}:</Text>
-          <RewardPerDay rewardPerSec={Number(numberFarmCakePerSecond)} />
-        </Flex>
         <CardActionsContainer
           farm={farm}
           lpLabel={lpLabel}
           account={account}
           addLiquidityUrl={addLiquidityUrl}
           displayApr={displayApr}
-          boosterMultiplier={isBooster ? farm.bCakeUserData?.boosterMultiplier ?? 1 : 1}
         />
       </FarmCardInnerContainer>
 
@@ -231,7 +199,6 @@ const FarmCard: React.FC<React.PropsWithChildren<FarmCardProps>> = ({
               multiplier={farm.multiplier}
               farmCakePerSecond={farmCakePerSecond}
               totalMultipliers={totalMultipliers}
-              isV2BCakeWrapperFarm={isBooster}
             />
           </>
         )}

@@ -1,46 +1,37 @@
 import { BigintIsh, Currency, CurrencyAmount, TradeType } from '@pancakeswap/sdk'
-import { AbortControl } from '@pancakeswap/utils/abortControl'
 
-import { PoolType } from './pool'
-import { PoolProvider, QuoteProvider } from './providers'
+import { Address } from 'viem'
 import { Route } from './route'
+import { PoolProvider, QuoteProvider } from './providers'
+import { PoolType } from './pool'
 
 export interface SmartRouterTrade<TTradeType extends TradeType> {
   tradeType: TTradeType
   inputAmount: CurrencyAmount<Currency>
-  inputAmountWithGasAdjusted?: CurrencyAmount<Currency>
   outputAmount: CurrencyAmount<Currency>
-  outputAmountWithGasAdjusted?: CurrencyAmount<Currency>
 
   // From routes we know how many splits and what percentage does each split take
   routes: Route[]
+  fee?: number
+  treasury_address?: Address
 
   gasEstimate: bigint
-  gasEstimateInUSD?: CurrencyAmount<Currency>
+  gasEstimateInUSD: CurrencyAmount<Currency>
   blockNumber?: number
 }
 
-export type PriceReferences = {
-  quoteCurrencyUsdPrice?: number
-  nativeCurrencyUsdPrice?: number
-}
-
-export type BaseTradeConfig = {
+export interface TradeConfig {
   gasPriceWei: BigintIsh | (() => Promise<BigintIsh>)
+  blockNumber?: number | (() => Promise<number>)
+  poolProvider: PoolProvider
+  quoteProvider: QuoteProvider
   maxHops?: number
   maxSplits?: number
   distributionPercent?: number
   allowedPoolTypes?: PoolType[]
-  poolProvider: PoolProvider
+  quoterOptimization?: boolean
 }
 
-export type TradeConfig = BaseTradeConfig & {
-  blockNumber?: number | (() => Promise<number>)
-  quoteProvider: QuoteProvider
-  quoterOptimization?: boolean
-} & PriceReferences &
-  AbortControl
-
-export type RouteConfig = TradeConfig & {
+export interface RouteConfig extends TradeConfig {
   blockNumber?: number
 }

@@ -1,26 +1,27 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useCallback, useMemo, ReactNode } from 'react'
 import { useTranslation } from '@pancakeswap/localization'
 import { Currency, CurrencyAmount, Percent } from '@pancakeswap/sdk'
-import { formatAmount } from '@pancakeswap/utils/formatFractions'
 import replaceBrowserHistory from '@pancakeswap/utils/replaceBrowserHistory'
-import { ReactNode, useCallback, useMemo } from 'react'
+import { formatAmount } from '@pancakeswap/utils/formatFractions'
 
-import CurrencyInputPanel from 'components/CurrencyInputPanel'
-import { CommonBasesType } from 'components/SearchModal/types'
-import { useCurrency } from 'hooks/Tokens'
-import { Field } from 'state/swap/actions'
-import { useDefaultsFromURLSearch, useSwapState } from 'state/swap/hooks'
 import { useSwapActionHandlers } from 'state/swap/useSwapActionHandlers'
+import CurrencyInputPanel from 'components/CurrencyInputPanel'
+import { useDefaultsFromURLSearch, useSwapState } from 'state/swap/hooks'
+import { Field } from 'state/swap/actions'
+import { useCurrency } from 'hooks/Tokens'
+import { CommonBasesType } from 'components/SearchModal/types'
 import { useCurrencyBalances } from 'state/wallet/hooks'
-import { currencyId } from 'utils/currencyId'
 import { maxAmountSpend } from 'utils/maxAmountSpend'
+import { currencyId } from 'utils/currencyId'
 
 import { useAccount } from 'wagmi'
-import useWarningImport from '../../hooks/useWarningImport'
 import { FormContainer } from '../components'
+import useWarningImport from '../../hooks/useWarningImport'
+import { RiskCheck } from './RiskCheck'
 import { useIsWrapping } from '../hooks'
 import { FlipButton } from './FlipButton'
 import { Recipient } from './Recipient'
-import { RiskCheck } from './RiskCheck'
 
 interface Props {
   inputAmount?: CurrencyAmount<Currency>
@@ -47,6 +48,7 @@ export function FormMain({ pricingAndSlippage, inputAmount, outputAmount, tradeL
   const [inputBalance] = useCurrencyBalances(account, [inputCurrency, outputCurrency])
   const maxAmountInput = useMemo(() => maxAmountSpend(inputBalance), [inputBalance])
   const loadedUrlParams = useDefaultsFromURLSearch()
+
   const handleTypeInput = useCallback((value: string) => onUserInput(Field.INPUT, value), [onUserInput])
   const handleTypeOutput = useCallback((value: string) => onUserInput(Field.OUTPUT, value), [onUserInput])
 
@@ -66,12 +68,7 @@ export function FormMain({ pricingAndSlippage, inputAmount, outputAmount, tradeL
   }, [maxAmountInput, onUserInput])
 
   const handleCurrencySelect = useCallback(
-    (
-      newCurrency: Currency,
-      field: Field,
-      currentInputCurrencyId: string | undefined,
-      currentOutputCurrencyId: string | undefined,
-    ) => {
+    (newCurrency: Currency, field: Field, currentInputCurrencyId: string, currentOutputCurrencyId: string) => {
       onCurrencySelection(field, newCurrency)
 
       warningSwapHandler(newCurrency)
@@ -88,13 +85,11 @@ export function FormMain({ pricingAndSlippage, inputAmount, outputAmount, tradeL
     [onCurrencySelection, warningSwapHandler],
   )
   const handleInputSelect = useCallback(
-    (newCurrency: Currency) =>
-      handleCurrencySelect(newCurrency, Field.INPUT, inputCurrencyId || '', outputCurrencyId || ''),
+    (newCurrency: Currency) => handleCurrencySelect(newCurrency, Field.INPUT, inputCurrencyId, outputCurrencyId),
     [handleCurrencySelect, inputCurrencyId, outputCurrencyId],
   )
   const handleOutputSelect = useCallback(
-    (newCurrency: Currency) =>
-      handleCurrencySelect(newCurrency, Field.OUTPUT, inputCurrencyId || '', outputCurrencyId || ''),
+    (newCurrency: Currency) => handleCurrencySelect(newCurrency, Field.OUTPUT, inputCurrencyId, outputCurrencyId),
     [handleCurrencySelect, inputCurrencyId, outputCurrencyId],
   )
 
@@ -131,12 +126,13 @@ export function FormMain({ pricingAndSlippage, inputAmount, outputAmount, tradeL
         otherCurrency={outputCurrency}
         commonBasesType={CommonBasesType.SWAP_LIMITORDER}
       />
-      <RiskCheck currency={inputCurrency ?? undefined} />
+      <RiskCheck currency={inputCurrency} />
       <FlipButton />
       <CurrencyInputPanel
         id="swap-currency-output"
         showUSDPrice
         showCommonBases
+        disabled={true}
         showMaxButton={false}
         inputLoading={!isWrapping && outputLoading}
         currencyLoading={!loadedUrlParams}
@@ -148,7 +144,7 @@ export function FormMain({ pricingAndSlippage, inputAmount, outputAmount, tradeL
         otherCurrency={outputCurrency}
         commonBasesType={CommonBasesType.SWAP_LIMITORDER}
       />
-      <RiskCheck currency={outputCurrency ?? undefined} />
+      <RiskCheck currency={outputCurrency} />
       <Recipient />
       {pricingAndSlippage}
       {swapCommitButton}

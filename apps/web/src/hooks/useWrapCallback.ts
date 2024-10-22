@@ -1,13 +1,14 @@
-import { useTranslation } from '@pancakeswap/localization'
-import { Currency, WNATIVE } from '@pancakeswap/sdk'
-import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
-import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import { ChainId, Currency, WNATIVE } from '@pancakeswap/sdk'
 import { useMemo } from 'react'
+import { useTranslation } from '@pancakeswap/localization'
+import tryParseAmount from '@pancakeswap/utils/tryParseAmount'
 import { useTransactionAdder } from 'state/transactions/hooks'
 import { useCurrencyBalance } from 'state/wallet/hooks'
-import { Hash } from 'viem'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
+import { useContract, useWNativeContract } from './useContract'
 import { useCallWithGasPrice } from './useCallWithGasPrice'
-import { useWNativeContract } from './useContract'
+import { coreTokens } from "@pancakeswap/tokens";
+import { wethABI } from "config/abi/weth";
 
 export enum WrapType {
   NOT_APPLICABLE,
@@ -23,14 +24,15 @@ const NOT_APPLICABLE = { wrapType: WrapType.NOT_APPLICABLE }
  * @param typedValue the user input value
  */
 export default function useWrapCallback(
-  inputCurrency: Currency | undefined | null,
-  outputCurrency: Currency | undefined | null,
+  inputCurrency: Currency | undefined,
+  outputCurrency: Currency | undefined,
   typedValue: string | undefined,
-): { wrapType: WrapType; execute?: undefined | (() => Promise<{ hash?: Hash } | undefined>); inputError?: string } {
+): { wrapType: WrapType; execute?: undefined | (() => Promise<void>); inputError?: string } {
   const { t } = useTranslation()
   const { account, chainId } = useAccountActiveChain()
   const { callWithGasPrice } = useCallWithGasPrice()
   const wbnbContract = useWNativeContract()
+  const oldWcoreContract = useContract(chainId === ChainId.CORE ? coreTokens.wcore_old.address : undefined, wethABI)
   const balance = useCurrencyBalance(account ?? undefined, inputCurrency)
   // we can always parse the amount typed as the input currency, since wrapping is 1:1
   const inputAmount = useMemo(() => tryParseAmount(typedValue, inputCurrency), [inputCurrency, typedValue])
@@ -46,8 +48,7 @@ export default function useWrapCallback(
         wrapType: WrapType.WRAP,
         execute:
           sufficientBalance && inputAmount
-            ? // eslint-disable-next-line consistent-return
-              async () => {
+            ? async () => {
                 try {
                   const txReceipt = await callWithGasPrice(wbnbContract, 'deposit', undefined, {
                     value: inputAmount.quotient,
@@ -60,9 +61,6 @@ export default function useWrapCallback(
                     translatableSummary: { text: 'Wrap %amount% %native% to %wrap%', data: { amount, native, wrap } },
                     type: 'wrap',
                   })
-                  return {
-                    hash: txReceipt?.hash,
-                  }
                 } catch (error) {
                   console.error('Could not deposit', error)
                 }
@@ -73,25 +71,25 @@ export default function useWrapCallback(
           : t('Insufficient %symbol% balance', { symbol: inputCurrency.symbol }),
       }
     }
-    if (WNATIVE[chainId]?.equals(inputCurrency) && outputCurrency?.isNative) {
+    if ((WNATIVE[chainId]?.equals(inputCurrency) || coreTokens.wcore_old.equals(inputCurrency)) && outputCurrency?.isNative) {
       return {
         wrapType: WrapType.UNWRAP,
         execute:
           sufficientBalance && inputAmount
-            ? // eslint-disable-next-line consistent-return
-              async () => {
+            ? async () => {
                 try {
-                  const txReceipt = await callWithGasPrice(wbnbContract, 'withdraw', [inputAmount.quotient])
+                  const txReceipt = coreTokens.wcore_old.equals(inputCurrency)
+                      ? await callWithGasPrice(oldWcoreContract, 'withdraw', [inputAmount.quotient])
+                      : await callWithGasPrice(wbnbContract, 'withdraw', [inputAmount.quotient])
+                  const wrap = coreTokens.wcore_old.equals(inputCurrency)
+                      ? coreTokens.wcore_old.symbol
+                      : WNATIVE[chainId].symbol
                   const amount = inputAmount.toSignificant(6)
-                  const wrap = WNATIVE[chainId].symbol
                   const native = outputCurrency.symbol
                   addTransaction(txReceipt, {
                     summary: `Unwrap ${amount} ${wrap} to ${native}`,
                     translatableSummary: { text: 'Unwrap %amount% %wrap% to %native%', data: { amount, wrap, native } },
                   })
-                  return {
-                    hash: txReceipt?.hash,
-                  }
                 } catch (error) {
                   console.error('Could not withdraw', error)
                 }
@@ -106,11 +104,7 @@ export default function useWrapCallback(
   }, [wbnbContract, chainId, inputCurrency, outputCurrency, t, inputAmount, balance, addTransaction, callWithGasPrice])
 }
 
-export function useIsWrapping(
-  currencyA: Currency | undefined | null,
-  currencyB: Currency | undefined | null,
-  value?: string,
-) {
+export function useIsWrapping(currencyA: Currency | undefined, currencyB: Currency | undefined, value?: string) {
   const { wrapType } = useWrapCallback(currencyA, currencyB, value)
 
   return wrapType !== WrapType.NOT_APPLICABLE

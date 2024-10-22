@@ -1,5 +1,5 @@
-import { PancakeTheme } from '@pancakeswap/uikit'
 import { createGlobalStyle } from 'styled-components'
+import { PancakeTheme } from '@pancakeswap/uikit'
 
 declare module 'styled-components' {
   /* eslint-disable @typescript-eslint/no-empty-interface */
@@ -8,16 +8,10 @@ declare module 'styled-components' {
 
 const GlobalStyle = createGlobalStyle`
   * {
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-poppins), sans-serif;
   }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     background-color: ${({ theme }) => theme.colors.background};
-    overflow-x: hidden;
 
     img {
       height: auto;

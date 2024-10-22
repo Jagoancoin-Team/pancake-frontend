@@ -1,10 +1,9 @@
+import { BSC_BLOCK_TIME } from 'config'
 import { useTranslation, TranslateFunction } from '@pancakeswap/localization'
 import { styled } from 'styled-components'
 import { Card, Flex, Box, InfoIcon, Text, useTooltip } from '@pancakeswap/uikit'
 import { useSubgraphHealthIndicatorManager } from 'state/user/hooks'
 import useSubgraphHealth, { SubgraphStatus } from 'hooks/useSubgraphHealth'
-import { AVERAGE_CHAIN_BLOCK_TIMES, ChainId, chainNames, getChainName } from '@pancakeswap/chains'
-import { useMemo } from 'react'
 
 const StyledCard = styled(Card)`
   border-radius: 8px;
@@ -32,7 +31,7 @@ interface CustomDescriptions {
   down?: string
 }
 
-const indicator = (t: TranslateFunction, chainName: string, customDescriptions?: CustomDescriptions) =>
+const indicator = (t: TranslateFunction, customDescriptions?: CustomDescriptions) =>
   ({
     delayed: {
       label: t('Delayed'),
@@ -40,8 +39,7 @@ const indicator = (t: TranslateFunction, chainName: string, customDescriptions?:
       description:
         customDescriptions?.delayed ??
         t(
-          'Subgraph is currently experiencing delays due to %chainName% issues. Performance may suffer until subgraph is restored.',
-          { chainName },
+          'Subgraph is currently experiencing delays due to BSC issues. Performance may suffer until subgraph is restored.',
         ),
     },
     slow: {
@@ -50,8 +48,7 @@ const indicator = (t: TranslateFunction, chainName: string, customDescriptions?:
       description:
         customDescriptions?.slow ??
         t(
-          'Subgraph is currently experiencing delays due to %chainName% issues. Performance may suffer until subgraph is restored.',
-          { chainName },
+          'Subgraph is currently experiencing delays due to BSC issues. Performance may suffer until subgraph is restored.',
         ),
     },
     healthy: {
@@ -93,36 +90,28 @@ export interface BlockResponse {
 }
 
 export type SubgraphHealthIndicatorProps = React.PropsWithChildren<{
-  chainId: ChainId
-  subgraph: string
+  subgraphName: string
   inline?: boolean
   customDescriptions?: CustomDescriptions
   obeyGlobalSetting?: boolean
 }>
 
 export const SubgraphHealthIndicator: React.FC<SubgraphHealthIndicatorProps> = ({
-  chainId,
-  subgraph,
+  subgraphName,
   inline,
   customDescriptions,
   obeyGlobalSetting = true,
 }) => {
   const { t } = useTranslation()
-  const { status, currentBlock, blockDifference, latestBlock } = useSubgraphHealth({ chainId, subgraph })
+  const { status, currentBlock, blockDifference, latestBlock } = useSubgraphHealth(subgraphName)
   const [alwaysShowIndicator] = useSubgraphHealthIndicatorManager()
   const forceIndicatorDisplay =
     status === SubgraphStatus.WARNING || status === SubgraphStatus.NOT_OK || status === SubgraphStatus.DOWN
   const showIndicator = (obeyGlobalSetting && alwaysShowIndicator) || forceIndicatorDisplay
-  const chainName = useMemo(
-    () =>
-      chainId
-        ? getChainName(chainId!)?.toUpperCase() ?? chainNames[ChainId.BSC].toUpperCase()
-        : chainNames[ChainId.BSC].toUpperCase(),
-    [chainId],
-  )
-  const indicatorProps = indicator(t, chainName, customDescriptions)
 
-  const secondRemainingBlockSync = chainId ? blockDifference * AVERAGE_CHAIN_BLOCK_TIMES[chainId!] : 0
+  const indicatorProps = indicator(t, customDescriptions)
+
+  const secondRemainingBlockSync = blockDifference * BSC_BLOCK_TIME
 
   const indicatorValue = getIndicator(status)
 
@@ -162,8 +151,7 @@ export const SubgraphHealthIndicator: React.FC<SubgraphHealthIndicatorProps> = (
     <Box
       position="fixed"
       bottom="calc(55px + env(safe-area-inset-bottom))"
-      right="18px"
-      zIndex="2"
+      right="5%"
       ref={targetRef}
       data-test="subgraph-health-indicator"
     >

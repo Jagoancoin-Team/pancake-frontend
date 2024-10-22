@@ -1,5 +1,4 @@
-import { Currency, Pair, Token } from '@pancakeswap/sdk'
-import { ChainId } from '@pancakeswap/chains'
+import { ChainId, Currency, Pair, Token } from '@pancakeswap/sdk'
 import flatMap from 'lodash/flatMap.js'
 
 import { ADDITIONAL_BASES, BASES_TO_CHECK_TRADES_AGAINST, CUSTOM_BASES } from '../evm/constants'

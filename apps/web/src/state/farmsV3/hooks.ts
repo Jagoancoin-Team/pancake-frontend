@@ -1,38 +1,29 @@
-import { ChainId } from '@pancakeswap/chains'
 import {
   FarmV3DataWithPrice,
   FarmV3DataWithPriceAndUserInfo,
   FarmV3DataWithPriceTVL,
   FarmsV3Response,
   IPendingCakeByTokenId,
-  PositionDetails,
   SerializedFarmsV3Response,
   bCakeSupportedChainId,
   createFarmFetcherV3,
   supportedChainIdV3,
 } from '@pancakeswap/farms'
 import { priceHelperTokens } from '@pancakeswap/farms/constants/common'
-import { legacyFarmsV3ConfigChainMap } from '@pancakeswap/farms/constants/v3'
-import { bCakeFarmBoosterVeCakeABI } from '@pancakeswap/farms/constants/v3/abi/bCakeFarmBoosterVeCake'
+import { farmsV3ConfigChainMap } from '@pancakeswap/farms/constants/v3'
 import { TvlMap, fetchCommonTokenUSDValue } from '@pancakeswap/farms/src/fetchFarmsV3'
+import { ChainId } from '@pancakeswap/sdk'
 import { deserializeToken } from '@pancakeswap/token-lists'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useCakePrice } from 'hooks/useCakePrice'
+import { bCakeFarmBoosterV3ABI } from 'config/abi/bCakeFarmBoosterV3'
 import { FAST_INTERVAL } from 'config/constants'
 import { FARMS_API } from 'config/constants/endpoints'
 import { useActiveChainId } from 'hooks/useActiveChainId'
-import { useCakePrice } from 'hooks/useCakePrice'
-
-import { masterChefV3ABI } from '@pancakeswap/v3-sdk'
-import BN from 'bignumber.js'
-import {
-  useBCakeFarmBoosterVeCakeContract,
-  useMasterchefV3,
-  useMasterchefV3ByChain,
-  useV3NFTPositionManagerContract,
-} from 'hooks/useContract'
+import { useBCakeFarmBoosterV3Contract, useMasterchefV3, useV3NFTPositionManagerContract } from 'hooks/useContract'
 import { useV3PositionsFromTokenIds, useV3TokenIdsByAccount } from 'hooks/v3/useV3Positions'
 import toLower from 'lodash/toLower'
 import { useMemo } from 'react'
+import useSWR from 'swr'
 import fetchWithTimeout from 'utils/fetchWithTimeout'
 import { getViemClients } from 'utils/viem'
 import { publicClient } from 'utils/wagmi'
@@ -71,11 +62,10 @@ const farmFetcherV3 = createFarmFetcherV3(getViemClients)
 export const useFarmsV3Public = () => {
   const { chainId } = useActiveChainId()
 
-  return useQuery({
-    queryKey: [chainId, 'farmV3ApiFetch'],
-
-    queryFn: async () => {
-      if (API_FLAG && chainId) {
+  return useSWR(
+    farmFetcherV3.isChainSupported(chainId) && [chainId, 'farmV3ApiFetch'],
+    async () => {
+      if (API_FLAG) {
         return farmV3ApiFetch(chainId).catch((err) => {
           console.error(err)
           return fallback
@@ -83,13 +73,13 @@ export const useFarmsV3Public = () => {
       }
 
       // direct copy from api routes, the client side fetch is preventing cache due to migration phase we want fresh data
-      const farms = legacyFarmsV3ConfigChainMap[chainId as ChainId]
+      const farms = farmsV3ConfigChainMap[chainId as ChainId]
 
-      const commonPrice = await fetchCommonTokenUSDValue(priceHelperTokens[chainId ?? -1])
+      const commonPrice = await fetchCommonTokenUSDValue(priceHelperTokens[chainId])
 
       try {
         const data = await farmFetcherV3.fetchFarms({
-          chainId: chainId ?? -1,
+          chainId,
           farms,
           commonPrice,
         })
@@ -101,41 +91,37 @@ export const useFarmsV3Public = () => {
         return fallback
       }
     },
-
-    enabled: Boolean(farmFetcherV3.isChainSupported(chainId ?? -1)),
-    refetchInterval: FAST_INTERVAL * 3,
-    initialData: fallback,
-  })
+    {
+      refreshInterval: FAST_INTERVAL * 3,
+      keepPreviousData: false,
+      fallbackData: fallback,
+    },
+  )
 }
 
 interface UseFarmsOptions {
   // mock apr when tvl is 0
   mockApr?: boolean
-  boosterLiquidityX?: Record<number, number>
 }
 
-export const useFarmsV3 = ({ mockApr = false, boosterLiquidityX = {} }: UseFarmsOptions = {}) => {
+export const useFarmsV3 = ({ mockApr = false }: UseFarmsOptions = {}) => {
   const { chainId } = useActiveChainId()
 
   const farmV3 = useFarmsV3Public()
 
   const cakePrice = useCakePrice()
 
-  const { data } = useQuery({
-    queryKey: [chainId, 'cake-apr-tvl', boosterLiquidityX],
-
-    queryFn: async ({ signal }) => {
+  const { data } = useSWR<FarmsV3Response<FarmV3DataWithPriceTVL>>(
+    farmV3.data.farmsWithPrice.length > 0 && [chainId, 'cake-apr-tvl'],
+    async () => {
       if (chainId !== farmV3?.data.chainId) {
         throw new Error('ChainId mismatch')
       }
       const tvls: TvlMap = {}
       if (supportedChainIdV3.includes(chainId)) {
-        const farmsToFetch = farmV3.data.farmsWithPrice.filter((f) => f.poolWeight !== '0')
         const results = await Promise.allSettled(
-          farmsToFetch.map((f) =>
-            fetchWithTimeout(`${FARMS_API}/v3/${chainId}/liquidity/${f.lpAddress}`, {
-              signal,
-            })
+          farmV3.data.farmsWithPrice.map((f) =>
+            fetchWithTimeout(`${FARMS_API}/v3/${chainId}/liquidity/${f.lpAddress}`)
               .then((r) => r.json())
               .catch((err) => {
                 console.error(err)
@@ -144,7 +130,7 @@ export const useFarmsV3 = ({ mockApr = false, boosterLiquidityX = {} }: UseFarms
           ),
         )
         results.forEach((r, i) => {
-          tvls[farmsToFetch[i].lpAddress] =
+          tvls[farmV3.data.farmsWithPrice[i].lpAddress] =
             r.status === 'fulfilled' ? { ...r.value.formatted, updatedAt: r.value.updatedAt } : null
         })
       }
@@ -168,7 +154,6 @@ export const useFarmsV3 = ({ mockApr = false, boosterLiquidityX = {} }: UseFarms
           tvl,
           cakePrice.toString(),
           farmV3.data.cakePerSecond,
-          boosterLiquidityX?.[f.pid] ?? 1,
         )
 
         return {
@@ -184,11 +169,12 @@ export const useFarmsV3 = ({ mockApr = false, boosterLiquidityX = {} }: UseFarms
         farmsWithPrice: farmWithPriceAndCakeAPR,
       }
     },
-
-    enabled: Boolean(farmV3.data.farmsWithPrice.length > 0),
-    refetchInterval: FAST_INTERVAL * 3,
-    staleTime: FAST_INTERVAL,
-  })
+    {
+      refreshInterval: FAST_INTERVAL * 3,
+      dedupingInterval: FAST_INTERVAL,
+      keepPreviousData: false,
+    },
+  )
 
   return {
     data: useMemo(() => {
@@ -201,22 +187,21 @@ export const useFarmsV3 = ({ mockApr = false, boosterLiquidityX = {} }: UseFarms
   }
 }
 
-const zkSyncChains = [ChainId.ZKSYNC_TESTNET, ChainId.ZKSYNC]
+const zkSyncChains = []
 
-export const useStakedPositionsByUser = (stakedTokenIds: bigint[], _chainId?: number) => {
+export const useStakedPositionsByUser = (stakedTokenIds: bigint[]) => {
   const { address: account } = useAccount()
-  const { chainId: activeChainId } = useActiveChainId()
-  const chainId = _chainId ?? activeChainId
-  const masterchefV3 = useMasterchefV3ByChain(chainId)
+  const { chainId } = useActiveChainId()
+  const masterchefV3 = useMasterchefV3()
 
   const harvestCalls = useMemo(() => {
-    if (!masterchefV3?.abi || !account || !supportedChainIdV3.includes(chainId ?? -1)) return []
+    if (!account || !supportedChainIdV3.includes(chainId)) return []
     const callData: Hex[] = []
     for (const stakedTokenId of stakedTokenIds) {
-      if (zkSyncChains.includes(chainId ?? -1)) {
+      if (zkSyncChains.includes(chainId)) {
         callData.push(
           encodeFunctionData({
-            abi: masterchefV3?.abi ?? [],
+            abi: masterchefV3?.abi,
             functionName: 'pendingCake',
             args: [stakedTokenId],
           }),
@@ -224,29 +209,25 @@ export const useStakedPositionsByUser = (stakedTokenIds: bigint[], _chainId?: nu
       } else {
         callData.push(
           encodeFunctionData({
-            abi: masterchefV3?.abi ?? [],
+            abi: masterchefV3?.abi,
             functionName: 'harvest',
             args: [stakedTokenId, account],
           }),
         )
       }
     }
-
     return callData
   }, [account, masterchefV3?.abi, stakedTokenIds, chainId])
 
-  const { data } = useQuery<bigint[]>({
-    queryKey: ['mcv3-harvest', ...harvestCalls],
-
-    queryFn: () => {
-      if (!masterchefV3 || !harvestCalls.length) return []
-
-      return masterchefV3?.simulate.multicall([harvestCalls], { account, value: 0n }).then((res) => {
+  const { data } = useSWR(
+    account && ['mcv3-harvest', harvestCalls],
+    () => {
+      return masterchefV3.simulate.multicall([harvestCalls], { account, value: 0n }).then((res) => {
         return res.result
           .map((r) =>
             decodeFunctionResult({
-              abi: masterchefV3?.abi,
-              functionName: zkSyncChains.includes(chainId ?? 0) ? 'pendingCake' : 'harvest',
+              abi: masterchefV3.abi,
+              functionName: zkSyncChains.includes(chainId) ? 'pendingCake' : 'harvest',
               data: r,
             }),
           )
@@ -255,10 +236,10 @@ export const useStakedPositionsByUser = (stakedTokenIds: bigint[], _chainId?: nu
           })
       })
     },
-
-    enabled: Boolean(account),
-    placeholderData: keepPreviousData,
-  })
+    {
+      keepPreviousData: true,
+    },
+  )
 
   return { tokenIdResults: data || [], isLoading: harvestCalls.length > 0 && !data }
 }
@@ -289,12 +270,8 @@ const usePositionsByUserFarms = (
     if (!positions) return [[], []]
     const unstakedIds = tokenIds.filter((id) => !stakedIds.find((s) => s === id))
     return [
-      unstakedIds
-        .map((id) => positions.find((p) => p.tokenId === id))
-        .filter((p) => (p?.liquidity ?? 0n) > 0n) as PositionDetails[],
-      stakedIds
-        .map((id) => positions.find((p) => p.tokenId === id))
-        .filter((p) => (p?.liquidity ?? 0n) > 0n) as PositionDetails[],
+      unstakedIds.map((id) => positions.find((p) => p.tokenId === id)).filter((p) => p?.liquidity > 0n),
+      stakedIds.map((id) => positions.find((p) => p.tokenId === id)).filter((p) => p?.liquidity > 0n),
     ]
   }, [positions, stakedIds, tokenIds])
 
@@ -318,15 +295,15 @@ const usePositionsByUserFarms = (
 
         const unstaked = unstakedPositions.filter(
           (p) =>
-            toLower(p?.token0) === toLower(token0.address) &&
-            toLower(p?.token1) === toLower(token1.address) &&
-            feeAmount === p?.fee,
+            toLower(p.token0) === toLower(token0.address) &&
+            toLower(p.token1) === toLower(token1.address) &&
+            feeAmount === p.fee,
         )
         const staked = stakedPositions.filter((p) => {
           return (
-            toLower(p?.token0) === toLower(token0.address) &&
-            toLower(p?.token1) === toLower(token1.address) &&
-            feeAmount === p?.fee
+            toLower(p.token0) === toLower(token0.address) &&
+            toLower(p.token1) === toLower(token1.address) &&
+            feeAmount === p.fee
           )
         })
 
@@ -336,7 +313,7 @@ const usePositionsByUserFarms = (
           stakedPositions: staked,
           pendingCakeByTokenIds: Object.entries(pendingCakeByTokenIds).reduce<IPendingCakeByTokenId>(
             (acc, [tokenId, cake]) => {
-              const foundPosition = staked.find((p) => p?.tokenId === BigInt(tokenId))
+              const foundPosition = staked.find((p) => p.tokenId === BigInt(tokenId))
 
               if (foundPosition) {
                 return { ...acc, [tokenId]: cake }
@@ -364,16 +341,12 @@ export function useFarmsV3WithPositionsAndBooster(options: UseFarmsOptions = {})
   poolLength: number
   isLoading: boolean
 } {
-  const { data: boosterLiquidityX } = useV3BoostedLiquidityX()
-  const { data, error: _error, isLoading } = useFarmsV3({ ...options, boosterLiquidityX })
+  const { data, error: _error, isLoading } = useFarmsV3(options)
   const { data: boosterWhitelist } = useV3BoostedFarm(data?.farmsWithPrice?.map((f) => f.pid))
 
   return {
     ...usePositionsByUserFarms(
-      data.farmsWithPrice?.map((d, index) => ({
-        ...d,
-        boosted: boosterWhitelist?.[index]?.boosted,
-      })),
+      data.farmsWithPrice?.map((d, index) => ({ ...d, boosted: boosterWhitelist?.[index]?.boosted })),
     ),
     poolLength: data.poolLength,
     cakePerSecond: data.cakePerSecond,
@@ -381,58 +354,24 @@ export function useFarmsV3WithPositionsAndBooster(options: UseFarmsOptions = {})
   }
 }
 
-const useV3BoostedFarm = (pids?: number[]) => {
+const useV3BoostedFarm = (pids: number[]) => {
   const { chainId } = useActiveChainId()
-  const farmBoosterVeCakeContract = useBCakeFarmBoosterVeCakeContract()
+  const farmBoosterV3Contract = useBCakeFarmBoosterV3Contract()
 
-  const { data } = useQuery({
-    queryKey: ['v3/boostedFarm', chainId, pids?.join('-')],
+  const { data } = useSWR(
+    chainId &&
+      pids.length > 0 &&
+      bCakeSupportedChainId.includes(chainId) && ['v3/boostedFarm', chainId, pids.join('-')],
+    () => getV3FarmBoosterWhiteList({ farmBoosterContract: farmBoosterV3Contract, chainId, pids }),
+    {
+      errorRetryCount: 3,
+      errorRetryInterval: 3000,
+      keepPreviousData: false,
+      refreshInterval: 0,
+    },
+  )
 
-    queryFn: () =>
-      getV3FarmBoosterWhiteList({
-        farmBoosterContract: farmBoosterVeCakeContract,
-        chainId: chainId ?? -1,
-        pids: pids ?? [],
-      }),
-
-    enabled: Boolean(chainId && pids && pids.length > 0 && bCakeSupportedChainId.includes(chainId)),
-    retry: 3,
-    retryDelay: 3000,
-  })
   return { data }
-}
-
-const useV3BoostedLiquidityX = (): { data: Record<number, number> } => {
-  const farmV3 = useFarmsV3Public()
-  const pids = farmV3.data?.farmsWithPrice?.map((f) => f.pid)
-  const { chainId } = useActiveChainId()
-  const masterChefV3Contract = useMasterchefV3()
-
-  const { data } = useQuery({
-    queryKey: ['v3/getV3BoosterAPRLiquidityX', chainId, pids?.join('-')],
-
-    queryFn: () =>
-      getV3BoosterAPRLiquidityX({
-        masterChefV3Contract,
-        chainId: chainId ?? -1,
-        pids: pids ?? [],
-      }),
-
-    enabled: Boolean(chainId && pids && pids.length > 0 && bCakeSupportedChainId.includes(chainId)),
-    retry: 3,
-    retryDelay: 3000,
-  })
-
-  const result = useMemo(() => {
-    const dataMap = data?.reduce((acc, d) => {
-      const updatedAcc = { ...acc }
-      updatedAcc[d.pid] = Number.isNaN(d.boosterliquidityX) ? 1 : d.boosterliquidityX
-      return updatedAcc
-    }, {})
-    return dataMap
-  }, [data])
-
-  return { data: result ?? {} }
 }
 
 export async function getV3FarmBoosterWhiteList({
@@ -440,7 +379,7 @@ export async function getV3FarmBoosterWhiteList({
   chainId,
   pids,
 }: {
-  farmBoosterContract: ReturnType<typeof useBCakeFarmBoosterVeCakeContract>
+  farmBoosterContract: ReturnType<typeof useBCakeFarmBoosterV3Contract>
   chainId: ChainId
   pids: number[]
 }): Promise<{ pid: number; boosted: boolean }[]> {
@@ -448,7 +387,7 @@ export async function getV3FarmBoosterWhiteList({
     return {
       address: farmBoosterContract.address,
       functionName: 'whiteList',
-      abi: bCakeFarmBoosterVeCakeABI,
+      abi: bCakeFarmBoosterV3ABI,
       args: [BigInt(pid)],
     } as const
   })
@@ -457,36 +396,5 @@ export async function getV3FarmBoosterWhiteList({
   })
 
   if (!whiteList || whiteList?.length !== pids?.length) return []
-  return pids?.map((d, index) => ({ pid: d, boosted: whiteList[index].result ?? false }))
-}
-
-export async function getV3BoosterAPRLiquidityX({
-  masterChefV3Contract,
-  chainId,
-  pids,
-}: {
-  masterChefV3Contract: ReturnType<typeof useMasterchefV3>
-  chainId: ChainId
-  pids: number[]
-}): Promise<{ pid: number; boosterliquidityX: number }[]> {
-  const contracts = pids?.map((pid) => {
-    return {
-      address: masterChefV3Contract?.address ?? '0x',
-      functionName: 'poolInfo',
-      abi: masterChefV3ABI,
-      args: [BigInt(pid)],
-    } as const
-  })
-  const data = await publicClient({ chainId }).multicall({
-    contracts,
-  })
-
-  if (!data || data?.length !== pids?.length) return []
-
-  return pids?.map((d, index) => ({
-    pid: d,
-    boosterliquidityX:
-      new BN(data?.[index]?.result?.[6]?.toString() ?? 1).div(data?.[index]?.result?.[5]?.toString() ?? 1).toNumber() ??
-      1,
-  }))
+  return pids?.map((d, index) => ({ pid: d, boosted: whiteList[index].result }))
 }

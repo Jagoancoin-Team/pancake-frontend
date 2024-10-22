@@ -1,9 +1,9 @@
 import { styled } from "styled-components";
-import { Box, Flex, FlexProps } from "../Box";
 import { CopyButton } from "./CopyButton";
+import { Box, Flex, FlexProps } from "../Box";
 
 interface CopyAddressProps extends FlexProps {
-  account: string | undefined;
+  account: string;
   tooltipMessage: string;
 }
 
@@ -62,7 +62,7 @@ export const CopyAddress: React.FC<React.PropsWithChildren<CopyAddressProps>> = 
           <input type="text" readOnly value={account} />
         </Address>
         <Flex margin="12px">
-          <CopyButton width="24px" text={account ?? ""} tooltipMessage={tooltipMessage} />
+          <CopyButton width="24px" text={account} tooltipMessage={tooltipMessage} />
         </Flex>
       </Wrapper>
     </Box>

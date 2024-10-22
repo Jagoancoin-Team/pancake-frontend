@@ -1,4 +1,4 @@
-import { Currency, CurrencyAmount, Fraction, Percent, Trade, TradeType } from '@pancakeswap/sdk'
+import { ChainId, Currency, CurrencyAmount, Fraction, Percent, Trade, TradeType } from '@pancakeswap/sdk'
 import { pancakeRouter02ABI } from 'config/abi/IPancakeRouter02'
 import {
   ALLOWED_PRICE_IMPACT_HIGH,
@@ -8,19 +8,18 @@ import {
   BLOCKED_PRICE_IMPACT_NON_EXPERT,
   INPUT_FRACTION_AFTER_FEE,
   ONE_HUNDRED_PERCENT,
-  V2_ROUTER_ADDRESS,
+  V2_ROUTER_ADDRESS
 } from 'config/constants/exchange'
 import { StableTrade } from 'config/constants/types'
 
 import { useActiveChainId } from 'hooks/useActiveChainId'
 import { useContract } from 'hooks/useContract'
-import memoize from 'lodash/memoize'
 import { Field } from '../state/swap/actions'
 
 // converts a basis points value to a sdk percent
-export const basisPointsToPercent = memoize((num: number): Percent => {
+export function basisPointsToPercent(num: number): Percent {
   return new Percent(BigInt(num), BIPS_BASE)
-})
+}
 
 export function calculateSlippageAmount(value: CurrencyAmount<Currency>, slippage: number): [bigint, bigint] {
   if (slippage < 0 || slippage > 10000) {
@@ -34,11 +33,11 @@ export function calculateSlippageAmount(value: CurrencyAmount<Currency>, slippag
 
 export function useRouterContract() {
   const { chainId } = useActiveChainId()
-  return useContract(chainId && V2_ROUTER_ADDRESS[chainId], pancakeRouter02ABI)
+  return useContract(V2_ROUTER_ADDRESS[chainId], pancakeRouter02ABI)
 }
 
 // computes price breakdown for the trade
-export function computeTradePriceBreakdown(trade?: Trade<Currency, Currency, TradeType> | null): {
+export function computeTradePriceBreakdown(trade: Trade<Currency, Currency, TradeType> | null): {
   priceImpactWithoutFee: Percent | undefined
   realizedLPFee: CurrencyAmount<Currency> | undefined | null
 } {
@@ -47,7 +46,7 @@ export function computeTradePriceBreakdown(trade?: Trade<Currency, Currency, Tra
   const realizedLPFee = !trade
     ? undefined
     : ONE_HUNDRED_PERCENT.subtract(
-        trade.route.pairs.reduce<Fraction>(
+        trade.route.pairs.reduce(
           (currentFee: Fraction): Fraction => currentFee.multiply(INPUT_FRACTION_AFTER_FEE),
           ONE_HUNDRED_PERCENT,
         ),
@@ -86,8 +85,7 @@ export function computeSlippageAdjustedAmounts(
   }
 }
 
-export function warningSeverity(priceImpact: Percent | undefined | null): 0 | 1 | 2 | 3 | 4 {
-  if (!priceImpact) return 0
+export function warningSeverity(priceImpact: Percent | undefined): 0 | 1 | 2 | 3 | 4 {
   if (!priceImpact?.lessThan(BLOCKED_PRICE_IMPACT_NON_EXPERT)) return 4
   if (!priceImpact?.lessThan(ALLOWED_PRICE_IMPACT_HIGH)) return 3
   if (!priceImpact?.lessThan(ALLOWED_PRICE_IMPACT_MEDIUM)) return 2

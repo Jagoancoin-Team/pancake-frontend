@@ -1,4 +1,5 @@
-import { QuoteProvider, QuoterConfig, QuoterOptions, RouteType, RouteWithQuote, RouteWithoutQuote } from '../types'
+/* eslint-disable no-console */
+import { QuoteProvider, RouteWithoutQuote, RouteWithQuote, RouteType, QuoterOptions, QuoterConfig } from '../types'
 import { isV3Pool } from '../utils'
 import { createOffChainQuoteProvider } from './offChainQuoteProvider'
 import { createMixedRouteOnChainQuoteProvider, createV3OnChainQuoteProvider } from './onChainQuoteProvider'
@@ -27,10 +28,9 @@ export function createQuoteProvider(config: QuoterConfig): QuoteProvider<QuoterC
 
     return async function getRoutesWithQuotes(
       routes: RouteWithoutQuote[],
-      { blockNumber, gasModel, signal }: QuoterOptions,
+      { blockNumber, gasModel }: QuoterOptions,
     ): Promise<RouteWithQuote[]> {
-      const v3SingleHopRoutes: RouteWithoutQuote[] = []
-      const v3MultihopRoutes: RouteWithoutQuote[] = []
+      const v3Routes: RouteWithoutQuote[] = []
       const mixedRoutesHaveV3Pool: RouteWithoutQuote[] = []
       const routesCanQuoteOffChain: RouteWithoutQuote[] = []
       for (const route of routes) {
@@ -39,11 +39,7 @@ export function createQuoteProvider(config: QuoterConfig): QuoteProvider<QuoterC
           continue
         }
         if (route.type === RouteType.V3) {
-          if (route.pools.length === 1) {
-            v3SingleHopRoutes.push(route)
-            continue
-          }
-          v3MultihopRoutes.push(route)
+          v3Routes.push(route)
           continue
         }
         const { pools } = route
@@ -55,10 +51,9 @@ export function createQuoteProvider(config: QuoterConfig): QuoteProvider<QuoterC
       }
 
       const results = await Promise.allSettled([
-        getOffChainQuotes(routesCanQuoteOffChain, { blockNumber, gasModel, signal }),
-        getMixedRouteQuotes(mixedRoutesHaveV3Pool, { blockNumber, gasModel, retry: { retries: 0 }, signal }),
-        getV3Quotes(v3SingleHopRoutes, { blockNumber, gasModel, signal }),
-        getV3Quotes(v3MultihopRoutes, { blockNumber, gasModel, retry: { retries: 1 }, signal }),
+        getOffChainQuotes(routesCanQuoteOffChain, { blockNumber, gasModel }),
+        getMixedRouteQuotes(mixedRoutesHaveV3Pool, { blockNumber, gasModel }),
+        getV3Quotes(v3Routes, { blockNumber, gasModel }),
       ])
       if (results.every((result) => result.status === 'rejected')) {
         throw new Error(results.map((result) => (result as PromiseRejectedResult).reason).join(','))

@@ -6,8 +6,6 @@ import useCatchTxError from 'hooks/useCatchTxError'
 import { useTradingCompetitionContractMoD } from 'hooks/useContract'
 import Image from 'next/image'
 import { styled } from 'styled-components'
-import { ASSET_CDN } from 'config/constants/endpoints'
-
 import { modPrizes } from '../../../../config/constants/trading-competition/prizes'
 import { getRewardGroupAchievements, useModCompetitionRewards } from '../../helpers'
 import MoDAllBunnies from '../../pngs/MoD-hero-bunnies.png'
@@ -35,16 +33,12 @@ const ClaimModal: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
   const { fetchWithCatchTxError, loading: isConfirming } = useCatchTxError()
   const { t } = useTranslation()
 
-  const userRewardGroup = userTradingInformation?.userRewardGroup
-  const userCakeRewards = userTradingInformation?.userCakeRewards
-  const userDarRewards = userTradingInformation?.userDarRewards
-  const userPointReward = userTradingInformation?.userPointReward
-  const canClaimNFT = userTradingInformation?.canClaimNFT
+  const { userRewardGroup, userCakeRewards, userDarRewards, userPointReward, canClaimNFT } = userTradingInformation
   const { cakeReward, darReward } = useModCompetitionRewards({
-    userCakeRewards: userCakeRewards || 0,
-    userDarRewards: userDarRewards || 0,
+    userCakeRewards,
+    userDarRewards,
   })
-  const achievement = getRewardGroupAchievements(modPrizes, userRewardGroup || '', userPointReward || '')
+  const achievement = getRewardGroupAchievements(modPrizes, userRewardGroup, userPointReward)
   const { callWithGasPrice } = useCallWithGasPrice()
 
   const handleClaimClick = async () => {
@@ -53,8 +47,8 @@ const ClaimModal: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
     })
     if (receipt?.status) {
       toastSuccess(t('You have claimed your rewards!'), <ToastDescriptionWithTx txHash={receipt.transactionHash} />)
-      onDismiss?.()
-      onClaimSuccess?.()
+      onDismiss()
+      onClaimSuccess()
     }
   }
 
@@ -67,7 +61,7 @@ const ClaimModal: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
         <Flex mt="16px" alignItems="center">
           {/* achievements */}
           <Image
-            src={`${ASSET_CDN}/web/achievements/${achievement?.image}`}
+            src={`/images/achievements/${achievement.image}`}
             alt="achievement-claim-image"
             width={25}
             height={25}
@@ -97,7 +91,7 @@ const ClaimModal: React.FC<React.PropsWithChildren<CompetitionProps>> = ({
             <ImageWrapper>
               <Image src={MoDAllBunnies} alt="achievement-claim-pcs" width={128} height={95} />
             </ImageWrapper>
-            <Text mt="8px">{t('PancakeSwap NFT')}</Text>
+            <Text mt="8px">{t('IceCreamSwap NFT')}</Text>
             <Text color="textSubtle" mt="8px" fontSize="12px" textAlign="center">
               {t(
                 'Your Mines of Dalarnia - Bunny Helmet NFT will be airdropped to your wallet before 00:00 UTC on 2nd June.',

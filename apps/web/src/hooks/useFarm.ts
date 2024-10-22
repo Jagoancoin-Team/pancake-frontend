@@ -1,19 +1,19 @@
-import { ComputedFarmConfigV3, createFarmFetcherV3, fetchTokenUSDValues } from '@pancakeswap/farms'
+import { createFarmFetcherV3, ComputedFarmConfigV3, fetchTokenUSDValues } from '@pancakeswap/farms'
+import { farmsV3ConfigChainMap } from '@pancakeswap/farms/constants/v3'
 import { priceHelperTokens } from '@pancakeswap/farms/constants/common'
 import { Currency, ERC20Token } from '@pancakeswap/sdk'
 import { FeeAmount, Pool } from '@pancakeswap/v3-sdk'
-import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import useSWR from 'swr'
 
-import { legacyFarmsV3ConfigChainMap } from '@pancakeswap/farms/constants/v3'
 import { FAST_INTERVAL } from 'config/constants'
 import { getViemClients } from 'utils/viem'
 
 const farmFetcherV3 = createFarmFetcherV3(getViemClients)
 
 interface FarmParams {
-  currencyA?: Currency | null
-  currencyB?: Currency | null
+  currencyA?: Currency
+  currencyB?: Currency
   feeAmount?: FeeAmount
 }
 
@@ -23,7 +23,7 @@ export function useFarm({ currencyA, currencyB, feeAmount }: FarmParams) {
     if (!chainId || !currencyA || !currencyB || !feeAmount) {
       return null
     }
-    const farms: ComputedFarmConfigV3[] = legacyFarmsV3ConfigChainMap[chainId]
+    const farms: ComputedFarmConfigV3[] = farmsV3ConfigChainMap[chainId]
     if (!farms) {
       return null
     }
@@ -32,11 +32,10 @@ export function useFarm({ currencyA, currencyB, feeAmount }: FarmParams) {
     return farm ?? null
   }, [chainId, currencyA, currencyB, feeAmount])
 
-  return useQuery({
-    queryKey: [chainId, farmConfig?.token0.symbol, farmConfig?.token1.symbol, farmConfig?.feeAmount],
-
-    queryFn: async () => {
-      if (!farmConfig || !chainId) {
+  return useSWR(
+    chainId && farmConfig && [chainId, farmConfig.token0.symbol, farmConfig.token1.symbol, farmConfig.feeAmount],
+    async () => {
+      if (!farmConfig) {
         throw new Error('Invalid farm config')
       }
       const tokensToGetPrice: ERC20Token[] = priceHelperTokens[chainId].list || []
@@ -68,9 +67,9 @@ export function useFarm({ currencyA, currencyB, feeAmount }: FarmParams) {
         return null
       }
     },
-
-    enabled: Boolean(chainId && farmConfig),
-    refetchInterval: FAST_INTERVAL * 3,
-    staleTime: FAST_INTERVAL,
-  })
+    {
+      refreshInterval: FAST_INTERVAL * 3,
+      dedupingInterval: FAST_INTERVAL,
+    },
+  )
 }

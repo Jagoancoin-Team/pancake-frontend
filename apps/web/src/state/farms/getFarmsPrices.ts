@@ -1,24 +1,18 @@
-import { ChainId } from '@pancakeswap/chains'
+import {ChainId, FACTORY_ADDRESS_MAP, Pair, WETH9} from "@pancakeswap/sdk";
+import { chains } from "@icecreamswap/constants";
+import {coreTokens, ICE, USD} from "@pancakeswap/tokens";
 
-export const nativeStableLpMap = {
-  [ChainId.ETHEREUM]: {
-    address: '0x2E8135bE71230c6B1B4045696d41C09Db0414226',
-    wNative: 'WETH',
-    stable: 'USDC',
-  },
-  [ChainId.GOERLI]: {
-    address: '0xf5bf0C34d3c428A74Ceb98d27d38d0036C587200',
-    wNative: 'WETH',
-    stable: 'tUSDC',
-  },
-  [ChainId.BSC]: {
-    address: '0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16',
-    wNative: 'WBNB',
-    stable: 'BUSD',
-  },
-  [ChainId.BSC_TESTNET]: {
-    address: '0x4E96D2e92680Ca65D58A0e2eB5bd1c0f44cAB897',
-    wNative: 'WBNB',
-    stable: 'BUSD',
-  },
+export const nativeStableLpMap = {...chains.reduce((acc, chain) => {
+  if (!WETH9[chain.id] || !USD[chain.id] || !FACTORY_ADDRESS_MAP[chain.id]) return acc
+  return {...acc, [chain.id]: {
+      address: Pair.getAddress(WETH9[chain.id], USD[chain.id]),
+      wNative: WETH9[chain.id].symbol,
+      stable: USD[chain.id].symbol,
+    }}
+}, {}),
+  [ChainId.CORE]: {
+    address: Pair.getAddress(coreTokens.wcore_old, USD[ChainId.CORE]),
+    wNative: coreTokens.wcore_old.symbol,
+    stable: USD[ChainId.CORE].symbol,
+  }
 }

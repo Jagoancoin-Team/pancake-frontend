@@ -47,8 +47,19 @@ module.exports = {
     "react/prop-types": 0,
     "react/jsx-props-no-spreading": 0,
     "react/no-multi-comp": 0,
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        js: "never",
+        mjs: "never",
+        jsx: "never",
+        ts: "never",
+        tsx: "never",
+      },
+    ],
+    "import/order": 0,
     "arrow-body-style": 0,
-    "prefer-arrow-callback": 0,
-    "import/extensions": ["off"],
+    "prefer-arrow-callback": 0
   },
 };

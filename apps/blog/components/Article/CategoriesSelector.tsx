@@ -1,7 +1,7 @@
-import { Categories } from '@pancakeswap/blog'
-import { useTranslation } from '@pancakeswap/localization'
-import { Button, Flex } from '@pancakeswap/uikit'
 import { useMemo } from 'react'
+import { Flex, Button } from '@pancakeswap/uikit'
+import { Categories } from 'types'
+import { useTranslation } from '@pancakeswap/localization'
 
 interface CategoriesSelectorProps {
   selected: number
@@ -15,12 +15,11 @@ const CategoriesSelector = ({ selected, categoriesData, childMargin, setSelected
 
   const allCategories = useMemo(() => {
     const firstCategories = { id: 0, name: t('All') }
-    const sortData = categoriesData.sort((i) => (i.name === 'V4' ? -1 : 1))
-    return [firstCategories, ...sortData]
+    return [firstCategories, ...categoriesData]
   }, [categoriesData, t])
 
   return (
-    <Flex flexDirection={['row', 'row', 'row', 'row', 'row', 'column', 'column']}>
+    <Flex flexDirection={['row', 'row', 'row', 'row', 'row', 'row', 'column']}>
       {allCategories?.map((category) => (
         <Button
           key={category.id}

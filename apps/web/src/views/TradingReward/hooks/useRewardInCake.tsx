@@ -5,7 +5,7 @@ interface UseRewardInCakeProps {
   timeRemaining: number
   totalEstimateRewardUSD: number
   totalReward: string
-  cakePrice: BigNumber
+  cakePriceBusd: BigNumber
   rewardPrice: string
   rewardTokenDecimal: number
 }
@@ -14,7 +14,7 @@ const useRewardInCake = ({
   timeRemaining,
   totalEstimateRewardUSD,
   totalReward,
-  cakePrice,
+  cakePriceBusd,
   rewardPrice,
   rewardTokenDecimal = 18,
 }: UseRewardInCakeProps) => {
@@ -23,7 +23,7 @@ const useRewardInCake = ({
   const rewardCakePrice = getBalanceAmount(new BigNumber(rewardPrice ?? '0'), rewardTokenDecimal ?? 0)
   const totalCakeReward = reward.div(rewardCakePrice).isNaN() ? 0 : reward.div(rewardCakePrice).toNumber()
 
-  return timeRemaining > 0 ? estimateRewardUSD.div(cakePrice).toNumber() : totalCakeReward
+  return timeRemaining > 0 ? estimateRewardUSD.div(cakePriceBusd).toNumber() : totalCakeReward
 }
 
 export default useRewardInCake

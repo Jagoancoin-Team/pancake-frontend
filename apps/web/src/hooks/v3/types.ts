@@ -1,4 +1,4 @@
-import { CurrencyField as Field } from 'utils/types'
+import { Field } from 'state/mint/actions'
 
 export enum PoolState {
   LOADING,

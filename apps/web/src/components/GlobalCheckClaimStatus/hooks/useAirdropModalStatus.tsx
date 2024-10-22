@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
-import { useV3AirdropContract } from 'hooks/useContract'
 import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
+import { useV3AirdropContract } from 'hooks/useContract'
+import useSWRImmutable from 'swr/immutable'
+import { FetchStatus } from 'config/constants/types'
+import useSWR from 'swr'
 
 interface AirdropModalStatus {
   shouldShowModal: boolean
@@ -14,32 +16,24 @@ const useAirdropModalStatus = (): AirdropModalStatus => {
   const { address: account } = useAccount()
   const v3Airdrop = useV3AirdropContract()
 
-  const { data: isAccountClaimed, status: accountClaimedStatus } = useQuery({
-    queryKey: [account, '/airdrop-claimed'],
-
-    queryFn: async () => {
-      if (!account) return undefined
-      return v3Airdrop.read.isClaimed([account])
+  const { data: isAccountClaimed, status: accountClaimedStatus } = useSWR(
+    account && [account, '/airdrop-claimed'],
+    async () => v3Airdrop.read.isClaimed([account]),
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
     },
+  )
 
-    enabled: Boolean(account),
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-  })
-
-  const { data: v3WhitelistAddress } = useQuery({
-    queryKey: ['/airdrop-whitelist-json'],
-    queryFn: async () => (await fetch(`${GITHUB_ENDPOINT}/forFE.json`)).json(),
-    enabled: Boolean(!isAccountClaimed && accountClaimedStatus === 'success'),
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-  })
+  const { data: v3WhitelistAddress } = useSWRImmutable(
+    !isAccountClaimed && accountClaimedStatus === FetchStatus.Fetched && '/airdrop-whitelist-json',
+    async () => (await fetch(`${GITHUB_ENDPOINT}/forFE.json`)).json(),
+  )
 
   const shouldShowModal = useMemo(() => {
     return (
-      accountClaimedStatus === 'success' && !isAccountClaimed && account && v3WhitelistAddress?.[account.toLowerCase()]
+      accountClaimedStatus === FetchStatus.Fetched && !isAccountClaimed && v3WhitelistAddress?.[account?.toLowerCase()]
     )
   }, [account, accountClaimedStatus, isAccountClaimed, v3WhitelistAddress])
 

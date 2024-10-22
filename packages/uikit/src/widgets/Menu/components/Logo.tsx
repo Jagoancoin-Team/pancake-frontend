@@ -1,8 +1,8 @@
 import React, { useContext } from "react";
-import { keyframes, styled } from "styled-components";
+import { styled, keyframes } from "styled-components";
 import Flex from "../../../components/Box/Flex";
 import { LogoIcon, LogoWithTextIcon } from "../../../components/Svg";
-import { MenuContext } from "../context";
+import Link from "next/link";
 
 interface Props {
   href: string;
@@ -17,15 +17,15 @@ const StyledLink = styled("a")`
   display: flex;
   .mobile-icon {
     width: 32px;
-    ${({ theme }) => theme.mediaQueries.xl} {
-      display: none;
+    ${({ theme }) => theme.mediaQueries.lg} {
+      display: none !important;
     }
   }
   .desktop-icon {
     width: 160px;
     display: none;
-    ${({ theme }) => theme.mediaQueries.xl} {
-      display: block;
+    ${({ theme }) => theme.mediaQueries.lg} {
+      display: flex;
     }
   }
   .eye {
@@ -42,7 +42,6 @@ const StyledLink = styled("a")`
 `;
 
 const Logo: React.FC<React.PropsWithChildren<Props>> = ({ href }) => {
-  const { linkComponent } = useContext(MenuContext);
   const isAbsoluteUrl = href.startsWith("http");
   const innerLogo = (
     <>
@@ -54,13 +53,13 @@ const Logo: React.FC<React.PropsWithChildren<Props>> = ({ href }) => {
   return (
     <Flex alignItems="center">
       {isAbsoluteUrl ? (
-        <StyledLink as="a" href={href} aria-label="Pancake home page">
+        <StyledLink as="a" href={href} aria-label="IceCream home page">
           {innerLogo}
         </StyledLink>
       ) : (
-        <StyledLink href={href} as={linkComponent} aria-label="Pancake home page">
-          {innerLogo}
-        </StyledLink>
+        <Link legacyBehavior href={href} passHref prefetch={false}>
+          <StyledLink aria-label="IceCream home page">{innerLogo}</StyledLink>
+        </Link>
       )}
     </Flex>
   );

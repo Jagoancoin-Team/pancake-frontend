@@ -1,11 +1,11 @@
-import { useTranslation } from '@pancakeswap/localization'
 import { ArrowBackIcon, ArrowForwardIcon, Box, SortArrowIcon, Text } from '@pancakeswap/uikit'
 import { useActiveChainId } from 'hooks/useActiveChainId'
+import { useTranslation } from '@pancakeswap/localization'
 import NextLink from 'next/link'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useChainIdByQuery, useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
+import { useChainNameByQuery, useMultiChainPath } from 'state/info/hooks'
 import { styled } from 'styled-components'
-import { getTokenSymbolAlias } from 'utils/getTokenAlias'
+import { subgraphTokenSymbol } from 'state/info/constant'
 import { DoubleCurrencyLogo } from 'views/Info/components/CurrencyLogo'
 import { Arrow, Break, ClickableColumnHeader, PageButtons, TableWrapper } from 'views/Info/components/InfoTables/shared'
 import { POOL_HIDE, v3InfoPath } from '../../constants'
@@ -63,10 +63,6 @@ const SORT_FIELD = {
 
 const DataRow = ({ poolData, index, chainPath }: { poolData: PoolData; index: number; chainPath: string }) => {
   const chainName = useChainNameByQuery()
-  const chainId = useChainIdByQuery()
-  const token0symbol = getTokenSymbolAlias(poolData.token0.address, chainId, poolData.token0.symbol)
-  const token1symbol = getTokenSymbolAlias(poolData.token1.address, chainId, poolData.token1.symbol)
-
   return (
     <LinkWrapper href={`/${v3InfoPath}${chainPath}/pairs/${poolData.address}`}>
       <ResponsiveGrid>
@@ -79,7 +75,8 @@ const DataRow = ({ poolData, index, chainPath }: { poolData: PoolData; index: nu
               chainName={chainName}
             />
             <Text ml="8px">
-              {token0symbol}/{token1symbol}
+              {subgraphTokenSymbol[poolData.token0.address] ?? poolData.token0.symbol}/
+              {subgraphTokenSymbol[poolData.token1.address] ?? poolData.token1.symbol}
             </Text>
             <GreyBadge ml="10px" style={{ fontSize: 14 }}>
               {feeTierPercent(poolData.feeTier)}
@@ -120,7 +117,7 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
   const sortedPools = useMemo(() => {
     return poolDatas
       ? poolDatas
-          .filter((x) => !!x && chainId && !POOL_HIDE?.[chainId]?.includes(x.address))
+          .filter((x) => !!x && !POOL_HIDE?.[chainId]?.includes(x.address))
           .sort((a, b) => {
             if (a && b) {
               return a[sortField as keyof PoolData] > b[sortField as keyof PoolData]
@@ -221,7 +218,7 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
                 <ArrowBackIcon color={page === 1 ? 'textDisabled' : 'primary'} />
               </Arrow>
             </Box>
-            <Text>{`Page ${page} of ${maxPage}`}</Text>
+            <Text>{t('Page %page% of %maxPage%', { page, maxPage })}</Text>
             <Box
               onClick={() => {
                 setPage(page === maxPage ? page : page + 1)

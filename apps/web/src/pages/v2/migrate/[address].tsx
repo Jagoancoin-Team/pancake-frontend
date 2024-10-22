@@ -1,27 +1,25 @@
-import { ChainId } from '@pancakeswap/chains'
-import { useTranslation } from '@pancakeswap/localization'
+import { ChainId } from '@pancakeswap/sdk'
 import { AppHeader } from 'components/App'
 import { BodyWrapper } from 'components/App/AppBody'
 import { useRouter } from 'next/router'
-import { safeGetAddress } from 'utils'
+import { isAddress } from 'utils'
 import LiquidityFormProvider from 'views/AddLiquidityV3/formViews/V3FormView/form/LiquidityFormProvider'
 import { Migrate } from 'views/AddLiquidityV3/Migrate'
 import Page from 'views/Page'
+import { SUPPORT_SWAP, SUPPORT_SWAP_V3 } from "config/constants/supportChains";
 
 function MigratePage() {
   // const { t } = useTranslation()
 
   const router = useRouter()
 
-  const address = safeGetAddress(router.query.address)
-
-  const { t } = useTranslation()
+  const address = isAddress(router.query.address)
 
   return (
     <LiquidityFormProvider>
       <Page>
         <BodyWrapper style={{ maxWidth: '858px' }}>
-          <AppHeader title={t('Migrate Liquidity')} />
+          <AppHeader title="Migrate Liquidity" />
           {address && <Migrate v2PairAddress={address} />}
         </BodyWrapper>
       </Page>
@@ -31,5 +29,5 @@ function MigratePage() {
 
 export default MigratePage
 
-MigratePage.screen = true
-MigratePage.chains = [ChainId.BSC, ChainId.ETHEREUM, ChainId.BSC_TESTNET, ChainId.GOERLI]
+// chains with V2 and V3 dex are supported
+MigratePage.chains = SUPPORT_SWAP_V3.filter(chainId => SUPPORT_SWAP.includes(chainId))

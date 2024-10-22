@@ -1,19 +1,19 @@
-import { Balance, Flex, Heading, RefreshIcon } from "@pancakeswap/uikit";
-import { formatLpBalance, getBalanceNumber } from "@pancakeswap/utils/formatBalance";
-import { BigNumber } from "bignumber.js";
-import { useMemo } from "react";
+import { BigNumber } from 'bignumber.js'
+import { useMemo } from 'react'
+import { formatLpBalance, getBalanceNumber } from '@pancakeswap/utils/formatBalance'
+import { Flex, Balance, Heading, RefreshIcon } from '@pancakeswap/uikit'
 
 interface StakedLPProps {
-  stakedBalance: BigNumber;
-  tokenSymbol: string;
-  quoteTokenSymbol: string;
-  lpTotalSupply: BigNumber;
-  lpTokenPrice: BigNumber;
-  tokenAmountTotal: BigNumber;
-  quoteTokenAmountTotal: BigNumber;
-  pendingFarmLength?: number;
-  decimals: number;
-  onClickLoadingIcon?: () => void;
+  stakedBalance: BigNumber
+  tokenSymbol: string
+  quoteTokenSymbol: string
+  lpTotalSupply: BigNumber
+  lpTokenPrice: BigNumber
+  tokenAmountTotal: BigNumber
+  quoteTokenAmountTotal: BigNumber
+  pendingFarmLength?: number
+  decimals: number
+  onClickLoadingIcon?: () => void
 }
 
 const StakedLP: React.FunctionComponent<React.PropsWithChildren<StakedLPProps>> = ({
@@ -29,14 +29,14 @@ const StakedLP: React.FunctionComponent<React.PropsWithChildren<StakedLPProps>> 
   onClickLoadingIcon,
 }) => {
   const displayBalance = useMemo(() => {
-    return formatLpBalance(stakedBalance, decimals);
-  }, [stakedBalance, decimals]);
+    return formatLpBalance(stakedBalance, decimals)
+  }, [stakedBalance, decimals])
 
   return (
     <Flex flexDirection="column" alignItems="flex-start">
       <Flex>
-        <Heading color={stakedBalance.eq(0) ? "textDisabled" : "text"}>{displayBalance}</Heading>
-        {pendingFarmLength > 0 && <RefreshIcon style={{ cursor: "pointer" }} spin onClick={onClickLoadingIcon} />}
+        <Heading color={stakedBalance.eq(0) ? 'textDisabled' : 'text'}>{displayBalance}</Heading>
+        {pendingFarmLength > 0 && <RefreshIcon style={{ cursor: 'pointer' }} spin onClick={onClickLoadingIcon} />}
       </Flex>
       {stakedBalance.gt(0) && lpTokenPrice.gt(0) && (
         <>
@@ -48,7 +48,7 @@ const StakedLP: React.FunctionComponent<React.PropsWithChildren<StakedLPProps>> 
             unit=" USD"
             prefix="~"
           />
-          <Flex flexDirection={["column", "column", "row"]}>
+          <Flex style={{ gap: '4px' }}>
             <Balance
               fontSize="12px"
               color="textSubtle"
@@ -60,7 +60,6 @@ const StakedLP: React.FunctionComponent<React.PropsWithChildren<StakedLPProps>> 
               fontSize="12px"
               color="textSubtle"
               decimals={2}
-              ml={["0", "0", "4px"]}
               value={stakedBalance.div(lpTotalSupply).times(quoteTokenAmountTotal).toNumber()}
               unit={` ${quoteTokenSymbol}`}
             />
@@ -68,7 +67,7 @@ const StakedLP: React.FunctionComponent<React.PropsWithChildren<StakedLPProps>> 
         </>
       )}
     </Flex>
-  );
-};
+  )
+}
 
-export default StakedLP;
+export default StakedLP

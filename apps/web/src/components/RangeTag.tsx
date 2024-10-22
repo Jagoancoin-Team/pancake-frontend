@@ -1,24 +1,21 @@
 import { useTranslation } from '@pancakeswap/localization'
 import { QuestionHelper, Tag, TagProps, Flex } from '@pancakeswap/uikit'
-import { styleVariants } from '@pancakeswap/uikit/components/Tag/theme'
 import { ReactNode } from 'react'
 
-type IRangeTagType = {
-  removed?: boolean
-  outOfRange: boolean
-  children?: ReactNode
-  lowContrast?: boolean
-} & TagProps
-
-export function RangeTag({ removed, outOfRange, children, lowContrast = false, ...props }: IRangeTagType) {
+export function RangeTag({
+  removed,
+  outOfRange,
+  children,
+  ...props
+}: { removed?: boolean; outOfRange: boolean; children?: ReactNode } & TagProps) {
   const { t } = useTranslation()
 
   return removed ? (
-    <Tag variant={lowContrast ? 'tertiary' : 'textSubtle'} {...props}>
+    <Tag variant="textSubtle" {...props}>
       {children || t('Closed')}
     </Tag>
   ) : outOfRange ? (
-    <Tag variant={lowContrast ? 'failureLowContrast' : 'failure'} {...props}>
+    <Tag variant="failure" {...props}>
       {children || (
         <Flex alignItems="center">
           {t('Inactive')}{' '}
@@ -30,14 +27,14 @@ export function RangeTag({ removed, outOfRange, children, lowContrast = false, .
               'The position is inactive and not earning trading fees due to the current price being out of the set price range.',
             )}
             size="20px"
-            color={styleVariants[lowContrast ? 'failureLowContrast' : 'failure'].color ?? 'white'}
+            color="white"
             placement="bottom"
           />
         </Flex>
       )}
     </Tag>
   ) : (
-    <Tag variant={lowContrast ? 'successLowContrast' : 'success'} {...props}>
+    <Tag variant="success" {...props}>
       {children || t('Active')}
     </Tag>
   )

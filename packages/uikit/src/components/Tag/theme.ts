@@ -13,14 +13,7 @@ export const scaleVariants = {
   },
 };
 
-interface IStyleVariantsProps {
-  backgroundColor?: string;
-  bg?: string;
-  color?: string;
-  border?: string;
-  borderColor?: string;
-}
-export const styleVariants: { [key: string]: IStyleVariantsProps } = {
+export const styleVariants: { [key: string]: { backgroundColor?: string; bg?: string } } = {
   [variants.PRIMARY]: {
     backgroundColor: "primary",
   },
@@ -45,31 +38,10 @@ export const styleVariants: { [key: string]: IStyleVariantsProps } = {
   [variants.WARNING]: {
     backgroundColor: "warning",
   },
+  [variants.WARNING]: {
+    backgroundColor: "warning",
+  },
   [variants.GRADIENTBOLD]: {
     bg: "gradientBold",
-  },
-  [variants.FAILURE_LOW_CONTRAST]: {
-    backgroundColor: "destructive10",
-    color: "destructive",
-    border: "2px solid",
-    borderColor: "destructive20",
-  },
-  [variants.SUCCESS_LOW_CONTRAST]: {
-    backgroundColor: "positive10",
-    color: "positive60",
-    border: "2px solid",
-    borderColor: "positive20",
-  },
-  [variants.TERTIARY]: {
-    backgroundColor: "tertiary",
-    color: "textSubtle",
-    border: "2px solid",
-    borderColor: "tertiary20",
-  },
-  [variants.PRIMARY60]: {
-    backgroundColor: "primary10",
-    color: "primary60",
-    border: "2px solid",
-    borderColor: "primary20",
   },
 };

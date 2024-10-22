@@ -17,6 +17,7 @@
     "jsx": "react-jsx",
     "target": "es2020"
   },
+  "types": ["vitest/globals"],
   "include": ["src"],
   "exclude": ["node_modules", "src/**/*.stories.tsx"]
 }

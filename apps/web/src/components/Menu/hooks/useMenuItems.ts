@@ -1,20 +1,14 @@
-import { ChainId } from '@pancakeswap/chains'
 import { useTheme } from '@pancakeswap/hooks'
+import { useMatchBreakpoints, DropdownMenuItems } from '@pancakeswap/uikit'
 import { useTranslation } from '@pancakeswap/localization'
-import { DropdownMenuItems } from '@pancakeswap/uikit'
 import { useActiveChainId } from 'hooks/useActiveChainId'
-import React, { useMemo } from 'react'
+import { useUserNotUsCitizenAcknowledgement, IdType } from 'hooks/useUserIsUsCitizenAcknowledgement'
+import { useMemo } from 'react'
 import { multiChainPaths } from 'state/info/constant'
-import { logMenuClick } from 'utils/customGTMEventTracking'
-
-import config, { ConfigMenuDropDownItemsType, ConfigMenuItemsType } from '../config/config'
+import config, { ConfigMenuItemsType } from '../config/config'
 import { useMenuItemsStatus } from './useMenuItemsStatus'
 
-export type UseMenuItemsParams = {
-  onClick?: (e: React.MouseEvent<HTMLElement>, item: ConfigMenuDropDownItemsType) => void
-}
-
-export const useMenuItems = ({ onClick }: UseMenuItemsParams = {}): ConfigMenuItemsType[] => {
+export const useMenuItems = (onUsCitizenModalPresent?: () => void): ConfigMenuItemsType[] => {
   const {
     t,
     currentLanguage: { code: languageCode },
@@ -22,69 +16,62 @@ export const useMenuItems = ({ onClick }: UseMenuItemsParams = {}): ConfigMenuIt
   const { chainId } = useActiveChainId()
   const { isDark } = useTheme()
   const menuItemsStatus = useMenuItemsStatus()
+  const { isMobile } = useMatchBreakpoints()
 
-  const menuItems = useMemo(() => config(t, isDark, languageCode, chainId), [t, isDark, languageCode, chainId])
+  const menuItems = useMemo(() => {
+    const mobileConfig = [...config(t, isDark, languageCode, chainId)]
+    mobileConfig.push(mobileConfig.splice(4, 1)[0])
+    return isMobile ? mobileConfig : config(t, isDark, languageCode, chainId)
+  }, [t, isDark, languageCode, chainId, isMobile])
+  const [userNotUsCitizenAcknowledgement] = useUserNotUsCitizenAcknowledgement(IdType.PERPETUALS)
 
   return useMemo(() => {
-    const traverseItems = <T extends ConfigMenuItemsType | ConfigMenuDropDownItemsType>(
-      item: T,
-      menuStatus: Record<string, string>,
-      translationFn: (key: string) => string,
-      onClickFn?: (e: React.MouseEvent<HTMLButtonElement>, item: ConfigMenuDropDownItemsType) => void,
-      chainIdNumber?: number,
-    ): T => {
-      if (item?.items && item.items.length > 0) {
-        const innerItems = item.items.map((currentItem) =>
-          traverseItems(currentItem, menuStatus, translationFn, onClickFn, chainIdNumber),
-        )
-        return { ...item, items: innerItems }
-      }
-
-      const onClickEvent = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (item.href) {
-          logMenuClick(item.href)
-        }
-        item.onClick?.(e)
-        onClick?.(e, item)
-      }
-
-      const itemStatus = item.href ? menuItemsStatus[item.href] : undefined
-
-      if (itemStatus) {
-        let itemMenuStatus: DropdownMenuItems['status'] | undefined
-        switch (itemStatus) {
-          case 'soon':
-            itemMenuStatus = { text: t('Soon'), color: 'warning' }
-            break
-          case 'live':
-            itemMenuStatus = { text: t('Live'), color: 'failure' }
-            break
-          case 'vote_now':
-            itemMenuStatus = { text: t('Vote Now'), color: 'success' }
-            break
-          case 'pot_open':
-            itemMenuStatus = { text: t('Pot Open'), color: 'success' }
-            break
-          case 'lock_end':
-            itemMenuStatus = { text: t('Lock End'), color: 'failure' }
-            break
-          default:
-            itemMenuStatus = { text: t('New'), color: 'success' }
-        }
-        return { ...item, onClick: onClickEvent, status: itemMenuStatus }
-      }
-
-      if (item.href === '/info/v3') {
-        const href = `${item.href}${multiChainPaths[chainId || ChainId.BSC] ?? ''}`
-        return { ...item, href, onClick: onClickEvent }
-      }
-
-      return { ...item, onClick: onClickEvent }
-    }
-
     if (menuItemsStatus && Object.keys(menuItemsStatus).length) {
-      return menuItems.map((item) => traverseItems(item, menuItemsStatus, t, onClick, chainId))
+      return menuItems.map((item) => {
+        const innerItems = item?.items?.map((innerItem) => {
+          const itemStatus = menuItemsStatus[innerItem.href]
+          const modalId = innerItem.confirmModalId
+          const isInfo = innerItem.href === '/info/v3'
+          if (itemStatus) {
+            let itemMenuStatus = null
+            if (itemStatus === 'soon') {
+              itemMenuStatus = <DropdownMenuItems['status']>{ text: t('Soon'), color: 'warning' }
+            } else if (itemStatus === 'live') {
+              itemMenuStatus = <DropdownMenuItems['status']>{ text: t('Live'), color: 'failure' }
+            } else if (itemStatus === 'vote_now') {
+              itemMenuStatus = <DropdownMenuItems['status']>{ text: t('Vote Now'), color: 'success' }
+            } else if (itemStatus === 'pot_open') {
+              itemMenuStatus = <DropdownMenuItems['status']>{ text: t('Pot Open'), color: 'success' }
+            } else if (itemStatus === 'lock_end') {
+              itemMenuStatus = <DropdownMenuItems['status']>{ text: t('Lock End'), color: 'failure' }
+            } else {
+              itemMenuStatus = <DropdownMenuItems['status']>{ text: t('New'), color: 'success' }
+            }
+            return { ...innerItem, status: itemMenuStatus }
+          }
+          if (modalId) {
+            let onClickEvent = null
+            if (modalId === 'usCitizenConfirmModal') {
+              onClickEvent = (e: React.MouseEvent<HTMLElement>) => {
+                if (!userNotUsCitizenAcknowledgement && onUsCitizenModalPresent) {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onUsCitizenModalPresent()
+                }
+              }
+            }
+            return { ...innerItem, onClick: onClickEvent }
+          }
+          if (isInfo) {
+            const href = `${innerItem.href}${multiChainPaths[chainId] ?? ''}`
+            return { ...innerItem, href }
+          }
+
+          return innerItem
+        })
+        return { ...item, items: innerItems }
+      })
     }
     return menuItems
-  }, [t, menuItems, menuItemsStatus, onClick, chainId])
+  }, [t, menuItems, menuItemsStatus, userNotUsCitizenAcknowledgement, onUsCitizenModalPresent, chainId])
 }

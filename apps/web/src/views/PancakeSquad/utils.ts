@@ -1,7 +1,7 @@
-import { ContextApi } from '@pancakeswap/localization'
 import { EventStatus } from '@pancakeswap/uikit'
-import getTimePeriods from '@pancakeswap/utils/getTimePeriods'
+import { ContextApi } from '@pancakeswap/localization'
 import formatTimePeriod from 'utils/formatTimePeriod'
+import getTimePeriods from '@pancakeswap/utils/getTimePeriods'
 import { SaleStatusEnum, UserStatusEnum } from './types'
 
 type getUserStatusType = {

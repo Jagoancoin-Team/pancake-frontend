@@ -1,19 +1,19 @@
-import { useTranslation } from '@pancakeswap/localization'
 import {
   Button,
-  ButtonProps,
-  Flex,
   Heading,
-  HelpIcon,
-  LinkExternal,
   Text,
+  ButtonProps,
+  HelpIcon,
+  Flex,
   TooltipText,
-  useMatchBreakpoints,
   useTooltip,
+  LinkExternal,
+  useMatchBreakpoints,
 } from '@pancakeswap/uikit'
 import _isEmpty from 'lodash/isEmpty'
 import { ReactNode } from 'react'
 import { styled } from 'styled-components'
+import { useTranslation } from '@pancakeswap/localization'
 
 const Container = styled.div`
   margin-right: 4px;
@@ -31,10 +31,10 @@ const BoosterTooltip = () => {
   return (
     <>
       {t(
-        `Boost multiplier is calculated based on the staking conditions from both Farms and fixed-term CAKE syrup pool and will be automatically updated upon user actions.`,
+        `Boost multiplier is calculated based on the staking conditions from both Farms and fixed-term ICE syrup pool and will be automatically updated upon user actions.`,
       )}
       <LinkExternal
-        href="https://docs.pancakeswap.finance/products/yield-farming/bcake/faq#how-are-the-bcake-multipliers-calculated"
+        href="https://docs.icecreamswap.com/products/yield-farming/bcake/faq#how-are-the-bcake-multipliers-calculated"
         external
       >
         {t('Learn More')}
@@ -45,7 +45,7 @@ const BoosterTooltip = () => {
 
 const ActionButton: React.FC<ActionButtonPropsType> = ({ title, description, button, ...props }) => {
   const { isMobile } = useMatchBreakpoints()
-  let btn: ReactNode | null = null
+  let btn = null
 
   const { targetRef, tooltip, tooltipVisible } = useTooltip(<BoosterTooltip />, {
     placement: 'top',

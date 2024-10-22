@@ -11,8 +11,8 @@ import { useVaultPoolContract } from 'hooks/useContract'
 import { useAppDispatch } from 'state'
 import { fetchCakeVaultUserData } from 'state/pools'
 import { VaultKey } from 'state/types'
-import { useActiveChainId } from 'hooks/useActiveChainId'
-import { useQueryClient } from '@tanstack/react-query'
+import { useActiveChainId } from '../../../../../hooks/useActiveChainId'
+import { useSWRConfig } from 'swr'
 
 const ConvertToFlexibleButton: React.FC<React.PropsWithChildren<ButtonProps>> = (props) => {
   const dispatch = useAppDispatch()
@@ -23,11 +23,10 @@ const ConvertToFlexibleButton: React.FC<React.PropsWithChildren<ButtonProps>> = 
   const vaultPoolContract = useVaultPoolContract(VaultKey.CakeVault)
   const { callWithGasPrice } = useCallWithGasPrice()
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
+  const { mutate } = useSWRConfig()
   const { toastSuccess } = useToast()
 
   const handleUnlock = useCallback(async () => {
-    if (!account || !chainId) return
     const callOptions = {
       gas: vaultPoolConfig[VaultKey.CakeVault].gasLimit,
     }
@@ -45,21 +44,9 @@ const ConvertToFlexibleButton: React.FC<React.PropsWithChildren<ButtonProps>> = 
         </ToastDescriptionWithTx>,
       )
       dispatch(fetchCakeVaultUserData({ account, chainId }))
-      queryClient.invalidateQueries({
-        queryKey: ['userCakeLockStatus', account],
-      })
+      mutate(['userCakeLockStatus', account])
     }
-  }, [
-    t,
-    toastSuccess,
-    account,
-    callWithGasPrice,
-    dispatch,
-    fetchWithCatchTxError,
-    vaultPoolContract,
-    queryClient,
-    chainId,
-  ])
+  }, [t, toastSuccess, account, callWithGasPrice, dispatch, fetchWithCatchTxError, vaultPoolContract, mutate, chainId])
 
   return (
     <Button width="100%" disabled={pendingTx} onClick={handleUnlock} variant="secondary" {...props}>

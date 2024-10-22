@@ -1,4 +1,4 @@
-import { Text } from '@pancakeswap/uikit'
+import { Text, Link } from '@pancakeswap/uikit'
 import { ContextApi } from '@pancakeswap/localization'
 
 type FAQsType = {
@@ -7,55 +7,64 @@ type FAQsType = {
 
 const config = ({ t }: FAQsType) => [
   {
-    title: t('What’s the Smart Contract?'),
+    title: t('What is IceCreamSwap building?'),
     description: [
-      <Text key={1} color="textSubtle">
-        {t('The smart contract address will be released soon before the sale starts.')}
+      t('A one stop DeFi solution with AI DEX aggregator and an intuitive UI to access efficient DeFi on all chains.')
+    ],
+  },
+  {
+    title: t('Are the Swap contracts audited?'),
+    description: [
+      <Text as="p" color="textSubtle" fontSize="16px">
+        {t('Yes, IceCreamSwap has multiple audits including an Audit, Bug Bounty and KYC by CertiK: ',)}
+        <Link
+          display="inline-flex"
+          color="text"
+          title="CertiK Audit"
+          href="https://skynet.certik.com/projects/icecreamswap"
+        >
+          {t('CertiK Audit')}
+        </Link>
+        {t('.')}
       </Text>,
     ],
   },
   {
-    title: t('I can’t see my NFT’s picture!'),
+    title: t('How does IceCreamSwap combine AI with Blockchains?'),
     description: [
-      t(
-        'Wait for the reveal! After all 10,000 members of the Pancake Squad have been minted, their images will remain hidden for a few days. Just be patient :)',
-      ),
+      t('The Blockchain is an amazing tool for security and trust minimization. But as it\'s still in It\'s early stage, ' +
+        'inefficiencies occur which result in an unwanted value transfer from users to MEV/Arbitrage bots. ' +
+        'Our AI DEX aggregator detects these inefficiencies and automatically extracts them for our users, resulting in more efficient trades and less value lost.'),
     ],
   },
   {
-    title: t('How many can I mint?'),
+    title: t('What is the IceCreamSwap AI DEX aggregator?'),
     description: [
-      t('The max limit per wallet is 10 NFTs.'),
-      t(
-        'Users holding Gen 0 Pancake Bunny NFTs at the snapshot may also purchase one additional Pancake Squad NFT in the presale for each Pancake Bunny they hold.',
-      ),
-      t(
-        'For example, if you have 5 Gen 0 bunnies, you can buy 5 minting tickets in the presale, then max. 10 in the public sale.',
-      ),
+      t('It\'s a sophisticated system that scans the entire blockchain to find the optimal way to execute your swap. ' +
+        'It allows you to trade any token at the best rate, not only taking into account the IceCreamSwap liquidity, but also the liquidity of other DEXes. ' +
+        'Simplified you can think about it as the booking.com of DEXes, finding you the best offer to execute your trade. ' +
+        'It even extracts Arbitrage opportunities for you, so your trades sometimes end with more value than they began with.'),
     ],
   },
   {
-    title: t('Where do the fees go?'),
-    description: [t('100% of CAKE spent on Pancake Squad NFTs will be burned as part of our weekly CAKE burn.')],
-  },
-  {
-    title: t('How are the NFTs randomly distributed?'),
+    title: t('How does IceCreamSwap extract arbitrage for me?'),
     description: [
-      t(
-        'Once all 10,000 Squad Tickets have been bought, Chainlink VRF will be used to randomly allocate the pre-generated NFTs to the purchased Tickets. Squad Tickets are allocated IDs numbered in order of their purchase.',
-      ),
-      t(
-        'Once all 10,000 have been sold, VRF will pick numbers from 0 to 9999, which will be used to shift the Squad Ticket ID. This will ensure that the distribution of rare NFTs will be randomized, and prevents “sniping” of specific NFTs during the pre-sale or public sale phases.',
-      ),
+      t('With every trade, our AI DEX aggregator not only finds the best way to execute that trade but also scans for arbitrage opportunities. These opportunities are extracted directly in your trade. As most Arbitrage is generated from inefficient trades, IceCreamSwap users not only avoid losing value to arbitrage but also profit directly from users who still rely on traditional DEXes.'),
     ],
   },
   {
-    title: t('What’s the value of each NFT?'),
+    title: t('How to list a token on IceCreamSwap?'),
     description: [
-      t(
-        'Value is subjective, but since different traits have different levels of rarity, you can expect bunnies with rarer traits to trade for higher prices than others. If you’re planning to sell, check the NFT market for the price of bunnies with a similarly rare traits to yours.',
-      ),
+      t('Simply contact us on Telegram.'),
     ],
   },
+  {
+    title: t('How much reward will I get for providing liquidity?'),
+    description: [
+      t(
+        'Most of the trading fees are distributed directly to our liquidity providers. Additionally, there are farming pools where you can receive extra ICE tokens, and some tokens, like SCORE, even generate rewards by securing the blockchain.',
+      ),
+    ],
+  }
 ]
 export default config

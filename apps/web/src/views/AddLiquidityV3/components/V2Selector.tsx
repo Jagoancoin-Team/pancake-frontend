@@ -7,6 +7,8 @@ import { TOTAL_FEE } from 'config/constants/info'
 
 import HideShowSelectorSection from './HideShowSelectorSection'
 import { HandleFeePoolSelectFn, SELECTOR_TYPE } from '../types'
+import { SUPPORT_SWAP_V3 } from "config/constants/supportChains";
+import { useActiveChainId } from "hooks/useActiveChainId";
 
 export function V2Selector({
   isStable,
@@ -19,6 +21,7 @@ export function V2Selector({
 }) {
   const { t } = useTranslation()
   const [showOptions, setShowOptions] = useState(false)
+  const { chainId } = useActiveChainId()
 
   return (
     <HideShowSelectorSection
@@ -29,7 +32,7 @@ export function V2Selector({
           <Text>StableSwap LP</Text>
         ) : selectorType === SELECTOR_TYPE.V2 ? (
           <Text>
-            V2 LP - {(TOTAL_FEE * 100).toFixed(2)} {t('fee tier')}
+            V2 LP - {(TOTAL_FEE * 100).toFixed(1)}% {t('fee tier')}
           </Text>
         ) : (
           <Text>V3 LP</Text>
@@ -38,19 +41,23 @@ export function V2Selector({
       content={
         <EvenWidthAutoRow gap="4px">
           {isStable ? (
-            <SelectButton
-              isActive={selectorType === SELECTOR_TYPE.STABLE}
-              onClick={() => handleFeePoolSelect({ type: SELECTOR_TYPE.STABLE })}
-            >
-              StableSwap LP
-            </SelectButton>
-          ) : (
-            <SelectButton
-              isActive={selectorType === SELECTOR_TYPE.V3}
-              onClick={() => handleFeePoolSelect({ type: SELECTOR_TYPE.V3 })}
-            >
-              V3 LP
-            </SelectButton>
+            <>
+              <SelectButton
+                isActive={selectorType === SELECTOR_TYPE.STABLE}
+                onClick={() => handleFeePoolSelect({ type: SELECTOR_TYPE.STABLE })}
+              >
+                StableSwap LP
+              </SelectButton>
+            </>
+          ) : SUPPORT_SWAP_V3.includes(chainId) && (
+            <>
+              <SelectButton
+                isActive={selectorType === SELECTOR_TYPE.V3}
+                onClick={() => handleFeePoolSelect({ type: SELECTOR_TYPE.V3 })}
+              >
+                V3 LP
+              </SelectButton>
+            </>
           )}
           <SelectButton
             isActive={selectorType === SELECTOR_TYPE.V2}

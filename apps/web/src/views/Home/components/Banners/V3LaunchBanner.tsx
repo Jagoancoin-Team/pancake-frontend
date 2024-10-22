@@ -1,7 +1,13 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Button, Flex, LogoIcon, OpenNewIcon, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import {
+  Button,
+  Flex,
+  LogoIcon,
+  NextLinkFromReactRouter,
+  OpenNewIcon,
+  Text,
+  useMatchBreakpoints,
+} from '@pancakeswap/uikit'
 import { ASSET_CDN } from 'config/constants/endpoints'
 import Image from 'next/legacy/image'
 import { styled, css, keyframes } from 'styled-components'
@@ -235,7 +241,7 @@ const V3LaunchBanner = () => {
               {t(`Ev3ryone's Favourite D3X`)}
             </StyledSubheading>
             <TitleWrapper alignItems="center" style={{ gap: 5 }}>
-              <LogoIcon /> <Title>{t('PancakeSwap v3 is live!')}</Title>
+              <LogoIcon /> <Title>{t('IceCreamSwap v3 is live!')}</Title>
             </TitleWrapper>
           </TextBox>
           <NextLinkFromReactRouter

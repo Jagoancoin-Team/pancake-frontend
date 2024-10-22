@@ -1,7 +1,5 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Button, Text, useMatchBreakpoints, OpenNewIcon } from '@pancakeswap/uikit'
-import { NextLinkFromReactRouter } from '@pancakeswap/widgets-internal'
-
+import { Button, NextLinkFromReactRouter, Text, useMatchBreakpoints, OpenNewIcon } from '@pancakeswap/uikit'
 import Image from 'next/legacy/image'
 import { styled, css, keyframes } from 'styled-components'
 import { v3AirdropBunny, v3BgBlingBlur, v3BgBlingNormal, v3BgCoinDown, v3BgCoinUp, v3Board } from './images'
@@ -225,9 +223,9 @@ const V3Banner = () => {
     >
       <S.Inner>
         <S.LeftWrapper>
-          <Title>{t('PancakeSwap V3')}</Title>
-          <StyledSubheading data-text={t('Claim $135K CAKE Airdrop & Exclusive NFT')}>
-            {t('Claim $135K CAKE Airdrop & Exclusive NFT')}
+          <Title>{t('IceCreamSwap V3')}</Title>
+          <StyledSubheading data-text={t('Claim $135K ICE Airdrop & Exclusive NFT')}>
+            {t('Claim $135K ICE Airdrop & Exclusive NFT')}
           </StyledSubheading>
           <NextLinkFromReactRouter
             target="_blank"
